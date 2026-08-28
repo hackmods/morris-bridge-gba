@@ -14,6 +14,7 @@
 #include "bn_sprite_items_ground.h"
 #include "bn_sprite_items_hatt.h"
 #include "bn_sprite_items_label.h"
+#include "bn_sprite_items_logo.h"
 #include "bn_sprite_items_menu.h"
 #include "bn_sprite_items_node.h"
 #include "bn_sprite_items_panel.h"
@@ -46,10 +47,9 @@ constexpr int LABEL_LV1 = 8;
 constexpr int LABEL_LV2 = 9;
 constexpr int LABEL_LV3 = 10;
 
-constexpr int BANNER_TITLE = 0;
-constexpr int BANNER_LEVEL_SELECT = 1;
-constexpr int BANNER_HATT_OK = 2;
-constexpr int BANNER_DELAY = 3;
+constexpr int BANNER_LEVEL_SELECT = 0;
+constexpr int BANNER_HATT_OK = 1;
+constexpr int BANNER_DELAY = 2;
 
 constexpr int PANEL_HUD = 0;
 constexpr int PANEL_DIALOG = 1;
@@ -100,6 +100,7 @@ public:
         _label(bn::sprite_items::label.create_sprite(0, 66)),
         _panel(bn::sprite_items::panel.create_sprite(0, 66)),
         _banner(bn::sprite_items::banner.create_sprite(0, -36)),
+        _logo(bn::sprite_items::logo.create_sprite(0, -52)),
         _menu_row(bn::sprite_items::menu.create_sprite(0, 8)),
         _menu_arrow(bn::sprite_items::cursor.create_sprite(-36, 8)),
         _hatt(bn::sprite_items::hatt.create_sprite(52, 8))
@@ -112,6 +113,8 @@ public:
         _label.set_z_order(-18);
         _panel.set_z_order(-19);
         _banner.set_z_order(-30);
+        _logo.set_z_order(-29);
+        _logo.set_visible(false);
         _menu_row.set_z_order(-25);
         _menu_arrow.set_z_order(-24);
         _hatt.set_z_order(-23);
@@ -235,6 +238,11 @@ private:
         {
             tile.set_visible(visible);
         }
+
+        if(! visible)
+        {
+            _logo.set_visible(false);
+        }
     }
 
     void _place_backdrop()
@@ -281,6 +289,8 @@ private:
         _hide_gameplay();
         _set_backdrop_visible(false);
         _set_splash_visible(true);
+        _logo.set_visible(true);
+        _logo.set_position(0, -52);
         _banner.set_visible(false);
         _panel.set_visible(true);
         _panel.set_item(bn::sprite_items::panel, PANEL_DIALOG);
@@ -991,6 +1001,7 @@ private:
     bn::sprite_ptr _label;
     bn::sprite_ptr _panel;
     bn::sprite_ptr _banner;
+    bn::sprite_ptr _logo;
     bn::sprite_ptr _menu_row;
     bn::sprite_ptr _menu_arrow;
     bn::sprite_ptr _hatt;
