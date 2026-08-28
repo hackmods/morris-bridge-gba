@@ -367,6 +367,20 @@ int main()
         std::cout << "  ok documented Knapford playthrough succeeds\n";
     }
 
+    {
+        bridge::BridgeSystem system;
+        system.load_level(1);
+        assert(system.add_strut(bridge::START_NODE, bridge::END_NODE, bridge::LinkRole::brace));
+        assert(system.begin_test() == bridge::SimStatus::no_path);
+        std::cout << "  ok brace-only link is not a train route\n";
+    }
+
+    {
+        bridge::BridgeSystem system;
+        assert(level_solutions::run_gordon_hill_playthrough(system));
+        std::cout << "  ok documented Gordon's Hill playthrough succeeds\n";
+    }
+
     std::cout << "All host physics tests passed.\n";
     return 0;
 }

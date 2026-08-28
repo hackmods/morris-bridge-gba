@@ -81,6 +81,8 @@ constexpr int STRUT_IDLE = 0;
 constexpr int STRUT_HOT = 1;
 constexpr int STRUT_PREVIEW_OK = 2;
 constexpr int STRUT_PREVIEW_WEAK = 3;
+constexpr int STRUT_BRACE_IDLE = 4;
+constexpr int STRUT_BRACE_HOT = 5;
 
 constexpr int Z_CURSOR = -32767;
 constexpr int Z_TOAST = -17;
@@ -198,6 +200,8 @@ constexpr int LABEL_OOPS = 13;
 constexpr int LABEL_WAIT = 14;
 constexpr int LABEL_AGAIN = 15;
 constexpr int LABEL_NEW = 16;
+constexpr int LABEL_TRACK = 17;
+constexpr int LABEL_ROD = 18;
 
 constexpr int BANNER_LEVEL_SELECT = 0;
 constexpr int BANNER_HATT_OK = 1;
@@ -248,7 +252,7 @@ void position_strut_sprite(bn::sprite_ptr& sprite, bn::fixed_point a, bn::fixed_
     sprite.set_position(mid);
     sprite.set_item(bn::sprite_items::strut, frame);
     sprite.set_horizontal_scale(scale);
-    sprite.set_vertical_scale(bn::fixed(1));
+    sprite.set_vertical_scale(frame >= STRUT_BRACE_IDLE ? bn::fixed(1) : bn::fixed(1));
     sprite.set_rotation_angle_safe(strut_angle_deg(a, b));
     sprite.set_visible(true);
 }
@@ -876,6 +880,7 @@ private:
         _screen = Screen::playing;
         _play_mode = PlayMode::build;
         _selected.reset();
+        _connect_role = bridge::LinkRole::track;
         _pause_option = PauseOption::resume;
         _build_hint_timer = 0;
         _cursor_pos = _bridge.nodes()[bridge::START_NODE].position;
@@ -1368,7 +1373,7 @@ private:
         if(hovered && hovered.value() != _selected.value())
         {
             const bridge::StrutPreview preview =
-                _bridge.preview_strut(_selected.value(), hovered.value());
+                _bridge.preview_strut(_selected.value(), hovered.value(), _connect_role);
 
             if(preview.status == bridge::StrutPreviewStatus::ok)
             {
@@ -1392,7 +1397,18 @@ private:
         if(show)
         {
             const bn::fixed load = _max_train_load();
-            const int frame = max_tension < load ? STRUT_PREVIEW_WEAK : STRUT_PREVIEW_OK;
+            const bool weak = max_tension < load;
+            int frame = STRUT_PREVIEW_OK;
+
+            if(_connect_role == bridge::LinkRole::brace)
+            {
+                frame = weak ? STRUT_BRACE_HOT : STRUT_BRACE_IDLE;
+            }
+            else
+            {
+                frame = weak ? STRUT_PREVIEW_WEAK : STRUT_PREVIEW_OK;
+            }
+
             position_strut_sprite(_preview_strut, from, to, frame);
             return;
         }
@@ -1614,6 +1630,12 @@ private:
             }
         }
 
+        if(bn::keypad::r_pressed() && !bn::keypad::left_held() && !bn::keypad::right_held() &&
+           !bn::keypad::up_held() && !bn::keypad::down_held())
+        {
+            _cycle_connect_role();
+        }
+
         if(bn::keypad::l_pressed())
         {
             const bridge::UndoResult undone = _bridge.undo_last_edit();
@@ -1672,7 +1694,8 @@ private:
 
         if(_selected && _selected.value() != node_id)
         {
-            const bridge::StrutPreview preview = _bridge.preview_strut(_selected.value(), node_id);
+            const bridge::StrutPreview preview =
+                _bridge.preview_strut(_selected.value(), node_id, _connect_role);
 
             switch(preview.status)
             {
@@ -1690,7 +1713,7 @@ private:
                         _show_toast(ToastKind::weak);
                     }
 
-                    (void)_bridge.add_strut(_selected.value(), node_id);
+                    (void)_bridge.add_strut(_selected.value(), node_id, _connect_role);
                     break;
 
                 default:
@@ -1699,6 +1722,29 @@ private:
         }
 
         _selected = node_id;
+    }
+
+    void _cycle_connect_role()
+    {
+        if(!_bridge.allows_link_role(bridge::LinkRole::brace))
+        {
+            _connect_role = bridge::LinkRole::track;
+            return;
+        }
+
+        _connect_role = _connect_role == bridge::LinkRole::track ?
+            bridge::LinkRole::brace : bridge::LinkRole::track;
+        bn::sound_items::ui.play();
+    }
+
+    [[nodiscard]] int _build_tool_label() const
+    {
+        if(_bridge.allows_link_role(bridge::LinkRole::brace))
+        {
+            return _connect_role == bridge::LinkRole::track ? LABEL_TRACK : LABEL_ROD;
+        }
+
+        return LABEL_BUILD;
     }
 
     void _enter_test()
@@ -1852,7 +1898,18 @@ private:
             const bool hot = _play_mode == PlayMode::test &&
                 strut.current_tension * 2 > strut.max_tension;
             bn::sprite_ptr& sprite = _strut_sprites[i];
-            position_strut_sprite(sprite, a, b, hot ? STRUT_HOT : STRUT_IDLE);
+            int frame = STRUT_IDLE;
+
+            if(strut.role == bridge::LinkRole::brace)
+            {
+                frame = hot ? STRUT_BRACE_HOT : STRUT_BRACE_IDLE;
+            }
+            else
+            {
+                frame = hot ? STRUT_HOT : STRUT_IDLE;
+            }
+
+            position_strut_sprite(sprite, a, b, frame);
 
             if(hot)
             {
@@ -1894,6 +1951,10 @@ private:
                     break;
             }
         }
+        else if(_play_mode == PlayMode::build)
+        {
+            frame = _build_tool_label();
+        }
 
         _label.set_item(bn::sprite_items::label, frame);
         _set_counter(_node_count_digits, _bridge.player_node_count(), -20);
@@ -1934,6 +1995,7 @@ private:
     bridge::BridgeSystem _bridge;
     Screen _screen = Screen::title;
     PlayMode _play_mode = PlayMode::build;
+    bridge::LinkRole _connect_role = bridge::LinkRole::track;
     bn::fixed_point _cursor_pos;
     bn::optional<int> _selected;
     int _selected_level = 0;

@@ -9,10 +9,17 @@
 #include "bn_fixed.h"
 #include "engine.h"
 
+#include <cstdint>
+
 namespace level
 {
 
 constexpr int COUNT = 3;
+
+/// Bit flags — align with bridge::LinkRole order (track = bit 0, brace = bit 1).
+inline constexpr uint8_t ALLOW_TRACK = 1;
+inline constexpr uint8_t ALLOW_BRACE = 2;
+inline constexpr uint8_t ALLOW_TRACK_AND_BRACE = ALLOW_TRACK | ALLOW_BRACE;
 
 struct Seed
 {
@@ -31,9 +38,15 @@ struct Def
     bn::fixed safe_length;  ///< 0 → use physics::SAFE_LENGTH default.
     bn::fixed parallax_back;  ///< Far layer scroll factor (fixed 8 = 1.0).
     bn::fixed parallax_front; ///< Near layer scroll factor.
+    uint8_t allowed_roles;  ///< ALLOW_* bitmask for connect tools on this level.
 };
 
 [[nodiscard]] const Def& get(int level_index);
+
+[[nodiscard]] inline bool allows_role(const Def& def, uint8_t role_bit)
+{
+    return (def.allowed_roles & role_bit) != 0;
+}
 
 } // namespace level
 

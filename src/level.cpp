@@ -45,6 +45,7 @@ constexpr Def DEFINITIONS[COUNT] = {
         physics::SAFE_LENGTH,
         bn::fixed(1) / 4,
         bn::fixed(1) / 2,
+        ALLOW_TRACK,
     },
     {
         GordonHill,
@@ -55,6 +56,7 @@ constexpr Def DEFINITIONS[COUNT] = {
         bn::fixed(44),
         bn::fixed(1) / 3,
         bn::fixed(3) / 5,
+        ALLOW_TRACK_AND_BRACE,
     },
     {
         Vicarstown,
@@ -65,6 +67,7 @@ constexpr Def DEFINITIONS[COUNT] = {
         bn::fixed(40),
         bn::fixed(1) / 3,
         bn::fixed(2) / 3,
+        ALLOW_TRACK_AND_BRACE,
     },
 };
 

@@ -120,8 +120,13 @@ bn::optional<int> BridgeSystem::add_node(bn::fixed x, bn::fixed y, bool is_ancho
     return bn::optional<int>(_nodes.size() - 1);
 }
 
-bn::optional<int> BridgeSystem::add_strut(int node_a, int node_b)
+bn::optional<int> BridgeSystem::add_strut(int node_a, int node_b, const LinkRole role)
 {
+    if(!allows_link_role(role))
+    {
+        return bn::optional<int>();
+    }
+
     if(node_a == node_b)
     {
         return bn::optional<int>();
@@ -155,6 +160,7 @@ bn::optional<int> BridgeSystem::add_strut(int node_a, int node_b)
     Strut strut;
     strut.node_a = lo;
     strut.node_b = hi;
+    strut.role = role;
     strut.length = length;
     strut.current_tension = 0;
     strut.triangulated = false;
@@ -236,9 +242,15 @@ bn::optional<int> BridgeSystem::find_node_near(bn::fixed_point point) const
     return best;
 }
 
-StrutPreview BridgeSystem::preview_strut(int node_a, int node_b) const
+StrutPreview BridgeSystem::preview_strut(int node_a, int node_b, const LinkRole role) const
 {
     StrutPreview preview;
+
+    if(!allows_link_role(role))
+    {
+        preview.status = StrutPreviewStatus::invalid_node;
+        return preview;
+    }
 
     if(node_a == node_b)
     {
@@ -420,6 +432,11 @@ RemoveNodeResult BridgeSystem::remove_player_node(int node_id)
     return RemoveNodeResult::ok;
 }
 
+bool BridgeSystem::allows_link_role(const LinkRole role) const
+{
+    return level::allows_role(level::get(_level_index), link_role_bit(role));
+}
+
 bool BridgeSystem::is_player_node(int node_id) const
 {
     return node_id >= 0 && node_id < _nodes.size() && !_nodes[node_id].is_anchored;
@@ -511,6 +528,12 @@ bool BridgeSystem::_bfs_path()
         for(int s = 0; s < _struts.size(); ++s)
         {
             const Strut& strut = _struts[s];
+
+            if(!is_routable(strut.role))
+            {
+                continue;
+            }
+
             int next = -1;
 
             if(strut.node_a == current)

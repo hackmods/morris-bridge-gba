@@ -37,6 +37,22 @@ inline constexpr bn::fixed FALL_INITIAL_VY = bn::fixed(1) / 2;
 inline constexpr bn::fixed SNAP_RADIUS = 10;
 inline constexpr bn::fixed FALL_Y_LIMIT = 90;
 
+enum class LinkRole : uint8_t
+{
+    track,  ///< Routable deck — train follows these links.
+    brace,  ///< Structural rod — supports joints, not traversable.
+};
+
+[[nodiscard]] inline constexpr uint8_t link_role_bit(const LinkRole role)
+{
+    return uint8_t(1) << int(role);
+}
+
+[[nodiscard]] inline constexpr bool is_routable(const LinkRole role)
+{
+    return role == LinkRole::track;
+}
+
 enum class SimStatus
 {
     idle,        ///< Build mode; simulation is not running.
@@ -88,6 +104,7 @@ struct Strut
 {
     int node_a = 0;
     int node_b = 0;
+    LinkRole role = LinkRole::track;
     bn::fixed length = 0;
     bn::fixed current_tension = 0;
     bn::fixed max_tension = 0;
@@ -138,7 +155,10 @@ public:
      * Rejects identical endpoints, missing IDs, duplicates, and a full vector.
      * Length and `max_tension` are computed immediately.
      */
-    [[nodiscard]] bn::optional<int> add_strut(int node_a, int node_b);
+    [[nodiscard]] bn::optional<int> add_strut(int node_a, int node_b,
+                                              LinkRole role = LinkRole::track);
+
+    [[nodiscard]] bool allows_link_role(LinkRole role) const;
 
     /**
      * @brief Nearest node within `SNAP_RADIUS`, using squared distance.
@@ -147,7 +167,8 @@ public:
 
     [[nodiscard]] bn::optional<int> find_strut(int node_a, int node_b) const;
 
-    [[nodiscard]] StrutPreview preview_strut(int node_a, int node_b) const;
+    [[nodiscard]] StrutPreview preview_strut(int node_a, int node_b,
+                                               LinkRole role = LinkRole::track) const;
 
     [[nodiscard]] UndoResult undo_last_edit();
 

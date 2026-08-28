@@ -4,9 +4,6 @@
 /**
  * @file
  * Reference bridge layouts used by host playthrough tests.
- *
- * Knapford Creek: two mid-deck nodes split the 176 px span into three
- * ~44 px legs — within SAFE_LENGTH for Thomas (weight 4).
  */
 
 #include "bridge_system.h"
@@ -29,17 +26,17 @@ inline bool build_knapford_reference(bridge::BridgeSystem& system)
         return false;
     }
 
-    if(!system.add_strut(bridge::START_NODE, mid_a.value()))
+    if(!system.add_strut(bridge::START_NODE, mid_a.value(), bridge::LinkRole::track))
     {
         return false;
     }
 
-    if(!system.add_strut(mid_a.value(), mid_b.value()))
+    if(!system.add_strut(mid_a.value(), mid_b.value(), bridge::LinkRole::track))
     {
         return false;
     }
 
-    if(!system.add_strut(mid_b.value(), bridge::END_NODE))
+    if(!system.add_strut(mid_b.value(), bridge::END_NODE, bridge::LinkRole::track))
     {
         return false;
     }
@@ -47,13 +44,55 @@ inline bool build_knapford_reference(bridge::BridgeSystem& system)
     return true;
 }
 
-[[nodiscard]] inline bool run_knapford_playthrough(bridge::BridgeSystem& system, int max_frames = 600)
+inline bool build_gordon_hill_reference(bridge::BridgeSystem& system)
 {
-    if(!build_knapford_reference(system))
+    system.load_level(1);
+    system.set_engine(engine::Id::edward);
+
+    const bn::fixed deck = system.level_def().deck_y;
+    const bn::optional<int> n1 = system.add_node(-52, deck, false);
+    const bn::optional<int> n2 = system.add_node(-8, deck, false);
+    const bn::optional<int> n3 = system.add_node(36, deck, false);
+    const bn::optional<int> n4 = system.add_node(80, deck, false);
+
+    if(!n1 || !n2 || !n3 || !n4)
     {
         return false;
     }
 
+    const int mids[] = { n1.value(), n2.value(), n3.value(), n4.value() };
+    int prev = bridge::START_NODE;
+
+    for(int mid : mids)
+    {
+        if(!system.add_strut(prev, mid, bridge::LinkRole::track))
+        {
+            return false;
+        }
+
+        prev = mid;
+    }
+
+    if(!system.add_strut(prev, bridge::END_NODE, bridge::LinkRole::track))
+    {
+        return false;
+    }
+
+    if(!system.add_strut(bridge::START_NODE, 3, bridge::LinkRole::brace))
+    {
+        return false;
+    }
+
+    if(!system.add_strut(bridge::END_NODE, 4, bridge::LinkRole::brace))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+[[nodiscard]] inline bool run_sim_to_completion(bridge::BridgeSystem& system, int max_frames = 600)
+{
     if(system.begin_test() != bridge::SimStatus::running)
     {
         return false;
@@ -68,6 +107,16 @@ inline bool build_knapford_reference(bridge::BridgeSystem& system)
     }
 
     return system.status() == bridge::SimStatus::success;
+}
+
+[[nodiscard]] inline bool run_knapford_playthrough(bridge::BridgeSystem& system, int max_frames = 600)
+{
+    return build_knapford_reference(system) && run_sim_to_completion(system, max_frames);
+}
+
+[[nodiscard]] inline bool run_gordon_hill_playthrough(bridge::BridgeSystem& system, int max_frames = 800)
+{
+    return build_gordon_hill_reference(system) && run_sim_to_completion(system, max_frames);
 }
 
 } // namespace level_solutions

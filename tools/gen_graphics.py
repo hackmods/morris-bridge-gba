@@ -524,15 +524,15 @@ def make_anchor() -> None:
 
 
 def make_strut() -> None:
-    w, h = 16, 64
+    w, h = 16, 96
     px = fill(w, h)
-    frames = (
+    track_frames = (
         (5, 12, 1),
         (9, 4, 1),
         (8, 2, 1),
         (9, 3, 1),
     )
-    for frame, colors in enumerate(frames):
+    for frame, colors in enumerate(track_frames):
         y0 = frame * 16
         body, hi, lo = colors
         rect(px, w, 0, y0 + 6, 16, y0 + 10, body)
@@ -540,6 +540,12 @@ def make_strut() -> None:
         hline(px, w, 0, 16, y0 + 9, lo)
         put(px, w, 0, y0 + 6, 1)
         put(px, w, 15, y0 + 6, 1)
+    # Brace rod frames (4–5): thinner diagonal-friendly beam.
+    for frame, body in enumerate((6, 9)):
+        y0 = (4 + frame) * 16
+        rect(px, w, 6, y0 + 7, 10, y0 + 9, body)
+        hline(px, w, 6, 10, y0 + 7, 12)
+        hline(px, w, 6, 10, y0 + 9, 1)
     write_indexed_bmp(os.path.join(GFX, "strut.bmp"), w, h, px)
 
 
@@ -650,6 +656,7 @@ def make_water() -> None:
 
 def make_labels() -> None:
     # Indices 0-7: core HUD. 8-10: onboarding hints. 11-16: rare PG lore alternates.
+    # 17-18: build tool indicators.
     texts = (
         "BUILD",
         "TEST!",
@@ -668,10 +675,12 @@ def make_labels() -> None:
         "WAIT!",
         "AGAIN!",
         "NEW!",
+        "TRACK",
+        "ROD",
     )
     w, fh = 32, 8
     px = fill(w, fh * len(texts))
-    colors = (2, 2, 2, 3, 2, 3, 2, 3, 2, 2, 2, 3, 3, 2, 3, 3, 3)
+    colors = (2, 2, 2, 3, 2, 3, 2, 3, 2, 2, 2, 3, 3, 2, 3, 3, 3, 2, 2)
     for i, text in enumerate(texts):
         y0 = i * fh
         rect(px, w, 0, y0, 32, y0 + fh, 7 if i < 8 else 13)
