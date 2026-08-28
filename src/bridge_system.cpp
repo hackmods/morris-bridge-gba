@@ -654,6 +654,11 @@ bn::fixed BridgeSystem::_current_train_speed() const
     return ENGINE_MIN_SPEED + (_train_speed - ENGINE_MIN_SPEED).safe_multiplication(t);
 }
 
+bn::fixed BridgeSystem::current_train_speed() const
+{
+    return _current_train_speed();
+}
+
 void BridgeSystem::_apply_tension(int strut_index, bn::fixed distance_along)
 {
     Strut& strut = _struts[strut_index];
