@@ -8,10 +8,12 @@ const crossOriginIsolationHeaders = {
 export default defineConfig({
   server: {
     port: 4317,
+    host: '127.0.0.1',
     headers: crossOriginIsolationHeaders,
   },
   preview: {
     port: 4317,
+    host: '127.0.0.1',
     headers: crossOriginIsolationHeaders,
   },
   optimizeDeps: {

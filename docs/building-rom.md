@@ -4,11 +4,11 @@
 
 | Artifact | Path |
 |----------|------|
-| GBA ROM | `leo_bridge.gba` (repo root after `make`) |
-| Canonical copy | `rom/leo_bridge.gba` |
-| Web staging | `web/public/rom/leo_bridge.gba` |
+| GBA ROM | `thomas_bridge.gba` (repo root after `make`) |
+| Canonical copy | `rom/thomas_bridge.gba` |
+| Web staging | `web/public/rom/thomas_bridge.gba` |
 
-ROM header: **RYANS BRIDGE** / code **RYAN**
+ROM header: **THOMASBRIDGE** / code **THOM**
 
 ## Layout with Butano
 
@@ -17,7 +17,7 @@ Recommended directory layout:
 ```text
 butano/
   butano/          ← engine (contains butano.mak)
-  leo_bridge/      ← this repository (clone morris-bridge-gba here)
+  morris-bridge-gba/   ← this repository
 ```
 
 The Makefile auto-detects `vendor/butano/butano` when present (CI / Docker), otherwise defaults to `../butano`.
@@ -39,8 +39,8 @@ make LIBBUTANO=/absolute/path/to/butano/butano
 ```bash
 git clone https://github.com/GValiente/butano.git
 cd butano
-git clone https://origin.cursor.com/git/hackmods/morris-bridge-gba.git leo_bridge
-cd leo_bridge
+git clone https://origin.cursor.com/git/hackmods/morris-bridge-gba.git morris-bridge-gba
+cd morris-bridge-gba
 make -j$(nproc)
 ```
 
@@ -56,9 +56,9 @@ Uses image `sunbr0/gba-butano-base:4dd4b16`, clones Butano into `vendor/butano`,
 
 | Variable | Value | Notes |
 |----------|-------|-------|
-| `TARGET` | `leo_bridge` | Output basename |
-| `ROMTITLE` | `RYANS BRIDGE` | 12-char GBA title |
-| `ROMCODE` | `RYAN` | 4-char game code |
+| `TARGET` | `thomas_bridge` | Output basename |
+| `ROMTITLE` | `THOMASBRIDGE` | 12-char GBA title |
+| `ROMCODE` | `THOM` | 4-char game code |
 | `AUDIOBACKEND` | `maxmod` | Direct Sound music (MOD) + WAV SFX |
 | `USERCXXFLAGS` | `-std=c++20` | C++20 required |
 
@@ -69,3 +69,37 @@ make clean
 ```
 
 Removes `build/` and generated asset headers.
+
+## Committing the prebuilt ROM
+
+The repo tracks **`rom/thomas_bridge.gba`** so friends can play without a toolchain. Regenerate and commit it whenever a change affects the shipped binary.
+
+### When to push an updated ROM
+
+Commit a fresh `rom/thomas_bridge.gba` after any **major refactor** or content change, including:
+
+- Gameplay / physics / level logic (`src/`, `include/`)
+- Graphics or audio assets (`graphics/`, `tools/gen_graphics.py`, `tools/gen_audio.py`)
+- Butano Makefile flags, audio backend, or build pipeline
+- Merging multiple feature branches into `main` (integration smoke)
+
+Docs-only edits do **not** require a ROM bump.
+
+### How to refresh and commit
+
+```bash
+./scripts/build_rom.sh
+git add rom/thomas_bridge.gba
+git commit -m "chore(rom): refresh prebuilt thomas_bridge.gba"
+git push origin main
+```
+
+`build_rom.sh` runs `gen_graphics.py`, `gen_audio.py`, Docker `make`, copies to `rom/`, and syncs `web/public/rom/` for local playtest.
+
+**Verify before commit:** `make -C tests` and, if web changed, `./scripts/sync_rom_to_web.sh && cd web && npm run test:e2e`.
+
+### CI vs committed ROM
+
+GitHub Actions builds a fresh ROM on every push (see [CI/CD](ci-cd.md)). The committed copy is for **clone-and-play** convenience; keep it in sync with `main` after refactors so [Getting started](getting-started.md) and EverDrive users get current behavior.
+
+See also [Session knowledge — ROM policy](knowledge.md#prebuilt-rom-policy).

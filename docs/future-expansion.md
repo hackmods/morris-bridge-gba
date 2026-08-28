@@ -272,15 +272,19 @@ Water: **8-frame ripple** tile animation in BG, not 2-frame sprite tiles.
 
 ---
 
-## 8. Quick wins (this week, low art skill)
+## 8. Quick wins — status
 
-Even before hiring/drawing final art:
+Most v1 quick wins from the original list are **done** (32×32 engines, strut/node upgrades, parallax scroll, weight on HUD, per-engine palette tints). Remaining low-effort polish:
 
-1. **Double train resolution** — redraw `TRAIN_16` as `TRAIN_32` native in generator (wheels, cab, funnel separate colors).
-2. **Strut 16×4** with top highlight line — still procedural, less laser-beam.
-3. **BG scroll** — scroll sky/cloud sprites at different rates (already partially done in [`main.cpp`](../src/main.cpp)).
-4. **Weight on HUD** — show engine load digits during build (uses existing `digit.bmp`).
-5. **Per-engine palette tint** — recolor template body index in `make_train()` (5 variants).
+| Item | Status | Notes |
+|------|--------|-------|
+| Native Aseprite export for one engine | Open | Replace procedural Thomas sheet first |
+| BG tileset per level | Open | Biggest remaining immersion win — see §5B |
+| Strut snap crack frame | Open | Brief sprite before erase |
+| Level select thumbnails | Open | 128×128 reduced screenshots |
+| Mode 3 title splash | Stretch | One-screen full bitmap |
+
+See [Session knowledge — QoL & stretch goals](knowledge.md#qol--stretch-goals) for the full backlog.
 
 ---
 
@@ -327,5 +331,14 @@ The game feels “flushed out” when:
 - [x] Canyon reads as a **place** (parallax hills + layered scroll)
 - [x] Trains read as **characters** (32×32 sheets + portraits)
 - [x] Progress persists via SRAM save block
+- [x] Web playtest has automated E2E coverage (ROM boot, render, gameplay smoke)
 
-Next engineering step: finish engine select UI and wire [`include/engine.h`](../include/engine.h) into [`src/main.cpp`](../src/main.cpp). Next art step: one native **32×32 Thomas** sheet exported from Aseprite to replace procedural train.
+**Next engineering steps:** per-level BG tilesets, golden screenshot E2E, M1–M5 screen-flow automation.
+
+**Next art step:** export one native **32×32 Thomas** sheet from Aseprite to replace the last procedural placeholders; add `tools/validate_graphics.py`.
+
+---
+
+## 12. Backlog pointer
+
+Detailed pitfalls, outstanding tasks, and stretch goals live in **[Session knowledge](knowledge.md)** — update that file at the end of each agent session instead of duplicating lists here.

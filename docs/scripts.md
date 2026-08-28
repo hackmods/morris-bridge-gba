@@ -4,7 +4,7 @@ All scripts live in [`scripts/`](../scripts/) and are intended to be run from th
 
 ## `build_rom.sh`
 
-Build `leo_bridge.gba` using Docker (no local devkitARM required).
+Build `thomas_bridge.gba` using Docker (no local devkitARM required).
 
 ```bash
 ./scripts/build_rom.sh
@@ -13,9 +13,12 @@ Build `leo_bridge.gba` using Docker (no local devkitARM required).
 **Steps:**
 
 1. Clone Butano into `vendor/butano` if missing
-2. Run `make` inside `sunbr0/gba-butano-base:4dd4b16`
-3. Copy `leo_bridge.gba` → `rom/leo_bridge.gba`
-4. Run `sync_rom_to_web.sh`
+2. Run `python3 tools/gen_graphics.py` and `python3 tools/gen_audio.py`
+3. Run `make` inside `sunbr0/gba-butano-base:4dd4b16`
+4. Copy `thomas_bridge.gba` → `rom/thomas_bridge.gba`
+5. Run `sync_rom_to_web.sh`
+
+**After major refactors:** commit the refreshed `rom/thomas_bridge.gba` — see [Building the ROM — Committing the prebuilt ROM](building-rom.md#committing-the-prebuilt-rom).
 
 **Override image:**
 
@@ -31,10 +34,10 @@ Copy canonical ROM into the web playtest public folder.
 ./scripts/sync_rom_to_web.sh
 ```
 
-Source: `rom/leo_bridge.gba`  
-Dest: `web/public/rom/leo_bridge.gba`
+Source: `rom/thomas_bridge.gba`  
+Dest: `web/public/rom/thomas_bridge.gba`
 
-Required before `npm run dev`, `docker build`, or CI-parity local builds.
+Required before `npm run dev`, `npm run test:e2e`, `docker build`, or CI-parity local builds.
 
 ## `tools/gen_graphics.py`
 
@@ -58,4 +61,5 @@ python3 tools/gen_audio.py --check
 | New ROM + web test | `./scripts/build_rom.sh && cd web && npm run dev` |
 | Docker smoke test | `./scripts/sync_rom_to_web.sh && docker build -t morris-bridge-gba:local .` |
 | Physics only | `make -C tests` |
+| Web E2E | `./scripts/sync_rom_to_web.sh && cd web && npm run test:e2e` |
 | Full native ROM | `make -j$(nproc)` (with devkitARM + Butano) |

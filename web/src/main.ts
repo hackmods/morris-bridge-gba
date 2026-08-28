@@ -2,6 +2,7 @@ import { GbaEmulator } from './emulator';
 import { InputQueue } from './input-queue';
 import { bindResponsiveCanvas } from './layout';
 import { setupKeyboard, setEmulatorInputEnabled } from './keyboard';
+import { installTestHooks } from './test-hooks';
 
 function $(id: string): HTMLElement {
   const element = document.getElementById(id);
@@ -222,6 +223,7 @@ async function main(): Promise<void> {
   try {
     await emulator.init();
     setupKeyboard(emulator);
+    installTestHooks(emulator, inputQueue, statusBar);
     setEnabled(true);
     appendFeedLine(pickReadyFeedLine());
   } catch (error) {

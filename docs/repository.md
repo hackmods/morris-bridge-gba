@@ -33,7 +33,7 @@ The cloud agent **cannot** push to GitHub directly (no `gh` auth / 403 on privat
 | **Name** | `morris-bridge-gba` |
 | **Origin URL** | `https://origin.cursor.com/git/hackmods/morris-bridge-gba.git` |
 | **Default branch** | `main` |
-| **ROM codename** | `leo_bridge` |
+| **ROM codename** | `thomas_bridge` |
 
 ## Remotes
 
@@ -68,12 +68,18 @@ git push -u origin main
 - **Tags `v*`** — semver releases; deploy with version image tag
 - **PRs** — build + test only (no GHCR push, no CapRover deploy)
 
+## Prebuilt ROM policy
+
+`rom/thomas_bridge.gba` is **tracked in git** for clone-and-play. After any major refactor (gameplay, graphics, audio, build flags, or multi-PR merge to `main`), rebuild with `./scripts/build_rom.sh` and commit the updated ROM in the same PR or immediately after merge.
+
+See [Building the ROM — Committing the prebuilt ROM](building-rom.md#committing-the-prebuilt-rom).
+
 ## What is tracked in git
 
 | Tracked | Ignored |
 |---------|---------|
 | Source, graphics, docs | `build/`, `vendor/` |
-| `rom/leo_bridge.gba` (prebuilt) | `*.elf`, root `*.gba` except `rom/` |
+| `rom/thomas_bridge.gba` (prebuilt) | `*.elf`, root `*.gba` except `rom/` |
 | `web/` source + lockfile | `web/node_modules/`, `web/dist/` |
 | CI, Docker, CapRover config | `web/public/rom/*.gba` (synced at build) |
 

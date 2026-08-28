@@ -32,7 +32,7 @@ Install [devkitPro](https://devkitpro.org/) or use `./scripts/build_rom.sh` inst
 - Check response headers include COOP + COEP
 - Use Chrome, Firefox, or Edge desktop
 
-### `ROM not found at /rom/leo_bridge.gba`
+### `ROM not found at /rom/thomas_bridge.gba`
 
 ```bash
 ./scripts/sync_rom_to_web.sh
@@ -42,13 +42,34 @@ Install [devkitPro](https://devkitpro.org/) or use `./scripts/build_rom.sh` inst
 
 Fixed in commit `fix(web): allow typing in command queue input` — pull latest `main`. Emulator keyboard is disabled while the command input is focused.
 
+### Playwright E2E webServer timeout (120s)
+
+Vite must listen on **`127.0.0.1`**, not default `localhost` (IPv6-only on some CI runners). Confirm [`web/vite.config.ts`](../web/vite.config.ts) has `server.host: '127.0.0.1'`.
+
+### E2E "canvas not rendering" / frame count stuck at 0
+
+Headless Chromium does not advance mGBA-WASM frame callbacks reliably. E2E uses **Playwright canvas screenshots** — do not rely on `toDataURL()` or in-emulator frame counters. See [`web/e2e/helpers.ts`](../web/e2e/helpers.ts).
+
+### E2E fails before tests run — missing ROM
+
+```bash
+./scripts/sync_rom_to_web.sh
+ls -la web/public/rom/thomas_bridge.gba
+```
+
+CI stages the ROM from the `build-rom` artifact; local runs need the sync script.
+
+### Theater mode test cannot click exit button
+
+By design: theater mode hides the header (including `#btn-theater`). E2E only verifies entering theater mode.
+
 ## Docker / CapRover
 
 ### Blank screen in production
 
 nginx must send COOP/COEP. Do not strip headers with a CDN. See [`deploy/nginx.conf`](../deploy/nginx.conf).
 
-### `Missing public/rom/leo_bridge.gba`
+### `Missing public/rom/thomas_bridge.gba`
 
 Run `./scripts/sync_rom_to_web.sh` before `docker build`.
 

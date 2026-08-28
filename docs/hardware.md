@@ -6,7 +6,7 @@
 |----------|--------|-------|
 | Game Boy Advance / GBA SP | **Yes** | Native target |
 | Nintendo DS (GBA slot) | **Yes** | On models with a GBA cartridge slot |
-| EverDrive GBA / EZ-Flash Omega | **Yes** | Copy `leo_bridge.gba` to SD `GBA/` folder |
+| EverDrive GBA / EZ-Flash Omega | **Yes** | Copy `thomas_bridge.gba` to SD `GBA/` folder |
 | mGBA, VBA-M (emulator) | **Yes** | Drag-and-drop ROM |
 | Browser (web playtest) | **Yes** | See [Web playtest](web-playtest.md) |
 
@@ -23,7 +23,7 @@ This project outputs a **`.gba` file** (32-bit ARM7TDMI). It cannot run on 8-bit
 
 ## Flashing workflow (EverDrive GBA)
 
-1. Build or download `rom/leo_bridge.gba`
+1. Build or download `rom/thomas_bridge.gba`
 2. Copy to the **`GBA`** folder on the EverDrive SD card
 3. Insert cart into a GBA / GBA SP
 4. Launch from the EverDrive menu

@@ -1,6 +1,6 @@
 # morris-bridge-gba — Documentation Wiki
 
-Knowledge base for **Ryan's Bridge** (internal codename `leo_bridge`): a Game Boy Advance bridge-building prototype built with [Butano](https://github.com/GValiente/butano).
+Knowledge base for **Thomas's Bridge** (ROM codename `thomas_bridge`): a Game Boy Advance bridge-building prototype built with [Butano](https://github.com/GValiente/butano).
 
 ## Quick links
 
@@ -10,6 +10,8 @@ Knowledge base for **Ryan's Bridge** (internal codename `leo_bridge`): a Game Bo
 | Understand the game | [Game design](game-design.md) |
 | Optional creepy lore (PG, friends-only) | [Lore leak](lore-leak.md) |
 | Full game + graphics roadmap | [Future expansion](future-expansion.md) |
+| **Engine v2 master plan + ship goal** | [Master plan](master-plan.md) · [Session goal](session-goal.md) |
+| Session learnings & backlog | [Session knowledge](knowledge.md) |
 | Build the GBA ROM | [Building the ROM](building-rom.md) |
 | Run physics tests on PC | [Testing](testing.md) |
 | Play in a browser | [Web playtest](web-playtest.md) |
@@ -31,6 +33,9 @@ docs/
 ├── game-design.md         Modes, controls, win/lose
 ├── lore-leak.md           Optional PG copypasta backstory (friends)
 ├── future-expansion.md    Engines, progression, graphics roadmap
+├── master-plan.md         Engine v2 architecture → ship (READ FIRST for v2)
+├── session-goal.md        Copy-paste goal for full implementation session
+├── knowledge.md           Session learnings, pitfalls, backlog
 ├── physics.md             Fixed-point math and tension model
 ├── graphics.md            Sprites, palettes, asset pipeline
 ├── audio.md               Original parody score, SFX, Maxmod import
@@ -51,5 +56,5 @@ docs/
 
 - **Name:** `morris-bridge-gba`
 - **Origin:** `https://origin.cursor.com/git/hackmods/morris-bridge-gba.git`
-- **ROM output:** `rom/leo_bridge.gba` (~95 KB)
+- **ROM output:** `rom/thomas_bridge.gba` (~264 KB)
 - **License:** zlib (same as Butano) — see root [README](../README.md)

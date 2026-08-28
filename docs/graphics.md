@@ -7,7 +7,8 @@
 | `cursor.bmp` | 8×8 | Build-mode crosshair |
 | `node.bmp` | 8×8 | Structural pin |
 | `strut.bmp` | 16×1 (line) | Beam segment (scaled/rotated) |
-| `train.bmp` | 16×16 | Tank engine |
+| `train.bmp` | 32×32 × 5 engines × 2 frames | Side-view tank engines (Thomas, Percy, Edward, James, Gordon) |
+| `portrait.bmp` | 32×32 × 5 | Engine select portraits with name plate |
 | `anchor.bmp` | 8×8 | Bank anchor marker |
 | `ground.bmp` | — | Canyon bank tiles |
 | `water.bmp` | — | Gap / water backdrop |

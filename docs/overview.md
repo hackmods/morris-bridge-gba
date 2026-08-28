@@ -1,6 +1,6 @@
 # Project overview
 
-## What is Ryan's Bridge?
+## What is Thomas's Bridge?
 
 A **Game Boy Advance** demake prototype of a bridge-building puzzle game. The player places structural **nodes** and connects them with **struts** to span a canyon. A small tank engine must cross before struts snap under tension.
 
@@ -10,7 +10,7 @@ A **Game Boy Advance** demake prototype of a bridge-building puzzle game. The pl
 
 ## Story (fiction)
 
-**Leo** is an autistic boy whose special interest is structural engineering. He helps save a train by building bridges across gaps. This is original fiction and placeholder art — **not** a licensed Thomas & Friends product.
+**Thomas** (and friends) need your bridges across Sodor gaps while **Sir Topham Hatt** watches for confusion and delay. Original pixel art — a playful Thomas homage, **not** a licensed Thomas & Friends product.
 
 ## Design goals
 
@@ -42,6 +42,7 @@ A **Game Boy Advance** demake prototype of a bridge-building puzzle game. The pl
 
 | Name | Meaning |
 |------|---------|
-| `leo_bridge` | Butano project / ROM filename (`leo_bridge.gba`) |
-| `morris-bridge-gba` | Git repository name |
-| Ryan's Bridge | Player-facing title embedded in ROM header |
+| `thomas_bridge` | Butano project / ROM filename (`thomas_bridge.gba`) |
+| `morris-bridge-gba` | Git repository name (historical) |
+| Thomas's Bridge | Player-facing title embedded in ROM header |
+| `leo_bridge` | Retired early prototype codename — do not use in new paths |

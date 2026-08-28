@@ -12,8 +12,10 @@
 | **COOP / COEP** | HTTP headers required for `SharedArrayBuffer` (mGBA-WASM) |
 | **GHCR** | GitHub Container Registry (`ghcr.io`) |
 | **CapRover** | Self-hosted PaaS for Docker deploys |
-| **leo_bridge** | Project/ROM codename (`leo_bridge.gba`) |
-| **morris-bridge-gba** | Git repository name |
+| **thomas_bridge** | Project/ROM codename (`thomas_bridge.gba`) |
+| **Thomas's Bridge** | Player-facing game title |
+| **morris-bridge-gba** | Git repository name (historical) |
+| **leo_bridge** | Retired early prototype codename |
 | **TPP** | Twitch Plays Pokémon — inspiration for command queue UI |
 | **EverDrive GBA** | GBA flash cartridge (not EverDrive GB) |
 | **devkitARM** | Official GBA/homebrew toolchain from devkitPro |

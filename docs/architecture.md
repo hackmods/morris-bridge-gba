@@ -4,7 +4,7 @@
 
 ```mermaid
 flowchart TB
-  subgraph gba [GBA ROM leo_bridge.gba]
+  subgraph gba [GBA ROM thomas_bridge.gba]
     Main[src/main.cpp]
     Bridge[bridge_system]
     Phys[physics]
