@@ -66,6 +66,10 @@ See [CI/CD](ci-cd.md).
 - [ ] Long single span snaps; train falls
 - [ ] No struts → "NO GO" / no path
 - [ ] Select opens pause menu
+- [ ] Title plays Island Line; level select plays Yard
+- [ ] Build mode plays Workshop; Start plays peep + Full Steam
+- [ ] Crossing chuffs in time with the sprite
+- [ ] Success plays Useful + whistle; fail plays snap / delay / splash
 
 ### Web playtest
 

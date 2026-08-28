@@ -59,7 +59,7 @@ Uses image `sunbr0/gba-butano-base:4dd4b16`, clones Butano into `vendor/butano`,
 | `TARGET` | `leo_bridge` | Output basename |
 | `ROMTITLE` | `RYANS BRIDGE` | 12-char GBA title |
 | `ROMCODE` | `RYAN` | 4-char game code |
-| `AUDIOBACKEND` | `null` | No music in prototype |
+| `AUDIOBACKEND` | `maxmod` | Direct Sound music (MOD) + WAV SFX |
 | `USERCXXFLAGS` | `-std=c++20` | C++20 required |
 
 ## Clean

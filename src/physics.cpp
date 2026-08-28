@@ -93,7 +93,7 @@ bn::fixed tension(bn::fixed base_weight, bn::fixed distance_from_train, bn::fixe
     return base_weight.safe_multiplication(ratio);
 }
 
-bn::fixed max_tension_for_length(bn::fixed length, bn::fixed safe_length)
+bn::fixed base_max_tension_for_length(bn::fixed length, bn::fixed safe_length)
 {
     if(length <= 0)
     {
@@ -102,6 +102,47 @@ bn::fixed max_tension_for_length(bn::fixed length, bn::fixed safe_length)
 
     const bn::fixed rating_base = safe_length > 0 ? safe_length : SAFE_LENGTH;
     bn::fixed rated = BASE_MAX_TENSION.safe_multiplication(rating_base).safe_division(length);
+
+    if(rated < 1)
+    {
+        rated = 1;
+    }
+
+    return rated;
+}
+
+bn::fixed max_tension_for_length(bn::fixed length, bn::fixed safe_length)
+{
+    return base_max_tension_for_length(length, safe_length);
+}
+
+bn::fixed reinforcement_multiplier(int connections_a, int connections_b)
+{
+    int extra = 0;
+
+    if(connections_a > 1)
+    {
+        extra += connections_a - 1;
+    }
+
+    if(connections_b > 1)
+    {
+        extra += connections_b - 1;
+    }
+
+    return bn::fixed(1) + REINFORCEMENT_PER_JOINT.safe_multiplication(extra);
+}
+
+bn::fixed effective_max_tension(bn::fixed length, int connections_a, int connections_b,
+                                bool triangulated, bn::fixed safe_length)
+{
+    bn::fixed rated = base_max_tension_for_length(length, safe_length);
+    rated = rated.safe_multiplication(reinforcement_multiplier(connections_a, connections_b));
+
+    if(triangulated)
+    {
+        rated = rated.safe_multiplication(TRIANGLE_BONUS);
+    }
 
     if(rated < 1)
     {

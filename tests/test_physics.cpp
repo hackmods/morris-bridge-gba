@@ -83,13 +83,21 @@ int main()
 
     {
         // A SAFE_LENGTH beam is rated BASE_MAX_TENSION.
-        expect_near(physics::max_tension_for_length(physics::SAFE_LENGTH),
+        expect_near(physics::base_max_tension_for_length(physics::SAFE_LENGTH),
                     physics::BASE_MAX_TENSION, bn::fixed(1) / 16,
                     "rating at SAFE_LENGTH");
 
         // Double the span, half the rating: 96px -> 4, which equals BASE_WEIGHT.
-        expect_near(physics::max_tension_for_length(96), 4, bn::fixed(1) / 8,
+        expect_near(physics::base_max_tension_for_length(96), 4, bn::fixed(1) / 8,
                     "long span is weaker");
+    }
+
+    {
+        expect_near(physics::reinforcement_multiplier(1, 1), 1, 0, "single joints");
+        expect_near(physics::reinforcement_multiplier(3, 2), bn::fixed(7) / 4, bn::fixed(1) / 16,
+                    "reinforced joint");
+        expect_near(physics::effective_max_tension(48, 2, 2, true), 18, bn::fixed(1) / 8,
+                    "triangulated deck is stronger");
     }
 
     {
@@ -100,28 +108,32 @@ int main()
         expect_near(mid.y(), 0, 0, "lerp midpoint y");
     }
 
-    // Graph: two banks plus a player deck. Short struts must survive a crossing.
+    // Graph: deck with three short spans — engine crosses the first 44 px leg.
     {
         bridge::BridgeSystem system;
         assert(system.nodes().size() >= 2);
 
-        const bn::optional<int> mid = system.add_node(0, 16, false);
-        assert(mid.has_value());
+        const bn::optional<int> mid_a = system.add_node(-44, 52, false);
+        const bn::optional<int> mid_b = system.add_node(44, 52, false);
+        assert(mid_a.has_value());
+        assert(mid_b.has_value());
 
-        const bn::optional<int> left = system.add_strut(bridge::START_NODE, mid.value());
-        const bn::optional<int> right = system.add_strut(mid.value(), bridge::END_NODE);
+        const bn::optional<int> left =
+            system.add_strut(bridge::START_NODE, mid_a.value());
+        const bn::optional<int> deck = system.add_strut(mid_a.value(), mid_b.value());
+        const bn::optional<int> right = system.add_strut(mid_b.value(), bridge::END_NODE);
         assert(left.has_value());
+        assert(deck.has_value());
         assert(right.has_value());
-        assert(!system.add_strut(bridge::START_NODE, mid.value()).has_value());
 
         const bridge::SimStatus started = system.begin_test();
         assert(started == bridge::SimStatus::running);
-        assert(system.path_length() == 3);
+        assert(system.path_length() == 4);
 
         bool snapped = false;
         int frames = 0;
 
-        while(system.status() == bridge::SimStatus::running && frames < 400)
+        while(system.status() == bridge::SimStatus::running && frames < 600)
         {
             system.update();
             ++frames;
@@ -133,16 +145,16 @@ int main()
             }
         }
 
-        std::cout << "  short two-span bridge: frames=" << frames
+        std::cout << "  short three-span bridge: frames=" << frames
                   << " status=" << int(system.status())
                   << " snapped=" << snapped << '\n';
         assert(system.status() == bridge::SimStatus::success);
         assert(!snapped);
-        std::cout << "  ok two-span deck carries the train\n";
+        std::cout << "  ok reinforced deck carries the locomotive\n";
 
         system.end_test();
         assert(system.status() == bridge::SimStatus::idle);
-        assert(system.struts().size() == 2);
+        assert(system.struts().size() == 3);
     }
 
     // A single 176px span is rated below BASE_WEIGHT and must snap.
@@ -152,7 +164,7 @@ int main()
         assert(beam.has_value());
 
         const bn::fixed rating = system.struts()[beam.value()].max_tension;
-        assert(rating < physics::BASE_WEIGHT);
+        assert(rating < physics::ENGINE_WEIGHT);
 
         (void)system.begin_test();
 
@@ -184,7 +196,7 @@ int main()
         assert(system.anchored_node_count() == 8);
         assert(system.player_node_budget() == 8);
 
-        const bn::optional<int> mid = system.add_node(0, 24, false);
+        const bn::optional<int> mid = system.add_node(0, 52, false);
         assert(mid.has_value());
         assert(system.player_node_count() == 1);
 
@@ -269,11 +281,11 @@ int main()
         system.load_level(0);
         assert(system.anchored_node_count() == 8);
         assert(system.nodes()[bridge::START_NODE].position.x().integer() == -88);
-        assert(system.nodes()[bridge::START_NODE].position.y().integer() == 16);
+        assert(system.nodes()[bridge::START_NODE].position.y().integer() == 52);
 
         system.load_level(1);
         assert(system.anchored_node_count() == 6);
-        assert(system.nodes()[bridge::START_NODE].position.y().integer() == 8);
+        assert(system.nodes()[bridge::START_NODE].position.y().integer() == 44);
 
         system.load_level(2);
         assert(system.anchored_node_count() == 6);

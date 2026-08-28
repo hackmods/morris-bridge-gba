@@ -5,11 +5,26 @@
 #include "bn_camera_ptr.h"
 #include "bn_keypad.h"
 #include "bn_math.h"
+#include "bn_music.h"
 #include "bn_optional.h"
+#include "bn_sound_items.h"
 #include "bn_sprite_builder.h"
 #include "bn_sprite_ptr.h"
 #include "bn_sram.h"
 #include "bn_vector.h"
+
+#include "bn_music_items_full_steam.h"
+#include "bn_music_items_island_line.h"
+#include "bn_music_items_workshop.h"
+#include "bn_music_items_yard.h"
+#include "bn_sound_items_chuff.h"
+#include "bn_sound_items_delay.h"
+#include "bn_sound_items_peep.h"
+#include "bn_sound_items_snap.h"
+#include "bn_sound_items_splash.h"
+#include "bn_sound_items_ui.h"
+#include "bn_sound_items_useful.h"
+#include "bn_sound_items_whistle.h"
 
 #include "bn_sprite_items_anchor.h"
 #include "bn_sprite_items_banner.h"
@@ -36,6 +51,7 @@
 
 #include "bridge_system.h"
 #include "engine.h"
+#include "game_constants.h"
 #include "level.h"
 #include "physics.h"
 #include "progress.h"
@@ -49,11 +65,13 @@ constexpr bn::fixed CURSOR_FAST = 6;
 constexpr bn::fixed STRUT_SPRITE_WIDTH = 16;
 constexpr int CURSOR_REPEAT_DELAY = 10;
 constexpr int CURSOR_REPEAT_RATE = 3;
-constexpr bn::fixed GRID_STEP = 4;
 constexpr int TOAST_FRAMES = 90;
 constexpr int SHAKE_FRAMES = 10;
 constexpr int DUST_LIFE = 24;
 constexpr int MAX_DUST = 6;
+constexpr int CHUFF_FRAMES = 10;
+constexpr bn::fixed MUSIC_VOLUME = bn::fixed(1) / 2;
+constexpr bn::fixed MUSIC_PAUSE_VOLUME = bn::fixed(1) / 5;
 
 constexpr int TOAST_DUP = 0;
 constexpr int TOAST_WEAK = 1;
@@ -113,6 +131,53 @@ bn::fixed clamp(bn::fixed value, bn::fixed lo, bn::fixed hi)
     return value;
 }
 
+void set_train_sprite_position(bn::sprite_ptr& train, bn::fixed_point track_position)
+{
+    train.set_position(game::train_display_position(track_position));
+}
+
+enum class MusicCue
+{
+    none,
+    island_line,
+    yard,
+    workshop,
+    full_steam,
+};
+
+void play_music(MusicCue cue, MusicCue& current)
+{
+    if(cue == current)
+    {
+        return;
+    }
+
+    current = cue;
+
+    switch(cue)
+    {
+        case MusicCue::none:
+            bn::music::stop();
+            break;
+
+        case MusicCue::island_line:
+            bn::music_items::island_line.play(MUSIC_VOLUME, true);
+            break;
+
+        case MusicCue::yard:
+            bn::music_items::yard.play(MUSIC_VOLUME, true);
+            break;
+
+        case MusicCue::workshop:
+            bn::music_items::workshop.play(MUSIC_VOLUME, true);
+            break;
+
+        case MusicCue::full_steam:
+            bn::music_items::full_steam.play(MUSIC_VOLUME, true);
+            break;
+    }
+}
+
 constexpr int LABEL_BUILD = 0;
 constexpr int LABEL_TEST = 1;
 constexpr int LABEL_DELAY = 2;
@@ -151,13 +216,6 @@ constexpr int HATT_FURIOUS = 1;
 constexpr int MENU_PAUSE_BASE = 3;
 constexpr int MENU_ENGINE_BASE = 7;
 
-bn::fixed snap_grid(bn::fixed value)
-{
-    const int raw = value.shift_integer();
-    const int snapped = ((raw + 2) / 4) * 4;
-    return bn::fixed(snapped);
-}
-
 bn::fixed strut_angle_deg(bn::fixed_point a, bn::fixed_point b)
 {
     const bn::fixed dx = b.x() - a.x();
@@ -176,17 +234,21 @@ bn::fixed strut_angle_deg(bn::fixed_point a, bn::fixed_point b)
 
 void position_strut_sprite(bn::sprite_ptr& sprite, bn::fixed_point a, bn::fixed_point b, int frame)
 {
-    const bn::fixed_point mid((a.x() + b.x()) / 2, (a.y() + b.y()) / 2);
-    bn::fixed scale = physics::distance(a, b).safe_division(STRUT_SPRITE_WIDTH);
+    const bn::fixed span = physics::distance(a, b);
 
-    if(scale < bn::fixed(1) / 8)
+    if(span <= 0)
     {
-        scale = bn::fixed(1) / 8;
+        sprite.set_visible(false);
+        return;
     }
+
+    const bn::fixed_point mid((a.x() + b.x()) / 2, (a.y() + b.y()) / 2);
+    const bn::fixed scale = span.safe_division(STRUT_SPRITE_WIDTH);
 
     sprite.set_position(mid);
     sprite.set_item(bn::sprite_items::strut, frame);
     sprite.set_horizontal_scale(scale);
+    sprite.set_vertical_scale(bn::fixed(1));
     sprite.set_rotation_angle_safe(strut_angle_deg(a, b));
     sprite.set_visible(true);
 }
@@ -707,6 +769,7 @@ private:
         _menu_arrow.set_visible(false);
         _train.set_visible(false);
         _hatt.set_visible(false);
+        play_music(MusicCue::island_line, _music_cue);
     }
 
     void _show_level_select()
@@ -762,7 +825,7 @@ private:
         _menu_arrow.set_position(-38, 16);
         _label.set_visible(false);
         _train.set_visible(true);
-        _train.set_position(-56, 44);
+        _train.set_position(-56, game::TRACK_Y + game::TRAIN_Y_OFFSET);
         _sync_train_sprite();
         _set_weight_digits(engine::profile(_selected_engine).weight.integer(), true);
         _portrait.set_visible(true);
@@ -775,6 +838,7 @@ private:
         _node_count_digits[1].set_visible(false);
         _strut_count_digits[0].set_visible(false);
         _strut_count_digits[1].set_visible(false);
+        play_music(MusicCue::yard, _music_cue);
     }
 
     void _start_level(int level_index)
@@ -792,6 +856,7 @@ private:
         _show_gameplay();
         _sync_node_sprites();
         _sync_strut_sprites();
+        play_music(MusicCue::workshop, _music_cue);
     }
 
     void _show_gameplay()
@@ -886,6 +951,11 @@ private:
         _hatt.set_visible(true);
         _hatt.set_position(56, 8);
         _hatt.set_item(bn::sprite_items::hatt, HATT_FURIOUS);
+
+        if(bn::music::playing())
+        {
+            bn::music::set_volume(MUSIC_PAUSE_VOLUME);
+        }
     }
 
     void _leave_pause()
@@ -902,6 +972,11 @@ private:
         _label.set_position(0, 68);
         _label.set_item(bn::sprite_items::label, LABEL_BUILD);
         _cursor.set_visible(true);
+
+        if(bn::music::playing())
+        {
+            bn::music::set_volume(MUSIC_VOLUME);
+        }
     }
 
     void _show_level_complete()
@@ -936,7 +1011,10 @@ private:
         _menu_arrow.set_visible(false);
         _cursor.set_visible(false);
         _train.set_visible(true);
-        _train.set_position(_bridge.train_position());
+        set_train_sprite_position(_train, _bridge.train_position());
+        play_music(MusicCue::none, _music_cue);
+        bn::sound_items::useful.play();
+        bn::sound_items::whistle.play();
         _hatt.set_visible(true);
         _hatt.set_position(-56, 8);
         _hatt.set_item(bn::sprite_items::hatt, HATT_STERN);
@@ -962,6 +1040,10 @@ private:
         _cursor.set_visible(false);
         _train.set_visible(_train.position().y() < bridge::FALL_Y_LIMIT);
         _sync_train_sprite();
+        play_music(MusicCue::none, _music_cue);
+        bn::sound_items::snap.play();
+        bn::sound_items::delay.play();
+        bn::sound_items::splash.play();
         _hatt.set_visible(true);
         _hatt.set_position(-56, 8);
         _hatt.set_item(bn::sprite_items::hatt, HATT_FURIOUS);
@@ -986,10 +1068,12 @@ private:
         _menu_row.set_visible(false);
         _menu_arrow.set_visible(false);
         _train.set_visible(true);
-        _train.set_position(0, 16);
+        _train.set_position(0, game::TRACK_Y + game::TRAIN_Y_OFFSET);
         _hatt.set_visible(true);
         _hatt.set_position(56, 16);
         _hatt.set_item(bn::sprite_items::hatt, HATT_STERN);
+        play_music(MusicCue::island_line, _music_cue);
+        bn::sound_items::useful.play();
     }
 
     void _update_title()
@@ -1007,11 +1091,13 @@ private:
         if(_dir_repeat(bn::keypad::up_pressed(), bn::keypad::up_held(), _menu_up_counter))
         {
             _step_level(-1);
+            bn::sound_items::ui.play();
         }
 
         if(_dir_repeat(bn::keypad::down_pressed(), bn::keypad::down_held(), _menu_down_counter))
         {
             _step_level(1);
+            bn::sound_items::ui.play();
         }
 
         if(bn::keypad::a_pressed() || bn::keypad::start_pressed())
@@ -1072,11 +1158,13 @@ private:
         {
             _pause_option = PauseOption((int(_pause_option) + int(PauseOption::count) - 1) %
                                         int(PauseOption::count));
+            bn::sound_items::ui.play();
         }
 
         if(_dir_repeat(bn::keypad::down_pressed(), bn::keypad::down_held(), _menu_down_counter))
         {
             _pause_option = PauseOption((int(_pause_option) + 1) % int(PauseOption::count));
+            bn::sound_items::ui.play();
         }
 
         _menu_row.set_item(bn::sprite_items::menu, MENU_PAUSE_BASE + int(_pause_option));
@@ -1097,6 +1185,7 @@ private:
                     _leave_pause();
                     _sync_node_sprites();
                     _sync_strut_sprites();
+                    play_music(MusicCue::workshop, _music_cue);
                     break;
 
                 case PauseOption::levels:
@@ -1260,7 +1349,7 @@ private:
         }
         else if(!hovered)
         {
-            to = bn::fixed_point(snap_grid(_cursor_pos.x()), snap_grid(_cursor_pos.y()));
+            to = game::snap_point(_cursor_pos);
             const bn::fixed length = physics::distance(from, to);
 
             if(length > 0)
@@ -1288,7 +1377,7 @@ private:
 
         for(int x : ground_x)
         {
-            bn::sprite_ptr tile = bn::sprite_items::ground.create_sprite(x, 48);
+            bn::sprite_ptr tile = bn::sprite_items::ground.create_sprite(x, game::GROUND_TILE_Y);
             tile.set_z_order(20);
             _ground.push_back(tile);
         }
@@ -1400,22 +1489,18 @@ private:
         }
 
         _cursor_pos.set_x(clamp(_cursor_pos.x(), -112, 112));
-        _cursor_pos.set_y(clamp(_cursor_pos.y(), -64, 48));
+        _cursor_pos.set_y(clamp(_cursor_pos.y(), -72, game::TRACK_Y));
 
         const bn::optional<int> hovered = _bridge.find_node_near(_cursor_pos);
-        bn::fixed_point draw_at = _cursor_pos;
-
-        if(hovered)
-        {
-            draw_at = _bridge.nodes()[hovered.value()].position;
-        }
+        bn::fixed_point draw_at = hovered ?
+            _bridge.nodes()[hovered.value()].position : game::snap_point(_cursor_pos);
 
         _cursor.set_position(draw_at);
         _cursor.set_visible(true);
 
         if(!hovered)
         {
-            _ghost.set_position(_cursor_pos);
+            _ghost.set_position(draw_at);
             _ghost.set_visible(true);
         }
         else
@@ -1495,10 +1580,9 @@ private:
                 return;
             }
 
-            const bn::fixed snapped_x = snap_grid(place_at.x());
-            const bn::fixed snapped_y = snap_grid(place_at.y());
+            const bn::fixed_point snapped = game::snap_point(place_at);
             const bn::optional<int> created =
-                _bridge.add_node(snapped_x, snapped_y, false);
+                _bridge.add_node(snapped.x(), snapped.y(), false);
 
             if(!created)
             {
@@ -1551,11 +1635,19 @@ private:
         _train.set_visible(true);
         _train_prev_x = _bridge.train_position().x();
         (void)_bridge.begin_test();
-        _train.set_position(_bridge.train_position());
+        set_train_sprite_position(_train, _bridge.train_position());
+        _chuff_cooldown = 0;
 
         if(_bridge.status() == bridge::SimStatus::no_path)
         {
             _label.set_item(bn::sprite_items::label, LABEL_NO_GO);
+            play_music(MusicCue::none, _music_cue);
+            bn::sound_items::delay.play();
+        }
+        else
+        {
+            play_music(MusicCue::full_steam, _music_cue);
+            bn::sound_items::peep.play();
         }
     }
 
@@ -1566,6 +1658,7 @@ private:
         _train.set_visible(false);
         _cursor.set_visible(true);
         _cursor.set_position(_cursor_pos);
+        play_music(MusicCue::workshop, _music_cue);
     }
 
     void _update_test()
@@ -1573,7 +1666,7 @@ private:
         const bn::fixed prev_x = _train.position().x();
         const bridge::SimStatus prev_status = _bridge.status();
         (void)_bridge.update();
-        _train.set_position(_bridge.train_position());
+        set_train_sprite_position(_train, _bridge.train_position());
 
         const bridge::SimStatus status = _bridge.status();
 
@@ -1736,7 +1829,25 @@ private:
 
     void _animate_train()
     {
+        const int chuff_frame = (_frame / CHUFF_FRAMES) % 2;
         _sync_train_sprite();
+
+        if(_play_mode == PlayMode::test &&
+           _bridge.status() == bridge::SimStatus::running &&
+           chuff_frame == 0 &&
+           _last_chuff_frame != 0 &&
+           _chuff_cooldown <= 0)
+        {
+            bn::sound_items::chuff.play();
+            _chuff_cooldown = CHUFF_FRAMES / 2;
+        }
+
+        _last_chuff_frame = chuff_frame;
+
+        if(_chuff_cooldown > 0)
+        {
+            --_chuff_cooldown;
+        }
     }
 
     progress::Progress _progress;
@@ -1753,11 +1864,14 @@ private:
     bn::optional<int> _selected;
     int _selected_level = 0;
     PauseOption _pause_option = PauseOption::resume;
+    MusicCue _music_cue = MusicCue::none;
     int _frame = 0;
     int _menu_up_counter = 0;
     int _menu_down_counter = 0;
     bool _train_facing_right = true;
     bn::fixed _train_prev_x = 0;
+    int _chuff_cooldown = 0;
+    int _last_chuff_frame = 1;
     int _toast_timer = 0;
     ToastKind _toast_kind = ToastKind::none;
     bool _build_hints_seen = false;

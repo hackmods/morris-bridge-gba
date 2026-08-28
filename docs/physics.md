@@ -1,78 +1,72 @@
 # Physics (fixed-point)
 
-All game physics uses Butano **`bn::fixed`** (20.12: 20 integer bits, 12 fractional bits, `1.0 = 4096`). No `float` or `double` on the GBA path.
+All game physics uses Butano **`bn::fixed`** (20.12). No `float` or `double` on the GBA path.
 
-Host unit tests compile the same [`physics.cpp`](../src/physics.cpp) against a 20.12 mock in [`tests/host_bn/`](../tests/host_bn/).
+Host unit tests compile the same sources against a 20.12 mock in [`tests/host_bn/`](../tests/host_bn/).
+
+## Layout
+
+| Constant | Value | Meaning |
+|----------|-------|---------|
+| `TRACK_Y` | 52 | Rail height — nodes, start/end banks |
+| `GROUND_TILE_Y` | 56 | Ground scenery tile centers |
+| `TRAIN_Y_OFFSET` | −6 | Sprite offset so wheels sit on the rail |
 
 ## Distance
 
-**Squared distance** (hot path, cursor snap):
-
-```text
-dx = a.x - b.x
-dy = a.y - b.y
-squared_distance = dx² + dy²
-```
-
-Compare against `radius²` to avoid `sqrt` when snapping to nodes.
-
-**Euclidean distance** uses a restoring **integer square root** on 64-bit intermediates (`isqrt64`), then scales back to 20.12 (`approx_sqrt`). No BIOS `Sqrt` SWI, no libm.
+Squared distance avoids `sqrt` in cursor snap. Euclidean distance uses `isqrt64` + `approx_sqrt`.
 
 ## Tension
 
-When the train is on a strut:
-
 ```text
-Tension = BaseWeight × (DistanceFromTrain / StrutLength)
+Tension = Load × (DistanceFromTrain / StrutLength)
 ```
 
-- `DistanceFromTrain` = distance along the strut from the start node toward the train
-- At the far end of the strut, tension equals `BaseWeight`
-- At the near end, tension approaches 0
-- Degenerate strut (`length == 0`) → tension 0
-
-Implementation: [`physics::tension()`](../include/physics.h)
+- **Cars:** `BASE_WEIGHT` (4)
+- **Locomotive** on the first span: `ENGINE_WEIGHT` (6)
 
 ## Max tension (span rating)
 
-New struts get a length-dependent limit:
+Base rating (inverse length):
 
 ```text
-max_tension = BASE_MAX_TENSION × SAFE_LENGTH / length
+base = BASE_MAX_TENSION × SAFE_LENGTH / length
 ```
 
-Clamped to minimum 1. Examples (defaults `BASE_MAX_TENSION=8`, `SAFE_LENGTH=48`):
+Effective rating after structural bonuses:
 
-| Span length | max_tension |
-|-------------|-------------|
-| 48 px | 8.0 |
-| 96 px | 4.0 |
-| 176 px | ~2.2 (snaps under `BASE_WEIGHT=4`) |
+```text
+effective = base × reinforcement × (triangulated ? TRIANGLE_BONUS : 1)
+```
+
+**Reinforcement:** each redundant strut at an endpoint adds `REINFORCEMENT_PER_JOINT` (¼) to the multiplier.
+
+**Triangle bonus:** when a third node forms a closed triangle with the strut, multiply by `TRIANGLE_BONUS` (1.5×).
+
+## Locomotive engine
+
+- Speed ramps from `ENGINE_MIN_SPEED` to `TRAIN_SPEED` over `ACCEL_FRAMES` (24 frames).
+- Heavier load on span index 0 (`ENGINE_WEIGHT`).
 
 ## Failure
 
-Each frame on the active strut:
+When `current_tension > max_tension`, the strut breaks, the train keeps its lerp position, and fall begins with `FALL_INITIAL_VY` plus `GRAVITY` each frame.
 
-```text
-if current_tension > strut.max_tension:
-    break strut
-    train enters fall state (vy += GRAVITY each frame)
-```
+## Audio
 
-Fall continues until `train.y > FALL_Y_LIMIT` (off bottom of 160px screen) → `failed_fall`.
+Original parody loops via Maxmod (`AUDIOBACKEND := maxmod`):
 
-## Interpolation
+| Track | Cue |
+|-------|-----|
+| `island_line.mod` | Title march |
+| `yard.mod` | Level select |
+| `workshop.mod` | Build mode |
+| `full_steam.mod` | Crossing |
 
-Train position along a strut uses [`physics::lerp()`](../include/physics.h) with parameter `t ∈ [0, 1]`.
+SFX: `chuff`, `peep`, `whistle`, `useful`, `snap`, `delay`, `splash`, `ui`.
+
+See [Audio](audio.md). Generate with `python3 tools/gen_audio.py`.
 
 ## Host test coverage
-
-[`tests/test_physics.cpp`](../tests/test_physics.cpp) asserts:
-
-- 3-4-5 triangle distance via `approx_sqrt`
-- Tension at start, midspan, and far end of a strut
-- Two-span bridge carries train (`success`)
-- Single overlong span snaps (`failed_fall`)
-- Disconnected banks → `no_path`
 
 Run: `make -C tests`

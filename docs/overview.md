@@ -23,6 +23,9 @@ A **Game Boy Advance** demake prototype of a bridge-building puzzle game. The pl
 
 - Build mode: place nodes, connect struts, chain-building
 - Test mode: train follows BFS path; tension breaks long spans
+- Structural reinforcement (joint redundancy + triangular bracing)
+- Locomotive engine physics (heavier first span, acceleration ramp)
+- Thomas choo-choo SFX (chuff, whistle, peep) plus original parody BGM via Maxmod
 - Host physics tests (PC, no GBA toolchain)
 - Web playtest (mGBA-WASM) with keyboard + command queue
 - CI: ROM build → tests → Docker image → optional CapRover deploy
@@ -31,7 +34,7 @@ A **Game Boy Advance** demake prototype of a bridge-building puzzle game. The pl
 
 - Twitch live chat integration (command queue simulates TPP without OAuth)
 - Save states in browser
-- Audio / music (AUDIOBACKEND is `null` in Makefile)
+- Licensed Thomas & Friends recordings (original parody score only)
 - Game Boy / GBC port (different CPU, no `bn::fixed` engine drop-in)
 - Authentic licensed characters
 

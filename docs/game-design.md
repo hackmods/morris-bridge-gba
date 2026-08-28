@@ -65,6 +65,10 @@ See [README](../README.md) and in-game HUD. Cursor snap radius: 10px.
 
 Engine unlocks, weight-based difficulty, and graphics upgrade plan: [Future expansion](future-expansion.md).
 
+## Audio
+
+Original parody score (not the licensed TV theme): title march, yard idler, workshop build loop, full-steam crossing. Steam chuffs, peeps, and a win whistle. See [Audio](audio.md).
+
 ## Graphics
 
 ```bash

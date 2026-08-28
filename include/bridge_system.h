@@ -29,10 +29,13 @@ inline constexpr int LEVEL_COUNT = level::COUNT;
 inline constexpr int START_NODE = 0;
 inline constexpr int END_NODE = 1;
 
-inline constexpr bn::fixed TRAIN_SPEED = 1;          // pixels per frame
-inline constexpr bn::fixed GRAVITY = bn::fixed(1) / 8;
+inline constexpr bn::fixed TRAIN_SPEED = 1;          // pixels per frame at cruise
+inline constexpr bn::fixed ENGINE_MIN_SPEED = bn::fixed(1) / 4;
+inline constexpr int ACCEL_FRAMES = 24;              // frames to reach cruise from rest
+inline constexpr bn::fixed GRAVITY = bn::fixed(1) / 4;
+inline constexpr bn::fixed FALL_INITIAL_VY = bn::fixed(1) / 2;
 inline constexpr bn::fixed SNAP_RADIUS = 10;
-inline constexpr bn::fixed FALL_Y_LIMIT = 90;        // off the bottom of the 160px screen
+inline constexpr bn::fixed FALL_Y_LIMIT = 90;
 
 enum class SimStatus
 {
@@ -88,6 +91,7 @@ struct Strut
     bn::fixed length = 0;
     bn::fixed current_tension = 0;
     bn::fixed max_tension = 0;
+    bool triangulated = false;
 };
 
 class BridgeSystem
@@ -245,6 +249,11 @@ private:
     };
 
     void _seed_level();
+    void _recompute_strut_ratings();
+    int _connection_count(int node_id) const;
+    bool _strut_is_triangulated(int strut_index) const;
+    bn::fixed _current_train_load() const;
+    bn::fixed _current_train_speed() const;
     void _break_strut(int strut_index);
     void _apply_tension(int strut_index, bn::fixed distance_along);
     void _remove_strut_at(int strut_index);
@@ -262,6 +271,7 @@ private:
     bn::fixed_point _train_position;
     bn::fixed _train_t = 0;     ///< 0..1 along the current strut.
     int _path_index = 0;        ///< Index of the node the train is leaving.
+    int _accel_frames = 0;
     bn::fixed _fall_vy = 0;
     bool _falling = false;
     int _level_index = 0;

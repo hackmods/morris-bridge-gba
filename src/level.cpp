@@ -1,5 +1,6 @@
 #include "level.h"
 
+#include "game_constants.h"
 #include "physics.h"
 
 namespace level
@@ -8,32 +9,32 @@ namespace
 {
 
 constexpr Seed Knapford[] = {
-    { -88, 16, true },
-    { 88, 16, true },
-    { -104, 40, true },
-    { -88, 40, true },
-    { -72, 40, true },
-    { 72, 40, true },
-    { 88, 40, true },
-    { 104, 40, true },
+    { -88, game::TRACK_Y, true },
+    { 88, game::TRACK_Y, true },
+    { -104, game::TRACK_Y, true },
+    { -88, game::TRACK_Y, true },
+    { -72, game::TRACK_Y, true },
+    { 72, game::TRACK_Y, true },
+    { 88, game::TRACK_Y, true },
+    { 104, game::TRACK_Y, true },
 };
 
 constexpr Seed GordonHill[] = {
-    { -96, 8, true },
-    { 96, 8, true },
-    { -112, 32, true },
-    { -80, 32, true },
-    { 80, 32, true },
-    { 112, 32, true },
+    { -96, 44, true },
+    { 96, 44, true },
+    { -112, game::TRACK_Y, true },
+    { -80, game::TRACK_Y, true },
+    { 80, game::TRACK_Y, true },
+    { 112, game::TRACK_Y, true },
 };
 
 constexpr Seed Vicarstown[] = {
-    { -104, 12, true },
-    { 104, 12, true },
-    { -120, 36, true },
-    { -88, 36, true },
-    { 88, 36, true },
-    { 120, 36, true },
+    { -104, 48, true },
+    { 104, 48, true },
+    { -120, game::TRACK_Y, true },
+    { -88, game::TRACK_Y, true },
+    { 88, game::TRACK_Y, true },
+    { 120, game::TRACK_Y, true },
 };
 
 constexpr Def DEFINITIONS[COUNT] = {
