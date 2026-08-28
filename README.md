@@ -1,16 +1,23 @@
-# morris-bridge-gba
+# Morris Bridge
 
-**Ryan's Bridge** — a Game Boy Advance bridge-building prototype (Butano / C++20).
+**Morris Bridge** — a Game Boy Advance bridge-building game (Butano / C++20).
 
-Leo pins nodes across a canyon and ties struts so a tank engine can cross. Long spans snap under tension. Original mechanics prototype — not a licensed Thomas & Friends product.
+Morris pins nodes across Sodor-inspired canyons and ties struts so a cheeky blue tank engine can cross. Long spans snap under tension. Original mechanics and pixel art — a playful Thomas & Friends *homage*, not a licensed product. Built with AI assistance to show what a focused prototype can become.
 
 ## Play now
 
 | Method | Command / file |
 |--------|-----------------|
-| **ROM** | [`rom/leo_bridge.gba`](rom/leo_bridge.gba) → mGBA or EverDrive **GBA** |
+| **ROM** | [`rom/morris_bridge.gba`](rom/morris_bridge.gba) → mGBA or EverDrive **GBA** |
 | **Browser** | `./scripts/sync_rom_to_web.sh && cd web && npm install && npm run dev` |
 | **Docker** | `./scripts/sync_rom_to_web.sh && docker build -t morris-bridge-gba . && docker run --rm -p 8080:80 morris-bridge-gba` |
+
+## Features
+
+- **Title screen & level select** — three levels: Knapford Creek, Gordon's Hill, Vicarstown Gap
+- **Pause menu** — resume, restart, level select, title (Select during build)
+- **Thomas-inspired engine** — blue boiler, red stripe, chuffing animation, cheeky win/fail lines
+- **AI-built polish** — graphics generated via `tools/gen_graphics.py`, full menu flow from proof-of-concept
 
 ## Documentation wiki
 
@@ -47,7 +54,8 @@ Push to `main` runs [`.github/workflows/release.yml`](.github/workflows/release.
 include/          physics.h, bridge_system.h
 src/              GBA game source + main loop
 graphics/         BMP sprites + Butano JSON
-rom/              Prebuilt leo_bridge.gba
+tools/            gen_graphics.py — sprite generator
+rom/              Prebuilt morris_bridge.gba
 tests/            Host physics tests (no GBA toolchain)
 web/              Browser playtest (mGBA-WASM)
 deploy/           nginx + CapRover notes

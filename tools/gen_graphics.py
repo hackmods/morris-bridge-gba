@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Generate 8bpp indexed BMP sprites for the Butano asset pipeline.
+"""Generate 8bpp indexed BMP sprites for the Morris Bridge Butano asset pipeline.
 
 Color 0 is transparent (magenta). All images use the same 16-color palette
 so they can share a 4bpp sprite palette on hardware.
+
+Run from repo root: python3 tools/gen_graphics.py
 """
 
 from __future__ import annotations
 
+import json
 import os
 import struct
 
@@ -17,14 +20,14 @@ GFX = os.path.join(ROOT, "graphics")
 PALETTE = [
     (255, 0, 255),  # 0 transparent
     (16, 12, 16),  # 1 near-black
-    (240, 236, 224),  # 2 ivory
+    (240, 236, 224),  # 2 ivory / face
     (236, 196, 48),  # 3 node yellow
     (208, 104, 32),  # 4 anchor orange
     (132, 80, 44),  # 5 strut brown
-    (56, 108, 188),  # 6 train blue
+    (56, 108, 188),  # 6 Thomas blue
     (28, 40, 84),  # 7 navy
     (72, 220, 220),  # 8 cursor cyan
-    (204, 44, 40),  # 9 stress red
+    (204, 44, 40),  # 9 Thomas red stripe
     (108, 108, 116),  # 10 gray
     (56, 156, 72),  # 11 grass
     (196, 156, 100),  # 12 tan
@@ -107,23 +110,42 @@ def circle(px: list[int], w: int, cx: int, cy: int, radius: int, color: int) -> 
                 put(px, w, x, y, color)
 
 
-# 5x5 caps used for HUD labels.
+def hline(px: list[int], w: int, x0: int, x1: int, y: int, color: int) -> None:
+    for x in range(x0, x1):
+        put(px, w, x, y, color)
+
+
+# 5x5 pixel font caps for HUD and menus.
 FONT = {
     "A": ["01110", "10001", "11111", "10001", "10001"],
     "B": ["11110", "10001", "11110", "10001", "11110"],
+    "C": ["01111", "10000", "10000", "10000", "01111"],
     "D": ["11110", "10001", "10001", "10001", "11110"],
     "E": ["11111", "10000", "11110", "10000", "11111"],
     "F": ["11111", "10000", "11110", "10000", "10000"],
     "G": ["01111", "10000", "10111", "10001", "01110"],
+    "H": ["10001", "10001", "11111", "10001", "10001"],
     "I": ["11111", "00100", "00100", "00100", "11111"],
+    "K": ["10001", "10010", "11100", "10010", "10001"],
     "L": ["10000", "10000", "10000", "10000", "11111"],
+    "M": ["10001", "11011", "10101", "10001", "10001"],
     "N": ["10001", "11001", "10101", "10011", "10001"],
     "O": ["01110", "10001", "10001", "10001", "01110"],
+    "P": ["11110", "10001", "11110", "10000", "10000"],
+    "R": ["11110", "10001", "11110", "10010", "10001"],
     "S": ["01111", "10000", "01110", "00001", "11110"],
     "T": ["11111", "00100", "00100", "00100", "00100"],
     "U": ["10001", "10001", "10001", "10001", "01110"],
+    "V": ["10001", "10001", "10001", "01010", "01010"],
     "W": ["10001", "10001", "10101", "10101", "01010"],
+    "Y": ["10001", "10001", "01010", "00100", "00100"],
+    "&": ["01100", "10101", "01010", "10100", "01101"],
     "!": ["00100", "00100", "00100", "00000", "00100"],
+    "-": ["00000", "00000", "11111", "00000", "00000"],
+    "'": ["00100", "00100", "01000", "00000", "00000"],
+    "1": ["00100", "01100", "00100", "00100", "01110"],
+    "2": ["01110", "10001", "00010", "00100", "11111"],
+    "3": ["11110", "00001", "01110", "00001", "11110"],
     " ": ["00000", "00000", "00000", "00000", "00000"],
 }
 
@@ -131,12 +153,18 @@ FONT = {
 def blit_text(px: list[int], w: int, text: str, origin_x: int, origin_y: int, color: int) -> None:
     x = origin_x
     for ch in text:
-        glyph = FONT[ch]
+        glyph = FONT.get(ch, FONT[" "])
         for gy, row in enumerate(glyph):
             for gx, bit in enumerate(row):
                 if bit == "1":
                     put(px, w, x + gx, origin_y + gy, color)
         x += 6
+
+
+def center_text(px: list[int], w: int, text: str, y: int, color: int) -> None:
+    text_w = len(text) * 6 - 1
+    x0 = max(0, (w - text_w) // 2)
+    blit_text(px, w, text, x0, y, color)
 
 
 def make_cursor() -> None:
@@ -147,7 +175,6 @@ def make_cursor() -> None:
         put(px, w, 8, i, 8)
         put(px, w, i, 7, 8)
         put(px, w, i, 8, 8)
-    # Hollow center so it sits on a node cleanly.
     rect(px, w, 6, 6, 10, 10, 0)
     rect(px, w, 7, 7, 9, 9, 2)
     write_indexed_bmp(os.path.join(GFX, "cursor.bmp"), w, h, px)
@@ -188,26 +215,49 @@ def make_strut() -> None:
 
 
 def make_train() -> None:
-    """Original 16x16 tank-engine silhouette (not licensed artwork)."""
-    w = h = 16
+    """Thomas-inspired tank engine (original pixel art, not licensed artwork).
+
+    Two 16x16 frames: idle and chuff (smoke puff) for a little personality.
+    """
+    w = 16
+    h = 32
     px = fill(w, h)
-    # Wheels
-    circle(px, w, 4, 13, 2, 1)
-    circle(px, w, 11, 13, 2, 1)
-    circle(px, w, 4, 13, 1, 10)
-    circle(px, w, 11, 13, 1, 10)
-    # Boiler
-    rect(px, w, 1, 6, 11, 12, 6)
-    rect(px, w, 2, 7, 10, 11, 8)
-    rect(px, w, 2, 7, 10, 8, 2)
-    # Cabin
-    rect(px, w, 10, 3, 15, 12, 7)
-    rect(px, w, 11, 4, 14, 7, 15)
-    # Funnel
-    rect(px, w, 3, 2, 6, 6, 1)
-    rect(px, w, 2, 1, 7, 3, 10)
-    # Cowcatcher / buffer
-    rect(px, w, 0, 11, 2, 13, 10)
+
+    for frame in range(2):
+        y0 = frame * 16
+        # Wheels — grey rim, red hub (cheeky Thomas nod)
+        for wx in (4, 11):
+            circle(px, w, wx, y0 + 13, 2, 1)
+            circle(px, w, wx, y0 + 13, 1, 9)
+        # Boiler — Thomas blue with red stripe
+        rect(px, w, 1, y0 + 6, 11, y0 + 12, 6)
+        rect(px, w, 2, y0 + 7, 10, y0 + 11, 7)
+        hline(px, w, 2, 10, y0 + 9, 9)
+        hline(px, w, 2, 10, y0 + 10, 9)
+        # Face circle on smokebox door
+        circle(px, w, 6, y0 + 9, 3, 2)
+        put(px, w, 5, y0 + 8, 1)  # left eye
+        put(px, w, 7, y0 + 8, 1)  # right eye
+        put(px, w, 5, y0 + 10, 1)
+        put(px, w, 6, y0 + 10, 1)
+        put(px, w, 7, y0 + 10, 1)  # smile
+        # Cabin
+        rect(px, w, 10, y0 + 3, 15, y0 + 12, 7)
+        rect(px, w, 11, y0 + 4, 14, y0 + 7, 15)
+        # Funnel — black stack, grey rim
+        rect(px, w, 3, y0 + 2, 6, y0 + 6, 1)
+        rect(px, w, 2, y0 + 1, 7, y0 + 3, 10)
+        # Red buffer beam
+        rect(px, w, 0, y0 + 11, 2, y0 + 13, 9)
+        # Smoke puff on chuff frame
+        if frame == 1:
+            put(px, w, 4, y0 + 0, 10)
+            put(px, w, 5, y0 + 0, 10)
+            put(px, w, 3, y0 + 1, 10)
+            put(px, w, 6, y0 + 1, 10)
+            put(px, w, 4, y0 + 1, 2)
+            put(px, w, 5, y0 + 1, 2)
+
     write_indexed_bmp(os.path.join(GFX, "train.bmp"), w, h, px)
 
 
@@ -235,24 +285,94 @@ def make_water() -> None:
 
 
 def make_labels() -> None:
-    """32x40 sheet, five 32x8 frames: BUILD, TEST, FAIL, WIN!, NO GO."""
+    """32x8 frames for in-game HUD and status messages."""
+    texts = (
+        "BUILD",
+        "TEST",
+        "FAIL",
+        "WIN!",
+        "NO GO",
+        "PEEP!",
+        "ASHES!",
+        "MENU",
+        "LV 1",
+        "LV 2",
+        "LV 3",
+    )
     w = 32
     frame_h = 8
-    texts = ("BUILD", "TEST", "FAIL", "WIN!", "NO GO")
     h = frame_h * len(texts)
     px = fill(w, h)
+    colors = (2, 8, 9, 11, 15, 11, 9, 8, 15, 15, 15)
     for index, text in enumerate(texts):
         y0 = index * frame_h
-        text_w = len(text) * 6 - 1
-        x0 = max(0, (w - text_w) // 2)
-        color = (2, 8, 9, 11, 15)[index]
-        blit_text(px, w, text, x0, y0 + 1, color)
+        center_text(px, w, text, y0 + 1, colors[index])
     write_indexed_bmp(os.path.join(GFX, "label.bmp"), w, h, px)
 
 
-def write_json(name: str, extra: dict | None = None) -> None:
-    import json
+def make_banner() -> None:
+    """Title and menu banner frames (64x32 each).
 
+    Frame 0: Title screen
+    Frame 1: Level select header
+    Frame 2: Victory splash
+    Frame 3: AI credit splash
+    """
+    w = 64
+    frame_h = 32
+    frames = 4
+    h = frame_h * frames
+    px = fill(w, h)
+
+    y0 = 0
+    rect(px, w, 2, y0 + 2, 62, y0 + 30, 7)
+    rect(px, w, 4, y0 + 4, 60, y0 + 28, 6)
+    hline(px, w, 4, 60, y0 + 14, 9)
+    center_text(px, w, "MORRIS", y0 + 6, 15)
+    center_text(px, w, "BRIDGE", y0 + 14, 2)
+    center_text(px, w, "USEFUL!", y0 + 22, 15)
+
+    y0 = 32
+    rect(px, w, 4, y0 + 4, 60, y0 + 28, 13)
+    rect(px, w, 6, y0 + 6, 58, y0 + 26, 7)
+    center_text(px, w, "LEVELS", y0 + 12, 2)
+
+    y0 = 64
+    rect(px, w, 4, y0 + 6, 60, y0 + 26, 11)
+    center_text(px, w, "PEEP PEEP!", y0 + 12, 15)
+
+    y0 = 96
+    rect(px, w, 4, y0 + 8, 60, y0 + 24, 1)
+    center_text(px, w, "AI BUILT", y0 + 12, 15)
+
+    write_indexed_bmp(os.path.join(GFX, "banner.bmp"), w, h, px)
+
+
+def make_menu() -> None:
+    """Menu highlight rows (32x16 each) — pairs with label level names."""
+    w = 32
+    frame_h = 16
+    rows = (
+        "KNAPFORD",
+        "GORDON",
+        "VICARS",
+        "RESUME",
+        "RESTART",
+        "LEVELS",
+        "TITLE",
+    )
+    h = frame_h * len(rows)
+    px = fill(w, h)
+    for index, text in enumerate(rows):
+        y0 = index * frame_h
+        bg = 13 if index < 3 else 7
+        rect(px, w, 0, y0 + 2, 32, y0 + 14, bg)
+        # Left-align; names may clip slightly on 32px width.
+        blit_text(px, w, text[:5], 2, y0 + 5, 2 if index != 1 else 15)
+    write_indexed_bmp(os.path.join(GFX, "menu.bmp"), w, h, px)
+
+
+def write_json(name: str, extra: dict | None = None) -> None:
     data = {"type": "sprite", "bpp_mode": "bpp_4"}
     if extra:
         data.update(extra)
@@ -271,16 +391,20 @@ def main() -> None:
     make_ground()
     make_water()
     make_labels()
+    make_banner()
+    make_menu()
 
     write_json("cursor.json")
     write_json("node.json")
     write_json("anchor.json")
     write_json("strut.json", {"height": 16})
-    write_json("train.json")
+    write_json("train.json", {"height": 16})
     write_json("ground.json")
     write_json("water.json")
     write_json("label.json", {"height": 8})
-    print(f"Wrote sprites in {GFX}")
+    write_json("banner.json", {"height": 32})
+    write_json("menu.json", {"height": 16})
+    print(f"Morris Bridge sprites written to {GFX}")
 
 
 if __name__ == "__main__":

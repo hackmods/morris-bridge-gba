@@ -4,8 +4,8 @@ export type EmulatorStatus = 'initializing' | 'ready' | 'error';
 
 export type StatusListener = (message: string, status: EmulatorStatus) => void;
 
-const DEFAULT_ROM_URL = '/rom/leo_bridge.gba';
-const DEFAULT_ROM_NAME = 'leo_bridge.gba';
+const DEFAULT_ROM_URL = '/rom/morris_bridge.gba';
+const DEFAULT_ROM_NAME = 'morris_bridge.gba';
 
 export class GbaEmulator {
   private module: mGBAEmulator | null = null;

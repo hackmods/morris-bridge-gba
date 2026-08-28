@@ -41,7 +41,7 @@ void expect_near(bn::fixed actual, bn::fixed expected, bn::fixed slack, const ch
 
 int main()
 {
-    std::cout << "Ryan's Bridge host physics tests (bn::fixed mock is 20.12)\n";
+    std::cout << "Morris Bridge host physics tests (bn::fixed mock is 20.12)\n";
 
     // 3-4-5 triangle: exact integer length, no rounding alibi.
     {

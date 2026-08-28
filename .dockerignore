@@ -6,8 +6,11 @@ web/node_modules/
 web/dist/
 tests/test_physics
 *.gba
-!rom/leo_bridge.gba
-!web/public/rom/leo_bridge.gba
+!rom/morris_bridge.gba
+!web/public/rom/morris_bridge.gba
+morris_bridge.gba
+morris_bridge.elf
+morris_bridge.map
 leo_bridge.gba
 leo_bridge.elf
 leo_bridge.map

@@ -13,10 +13,76 @@ int max_id(int a, int b)
 {
     return a > b ? a : b;
 }
+
+struct LevelSeed
+{
+    bn::fixed x;
+    bn::fixed y;
+    bool anchored;
+};
+
+// Sodor-inspired level layouts (original geometry, cheeky names only).
+constexpr LevelSeed LEVEL_0[] = {
+    { -88, 16, true },  // START
+    { 88, 16, true },   // END
+    { -104, 40, true },
+    { -88, 40, true },
+    { -72, 40, true },
+    { 72, 40, true },
+    { 88, 40, true },
+    { 104, 40, true },
+};
+
+constexpr LevelSeed LEVEL_1[] = {
+    { -96, 8, true },   // START — higher banks, Gordon's Hill vibes
+    { 96, 8, true },    // END
+    { -112, 32, true },
+    { -80, 32, true },
+    { 80, 32, true },
+    { 112, 32, true },
+};
+
+constexpr LevelSeed LEVEL_2[] = {
+    { -104, 12, true }, // START — widest gap on the island
+    { 104, 12, true },  // END
+    { -120, 36, true },
+    { -88, 36, true },
+    { 88, 36, true },
+    { 120, 36, true },
+};
+
+constexpr const LevelSeed* const LEVELS[] = {
+    LEVEL_0,
+    LEVEL_1,
+    LEVEL_2,
+};
+
+constexpr int LEVEL_SIZES[] = {
+    sizeof(LEVEL_0) / sizeof(LevelSeed),
+    sizeof(LEVEL_1) / sizeof(LevelSeed),
+    sizeof(LEVEL_2) / sizeof(LevelSeed),
+};
+
 } // namespace
 
 BridgeSystem::BridgeSystem()
 {
+    load_level(0);
+}
+
+void BridgeSystem::load_level(int level_index)
+{
+    if(level_index < 0)
+    {
+        level_index = 0;
+    }
+
+    if(level_index >= LEVEL_COUNT)
+    {
+        level_index = LEVEL_COUNT - 1;
+    }
+
+    _level_index = level_index;
     reset_level();
 }
 
@@ -31,23 +97,19 @@ void BridgeSystem::reset_level()
     _path_index = 0;
     _fall_vy = 0;
     _falling = false;
-    _seed_canyon();
+    _seed_level();
     _train_position = _nodes[START_NODE].position;
 }
 
-void BridgeSystem::_seed_canyon()
+void BridgeSystem::_seed_level()
 {
-    // Left bank (start) then right bank (end). Additional anchors give Leo
-    // places to pin the deck without spending his 16-node budget.
-    // Butano screen space is centred: x in [-120, 120), y in [-80, 80).
-    (void)add_node(-88, 16, true); // START_NODE
-    (void)add_node(88, 16, true);  // END_NODE
-    (void)add_node(-104, 40, true);
-    (void)add_node(-88, 40, true);
-    (void)add_node(-72, 40, true);
-    (void)add_node(72, 40, true);
-    (void)add_node(88, 40, true);
-    (void)add_node(104, 40, true);
+    const LevelSeed* seeds = LEVELS[_level_index];
+    const int count = LEVEL_SIZES[_level_index];
+
+    for(int i = 0; i < count; ++i)
+    {
+        (void)add_node(seeds[i].x, seeds[i].y, seeds[i].anchored);
+    }
 }
 
 bn::optional<int> BridgeSystem::add_node(bn::fixed x, bn::fixed y, bool is_anchored)
@@ -200,7 +262,6 @@ bool BridgeSystem::_bfs_path()
         return false;
     }
 
-    // Walk parent pointers into a scratch, then reverse into `_path`.
     bn::vector<int, MAX_NODES> reverse;
     int cursor = END_NODE;
 
