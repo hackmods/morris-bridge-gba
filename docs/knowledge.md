@@ -4,6 +4,27 @@ Living notes from Cloud Agent sessions: what shipped, what broke, and what to pi
 
 ---
 
+## PR merge policy (read first)
+
+**Do not stack open PRs.** Merge to `main` as soon as CI is green.
+
+| Rule | Detail |
+|------|--------|
+| **One active code PR** | Superseded branches get closed, not left open alongside replacements |
+| **Merge order** | Docs/plan PR first if separate, then the single consolidated code PR |
+| **Mark ready** | Flip draft → ready when host tests + web tests + E2E pass (Docker deploy failure is non-blocking for game code) |
+| **Delete branch** | After merge, delete the remote `cursor/*` branch |
+
+**Current queue (2026-08-28):**
+
+1. Merge **#14** (`master-plan` docs) — no ROM impact  
+2. Merge **#15** (`engine-v2-link-role`) — **supersedes #13**; close #13 without merging  
+3. Delete `cursor/fix-levels-backdrop-playthrough-7b6f` after #15 lands  
+
+Agents: after pushing a fix, **update the existing PR or merge it in the same session** — do not open a third PR for the same workstream.
+
+---
+
 ## Current state (2026-08-28)
 
 | Item | Value |

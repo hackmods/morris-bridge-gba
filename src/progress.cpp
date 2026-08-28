@@ -100,11 +100,84 @@ void Progress::apply_save(const int max_unlocked_level, const unsigned cleared_l
     _unlocked_engines = unlocked_engines | (1u << unsigned(engine::default_engine()));
 }
 
+void Progress::record_level_result(const int level_index, const uint8_t stars,
+                                     const uint16_t cost)
+{
+    if(level_index < 0 || level_index >= level::COUNT || stars == 0)
+    {
+        return;
+    }
+
+    const uint8_t prev_stars = _best_stars[level_index];
+    const uint16_t prev_cost = _best_cost[level_index];
+    const bool better_stars = stars > prev_stars;
+    const bool same_stars_better_cost =
+        stars == prev_stars && stars > 0 && (prev_cost == 0 || cost < prev_cost);
+
+    if(prev_stars == 0 || better_stars || same_stars_better_cost)
+    {
+        _best_stars[level_index] = stars;
+        _best_cost[level_index] = cost;
+    }
+}
+
+uint8_t Progress::best_stars(const int level_index) const
+{
+    if(level_index < 0 || level_index >= level::COUNT)
+    {
+        return 0;
+    }
+
+    return _best_stars[level_index];
+}
+
+uint16_t Progress::best_cost(const int level_index) const
+{
+    if(level_index < 0 || level_index >= level::COUNT)
+    {
+        return 0;
+    }
+
+    return _best_cost[level_index];
+}
+
+uint8_t Progress::packed_best_stars() const
+{
+    uint8_t packed = 0;
+
+    for(int i = 0; i < level::COUNT; ++i)
+    {
+        packed |= uint8_t((_best_stars[i] & 3) << (i * 2));
+    }
+
+    return packed;
+}
+
+void Progress::apply_save_v2(const int max_unlocked_level, const unsigned cleared_levels,
+                             const unsigned unlocked_engines, const uint8_t packed_stars,
+                             const uint16_t best_costs[level::COUNT])
+{
+    apply_save(max_unlocked_level, cleared_levels, unlocked_engines);
+
+    for(int i = 0; i < level::COUNT; ++i)
+    {
+        _best_stars[i] = uint8_t((packed_stars >> (i * 2)) & 3);
+        _best_cost[i] = best_costs[i];
+    }
+}
+
 void Progress::reset()
 {
     _max_unlocked_level = 0;
     _cleared_levels = 0;
     _unlocked_engines = 0;
+
+    for(int i = 0; i < level::COUNT; ++i)
+    {
+        _best_stars[i] = 0;
+        _best_cost[i] = 0;
+    }
+
     _unlock_engine(engine::default_engine());
 }
 

@@ -38,6 +38,56 @@ int main()
     assert(! save_data::decode(loaded, buffer));
     std::cout << "  ok checksum rejects tampered save\n";
 
+    progress.reset();
+    progress.record_level_result(0, 3, 5);
+    progress.record_level_result(1, 2, 11);
+    progress.record_level_result(2, 1, 15);
+    assert(save_data::encode(progress, buffer));
+    loaded.reset();
+    assert(save_data::decode(loaded, buffer));
+    assert(loaded.best_stars(0) == 3);
+    assert(loaded.best_cost(0) == 5);
+    assert(loaded.best_stars(1) == 2);
+    assert(loaded.best_cost(1) == 11);
+    assert(loaded.best_stars(2) == 1);
+    assert(loaded.best_cost(2) == 15);
+    std::cout << "  ok v2 round-trip best stars and cost\n";
+
+    progress.record_level_result(0, 2, 4);
+    assert(progress.best_stars(0) == 3);
+    assert(progress.best_cost(0) == 5);
+    progress.record_level_result(0, 3, 6);
+    assert(progress.best_stars(0) == 3);
+    assert(progress.best_cost(0) == 5);
+    progress.record_level_result(0, 3, 4);
+    assert(progress.best_stars(0) == 3);
+    assert(progress.best_cost(0) == 4);
+    std::cout << "  ok record_level_result keeps best stars and lowest cost\n";
+
+    std::uint8_t v1[save_data::SIZE] = {};
+    v1[0] = std::uint8_t(save_data::MAGIC & 0xFF);
+    v1[1] = std::uint8_t((save_data::MAGIC >> 8) & 0xFF);
+    v1[2] = std::uint8_t((save_data::MAGIC >> 16) & 0xFF);
+    v1[3] = std::uint8_t((save_data::MAGIC >> 24) & 0xFF);
+    v1[4] = save_data::VERSION_V1;
+    v1[5] = 2;
+    v1[6] = 0b111;
+    v1[7] = 0b1111111;
+    std::uint8_t sum = 0;
+
+    for(int i = 0; i < 8; ++i)
+    {
+        sum = std::uint8_t(sum + v1[i]);
+    }
+
+    v1[8] = sum;
+    loaded.reset();
+    assert(save_data::decode(loaded, v1));
+    assert(loaded.max_unlocked_level() == 2);
+    assert(loaded.best_stars(0) == 0);
+    assert(loaded.best_cost(0) == 0);
+    std::cout << "  ok v1 save migrates with zero stars\n";
+
     std::cout << "All save_data tests passed.\n";
     return 0;
 }
