@@ -184,7 +184,7 @@ int main()
         assert(system.anchored_node_count() == 8);
         assert(system.player_node_budget() == 8);
 
-        const bn::optional<int> mid = system.add_node(0, 16, false);
+        const bn::optional<int> mid = system.add_node(0, 24, false);
         assert(mid.has_value());
         assert(system.player_node_count() == 1);
 
@@ -262,6 +262,88 @@ int main()
         const bn::fixed james_end = james.effective_weight_at(bn::fixed(96), bn::fixed(96));
         assert(gordon_end > james_end);
         std::cout << "  ok coach load ramp increases with engine coaches\n";
+    }
+
+    {
+        bridge::BridgeSystem system;
+        system.load_level(0);
+        assert(system.anchored_node_count() == 8);
+        assert(system.nodes()[bridge::START_NODE].position.x().integer() == -88);
+        assert(system.nodes()[bridge::START_NODE].position.y().integer() == 16);
+
+        system.load_level(1);
+        assert(system.anchored_node_count() == 6);
+        assert(system.nodes()[bridge::START_NODE].position.y().integer() == 8);
+
+        system.load_level(2);
+        assert(system.anchored_node_count() == 6);
+        assert(system.nodes()[bridge::END_NODE].position.x().integer() == 104);
+
+        system.load_level(-1);
+        assert(system.current_level() == 0);
+        system.load_level(99);
+        assert(system.current_level() == 2);
+        std::cout << "  ok per-level seeding and clamping\n";
+    }
+
+    {
+        bridge::BridgeSystem system;
+        const bridge::StrutPreview same_node = system.preview_strut(bridge::START_NODE, bridge::START_NODE);
+        assert(same_node.status == bridge::StrutPreviewStatus::same_node);
+
+        const bridge::StrutPreview invalid = system.preview_strut(bridge::START_NODE, 99);
+        assert(invalid.status == bridge::StrutPreviewStatus::invalid_node);
+
+        const bn::optional<int> mid = system.add_node(0, 24, false);
+        assert(mid.has_value());
+        assert(system.preview_strut(bridge::START_NODE, mid.value()).status ==
+               bridge::StrutPreviewStatus::ok);
+        std::cout << "  ok strut preview statuses\n";
+    }
+
+    {
+        expect_near(physics::max_tension_for_length(48), physics::BASE_MAX_TENSION,
+                    bn::fixed(1) / 16, "rating at 48px span");
+        expect_near(physics::max_tension_for_length(176),
+                    physics::BASE_MAX_TENSION.safe_multiplication(physics::SAFE_LENGTH).safe_division(176),
+                    bn::fixed(1) / 8, "rating at 176px span");
+        std::cout << "  ok max_tension_for_length boundaries\n";
+    }
+
+    {
+        bridge::BridgeSystem system;
+        const bn::optional<int> first = system.add_node(-24, 24, false);
+        const bn::optional<int> second = system.add_node(24, 24, false);
+        assert(first.has_value());
+        assert(second.has_value());
+        assert(system.add_strut(bridge::START_NODE, first.value()).has_value());
+        assert(system.add_strut(first.value(), second.value()).has_value());
+        assert(system.add_strut(second.value(), bridge::END_NODE).has_value());
+        assert(system.begin_test() == bridge::SimStatus::running);
+
+        int frames = 0;
+
+        while(system.status() == bridge::SimStatus::running && frames < 500)
+        {
+            system.update();
+            ++frames;
+        }
+
+        assert(system.status() == bridge::SimStatus::success);
+        std::cout << "  ok three-span bridge carries the train\n";
+    }
+
+    {
+        bridge::BridgeSystem system;
+        const int budget = system.player_node_budget();
+
+        for(int i = 0; i < budget; ++i)
+        {
+            assert(system.add_node(-8 + i * 4, 24, false).has_value());
+        }
+
+        assert(!system.add_node(0, 32, false).has_value());
+        std::cout << "  ok player node budget is enforced\n";
     }
 
     std::cout << "All host physics tests passed.\n";

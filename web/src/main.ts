@@ -1,5 +1,6 @@
 import { GbaEmulator } from './emulator';
 import { InputQueue } from './input-queue';
+import { bindResponsiveCanvas } from './layout';
 import { setupKeyboard, setEmulatorInputEnabled } from './keyboard';
 
 function $(id: string): HTMLElement {
@@ -69,6 +70,35 @@ async function main(): Promise<void> {
 
   const emulator = new GbaEmulator(canvas);
   const inputQueue = new InputQueue(emulator);
+  const unbindCanvasLayout = bindResponsiveCanvas(canvas, canvasWrap);
+
+  $('btn-theater').addEventListener('click', () => {
+    document.body.classList.toggle('theater-mode');
+    const enabled = document.body.classList.contains('theater-mode');
+    ($('btn-theater') as HTMLButtonElement).textContent = enabled
+      ? 'Exit theater'
+      : 'Theater';
+  });
+
+  $('btn-fullscreen').addEventListener('click', async () => {
+    if (!document.fullscreenElement) {
+      await canvasWrap.requestFullscreen();
+      return;
+    }
+
+    await document.exitFullscreen();
+  });
+
+  document.addEventListener('fullscreenchange', () => {
+    const enabled = Boolean(document.fullscreenElement);
+    ($('btn-fullscreen') as HTMLButtonElement).textContent = enabled
+      ? 'Exit fullscreen'
+      : 'Fullscreen';
+  });
+
+  window.addEventListener('beforeunload', () => {
+    unbindCanvasLayout();
+  });
 
   emulator.onStatus((message, status) => {
     statusBar.textContent = message;

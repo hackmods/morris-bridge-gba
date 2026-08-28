@@ -11,7 +11,7 @@
 | `anchor.bmp` | 8×8 | Bank anchor marker |
 | `ground.bmp` | — | Canyon bank tiles |
 | `water.bmp` | — | Gap / water backdrop |
-| `label.bmp` | — | HUD text tiles (BUILD, TEST, WIN, etc.) |
+| `label.bmp` | 32×8 frames | HUD text tiles (BUILD, TEST, hints, etc.) |
 
 Each BMP has a matching **`.json`** in [`graphics/`](../graphics/) with `"type": "sprite"` (or bg type where applicable).
 

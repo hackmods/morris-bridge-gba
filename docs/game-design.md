@@ -25,11 +25,19 @@ Optional **PG lore** for friends: [Lore leak](lore-leak.md) (creepy copypasta ba
 
 | Screen | Controls |
 |--------|----------|
-| **Title** | Full splash artwork; Start / A → levels |
-| **Level select** | Up/Down (locked tracks skipped), A → engine pick, B back |
+| **Title** | Full splash artwork; hints for **A NOD** and **START**; Start / A → levels |
+| **Level select** | Up/Down (locked tracks skipped), A → engine pick, B back — track name shown in menu row |
 | **Engine select** | Up/Down (locked engines skipped), weight shown; A start, B back |
-| **Build** | D-Pad, A nodes, Start test, Select pause |
+| **Build** | D-Pad, A nodes, Start test, Select pause, B delete, L undo |
 | **Test** | Train runs; B cancel |
+
+## Onboarding
+
+The ROM teaches controls directly:
+
+- **Title:** static hint labels (**A NOD**, **START**) above the dialog panel
+- **First build session:** rotating hints (`A NOD` → `START` → `PAUSE`) for a few seconds, dismissible with any button
+- **Build HUD:** persistent **PAUSE** reminder after the intro cycle
 
 ## Engines and unlocks
 
@@ -56,8 +64,6 @@ See [README](../README.md) and in-game HUD. Cursor snap radius: 10px.
 ## Roadmap
 
 Engine unlocks, weight-based difficulty, and graphics upgrade plan: [Future expansion](future-expansion.md).
-
-Starter types: [`include/engine.h`](../include/engine.h), [`include/progress.h`](../include/progress.h).
 
 ## Graphics
 
