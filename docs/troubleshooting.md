@@ -98,9 +98,11 @@ make clean LIBBUTANO=vendor/butano/butano && make -j$(nproc) LIBBUTANO=vendor/bu
 
 ## CI
 
-### Release workflow deploy job red, others green
+### Release workflow deploy job skipped or red
 
-Expected until CapRover secrets are configured.
+The **Deploy to CapRover** job runs only when all three repository secrets are set: `CAPROVER_SERVER`, `CAPROVER_APP_NAME`, and `CAPROVER_APP_TOKEN`. If they are missing, the job is skipped and the other three checks (ROM build, host tests, Docker image) should still pass.
+
+To enable production deploys, add those secrets and optionally set the `production` environment in GitHub. See [`deploy/caprover.md`](../deploy/caprover.md).
 
 ### PR Docker build only (no push)
 

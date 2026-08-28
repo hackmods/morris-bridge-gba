@@ -122,7 +122,12 @@ jobs:
     name: Deploy to CapRover
     needs: build-image
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    if: >-
+      github.event_name != 'pull_request' &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) &&
+      secrets.CAPROVER_SERVER != '' &&
+      secrets.CAPROVER_APP_NAME != '' &&
+      secrets.CAPROVER_APP_TOKEN != ''
     environment: production
     steps:
       - name: Deploy image
