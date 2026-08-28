@@ -9,9 +9,10 @@
 #include "bn_optional.h"
 #include "bn_music_items.h"
 #include "bn_sound_items.h"
+#include "bn_span.h"
+#include "bn_sram.h"
 #include "bn_sprite_builder.h"
 #include "bn_sprite_ptr.h"
-#include "bn_sram.h"
 #include "bn_vector.h"
 
 #include "bn_sprite_items_anchor.h"
@@ -261,11 +262,9 @@ public:
         _preview_strut(make_sprite(bn::sprite_items::strut, 0, 0, Z_STRUT_PREVIEW)),
         _toast(make_sprite(bn::sprite_items::toast, 0, 52, Z_TOAST)),
         _portrait(bn::sprite_items::portrait.create_sprite(56, 44)),
-        _camera(bn::camera.create())
+        _camera(bn::camera_ptr::create())
     {
         bn::bg_palettes::set_transparent_color(bn::color(8, 14, 20));
-
-        _camera.set_z_order(0);
 
         _cursor.set_z_order(Z_CURSOR);
         _train.set_z_order(-15);
@@ -433,21 +432,18 @@ private:
 
     void _load_progress()
     {
-        bn::sram sram;
-        bn::array<std::uint8_t, save_data::SIZE> buffer;
-
-        if(sram.read(buffer))
-        {
-            (void)save_data::decode(_progress, buffer.data());
-        }
+        std::uint8_t buffer[save_data::SIZE];
+        bn::span<uint8_t> span(buffer, save_data::SIZE);
+        bn::sram::read_span(span);
+        (void)save_data::decode(_progress, buffer);
     }
 
     void _persist_progress()
     {
-        bn::sram sram;
-        bn::array<std::uint8_t, save_data::SIZE> buffer;
-        (void)save_data::encode(_progress, buffer.data());
-        sram.write(buffer);
+        std::uint8_t buffer[save_data::SIZE];
+        (void)save_data::encode(_progress, buffer);
+        bn::span<const uint8_t> span(buffer, save_data::SIZE);
+        bn::sram::write_span(span);
     }
 
     void _trigger_shake()
@@ -476,12 +472,12 @@ private:
                 break;
             }
 
-            DustPuff puff;
-            puff.sprite = make_sprite(bn::sprite_items::ghost,
-                                      origin.x() + bn::fixed(i * 4 - 6), origin.y(), 3);
-            puff.vy = bn::fixed(-1) / 4;
-            puff.life = DUST_LIFE;
-            _dust.push_back(puff);
+            _dust.push_back(DustPuff{
+                make_sprite(bn::sprite_items::ghost,
+                            origin.x() + bn::fixed(i * 4 - 6), origin.y(), 3),
+                bn::fixed(-1) / 4,
+                DUST_LIFE,
+            });
         }
     }
 
