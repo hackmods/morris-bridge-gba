@@ -17,6 +17,7 @@
 
 #include "physics.h"
 #include "bridge_system.h"
+#include "engine.h"
 
 namespace
 {
@@ -206,6 +207,49 @@ int main()
         assert(system.undo_last_edit() == bridge::UndoResult::removed_node);
         assert(system.remove_player_node(bridge::START_NODE) == bridge::RemoveNodeResult::anchored);
         std::cout << "  ok undo, preview, and delete helpers\n";
+    }
+
+    // Heavy engine (Gordon) snaps a span Percy survives.
+    {
+        bridge::BridgeSystem light;
+        bridge::BridgeSystem heavy;
+        light.set_engine(engine::Id::percy);
+        heavy.set_engine(engine::Id::gordon);
+        assert(light.train_weight() == bn::fixed(3));
+        assert(heavy.train_weight() == bn::fixed(10));
+
+        const bn::optional<int> mid = light.add_node(0, 16, false);
+        assert(mid.has_value());
+        assert(heavy.add_node(0, 16, false).has_value());
+
+        assert(light.add_strut(bridge::START_NODE, mid.value()).has_value());
+        assert(light.add_strut(mid.value(), bridge::END_NODE).has_value());
+        assert(heavy.add_strut(bridge::START_NODE, mid.value()).has_value());
+        assert(heavy.add_strut(mid.value(), bridge::END_NODE).has_value());
+
+        (void)light.begin_test();
+        int frames = 0;
+
+        while(light.status() == bridge::SimStatus::running && frames < 400)
+        {
+            light.update();
+            ++frames;
+        }
+
+        assert(light.status() == bridge::SimStatus::success);
+        std::cout << "  ok Percy (weight 3) crosses two-span deck\n";
+
+        (void)heavy.begin_test();
+        frames = 0;
+
+        while(heavy.status() == bridge::SimStatus::running && frames < 400)
+        {
+            heavy.update();
+            ++frames;
+        }
+
+        assert(heavy.status() == bridge::SimStatus::failed_fall);
+        std::cout << "  ok Gordon (weight 10) snaps the same deck\n";
     }
 
     std::cout << "All host physics tests passed.\n";

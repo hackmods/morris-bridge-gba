@@ -7,8 +7,8 @@ INCLUDES := -Ihost_bn -I../include
 
 all: test
 
-test_physics: test_physics.cpp ../src/physics.cpp ../src/bridge_system.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $@ test_physics.cpp ../src/physics.cpp ../src/bridge_system.cpp
+test_physics: test_physics.cpp ../src/physics.cpp ../src/bridge_system.cpp ../src/engine.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $@ test_physics.cpp ../src/physics.cpp ../src/bridge_system.cpp ../src/engine.cpp
 
 test: test_physics
 	./test_physics
