@@ -38,6 +38,11 @@ This overwrites BMPs in `graphics/`. Replace with your own art but keep JSON fil
 3. `sprite.set_rotation(angle)`
 4. `sprite.set_horizontal_scale(length / STRUT_SPRITE_WIDTH)`
 
-## Affine mats
+## Affine mats and sort layers
 
-Makefile sets `USERFLAGS := -DBN_CFG_SPRITE_AFFINE_MATS_MAX_ITEMS=32` for rotation/scale headroom.
+Makefile sets:
+
+- `BN_CFG_SPRITE_AFFINE_MATS_MAX_ITEMS=32` — headroom for rotated/scaled struts
+- `BN_CFG_SPRITES_MAX_SORT_LAYERS=32` — headroom for z-order draw layers
+
+Use as few unique `z_order` values as possible. See [Troubleshooting — sort layers](troubleshooting.md#no-more-sprite-sort-layers-available-butano-assert).

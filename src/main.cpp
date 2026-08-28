@@ -4,6 +4,7 @@
 #include "bn_keypad.h"
 #include "bn_math.h"
 #include "bn_optional.h"
+#include "bn_sprite_builder.h"
 #include "bn_sprite_ptr.h"
 #include "bn_vector.h"
 
@@ -29,6 +30,22 @@ constexpr int LABEL_TEST = 1;
 constexpr int LABEL_FAIL = 2;
 constexpr int LABEL_WIN = 3;
 constexpr int LABEL_NO_GO = 4;
+
+constexpr int Z_CURSOR = -32767;
+constexpr int Z_LABEL = -20;
+constexpr int Z_TRAIN = -10;
+constexpr int Z_NODE = 5;
+constexpr int Z_STRUT = 10;
+constexpr int Z_GROUND = 20;
+constexpr int Z_WATER = 21;
+
+bn::sprite_ptr make_sprite(const bn::sprite_item& item, bn::fixed x, bn::fixed y, int z_order)
+{
+    bn::sprite_builder builder(item);
+    builder.set_position(x, y);
+    builder.set_z_order(z_order);
+    return builder.release_build();
+}
 
 bn::fixed clamp(bn::fixed value, bn::fixed lo, bn::fixed hi)
 {
@@ -67,16 +84,13 @@ class Game
 {
 public:
     Game() :
-        _cursor(bn::sprite_items::cursor.create_sprite(0, 0)),
-        _train(bn::sprite_items::train.create_sprite(_bridge.train_position())),
-        _label(bn::sprite_items::label.create_sprite(-104, -72))
+        _cursor(make_sprite(bn::sprite_items::cursor, 0, 0, Z_CURSOR)),
+        _train(make_sprite(bn::sprite_items::train, _bridge.train_position().x(), _bridge.train_position().y(), Z_TRAIN)),
+        _label(make_sprite(bn::sprite_items::label, -104, -72, Z_LABEL))
     {
         bn::bg_palettes::set_transparent_color(bn::color(8, 14, 20));
 
-        _cursor.set_z_order(-32767);
-        _train.set_z_order(-10);
         _train.set_visible(false);
-        _label.set_z_order(-20);
         _label.set_item(bn::sprite_items::label, LABEL_BUILD);
 
         _place_scenery();
@@ -116,16 +130,12 @@ private:
 
         for(int x : ground_x)
         {
-            bn::sprite_ptr tile = bn::sprite_items::ground.create_sprite(x, 56);
-            tile.set_z_order(20);
-            _ground.push_back(tile);
+            _ground.push_back(make_sprite(bn::sprite_items::ground, x, 56, Z_GROUND));
         }
 
         for(int x : water_x)
         {
-            bn::sprite_ptr tile = bn::sprite_items::water.create_sprite(x, 74);
-            tile.set_z_order(21);
-            _water.push_back(tile);
+            _water.push_back(make_sprite(bn::sprite_items::water, x, 74, Z_WATER));
         }
     }
 
@@ -259,14 +269,13 @@ private:
 
         while(_node_sprites.size() < nodes.size())
         {
-            _node_sprites.push_back(bn::sprite_items::node.create_sprite(0, 0));
+            _node_sprites.push_back(make_sprite(bn::sprite_items::node, 0, 0, Z_NODE));
         }
 
         for(int i = 0; i < nodes.size(); ++i)
         {
             bn::sprite_ptr& sprite = _node_sprites[i];
             sprite.set_position(nodes[i].position);
-            sprite.set_z_order(5);
 
             if(nodes[i].is_anchored)
             {
@@ -295,9 +304,7 @@ private:
 
         while(_strut_sprites.size() < struts.size())
         {
-            bn::sprite_ptr sprite = bn::sprite_items::strut.create_sprite(0, 0);
-            sprite.set_z_order(10);
-            _strut_sprites.push_back(sprite);
+            _strut_sprites.push_back(make_sprite(bn::sprite_items::strut, 0, 0, Z_STRUT));
         }
 
         for(int i = 0; i < struts.size(); ++i)

@@ -86,6 +86,25 @@ Span too long — max tension rating drops with length. Add intermediate nodes o
 - Duplicate struts rejected
 - Max 32 struts
 
+### `No more sprite sort layers available` (Butano assert)
+
+Butano groups sprites into sort layers by **background priority + z-order**. Each unique pair consumes one layer from a fixed pool (default 16).
+
+This can trigger when placing many bridge nodes/struts because new sprites briefly register at the default `z_order` of `0` before code assigns the intended layer.
+
+**Fixes in this repo:**
+
+1. Sprites are created with the correct `z_order` up front via `make_sprite()` in [`src/main.cpp`](../src/main.cpp).
+2. `Makefile` sets `BN_CFG_SPRITES_MAX_SORT_LAYERS=32`.
+
+After changing `Makefile` flags, rebuild from scratch:
+
+```bash
+make clean LIBBUTANO=vendor/butano/butano && make -j$(nproc) LIBBUTANO=vendor/butano/butano
+```
+
+Keep unique z-orders to a minimum — the game uses seven fixed layers (cursor, label, train, nodes, struts, ground, water).
+
 ## CI
 
 ### Release workflow deploy job red, others green
