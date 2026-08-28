@@ -1,11 +1,7 @@
 #include "audio_director.h"
 
 #include "bn_music.h"
-
-#include "bn_music_items_full_steam.h"
-#include "bn_music_items_island_line.h"
-#include "bn_music_items_workshop.h"
-#include "bn_music_items_yard.h"
+#include "bn_music_items.h"
 
 namespace audio
 {
