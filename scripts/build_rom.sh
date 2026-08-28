@@ -15,8 +15,20 @@ fi
 echo "Regenerating Thomas's Bridge sprites ..."
 python3 tools/gen_graphics.py
 
+echo "Regenerating audio (MOD + WAV) ..."
+python3 tools/gen_audio.py
+
 echo "Building ROM with ${IMAGE} ..."
-sudo docker run --rm -v "$ROOT:/project" -w /project "$IMAGE" \
+if command -v docker >/dev/null 2>&1; then
+  DOCKER=(docker)
+elif command -v sudo >/dev/null 2>&1 && sudo -n docker info >/dev/null 2>&1; then
+  DOCKER=(sudo docker)
+else
+  echo "Docker not available. Install docker or use devkitARM + make." >&2
+  exit 1
+fi
+
+"${DOCKER[@]}" run --rm -v "$ROOT:/project" -w /project "$IMAGE" \
   bash -lc 'make clean LIBBUTANO=vendor/butano/butano && make -j"$(nproc)" LIBBUTANO=vendor/butano/butano PYTHON=python3'
 
 cp -f thomas_bridge.gba rom/thomas_bridge.gba

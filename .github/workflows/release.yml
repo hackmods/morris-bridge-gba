@@ -29,9 +29,10 @@ jobs:
       - name: Clone Butano
         run: git clone --depth 1 https://github.com/GValiente/butano.git vendor/butano
 
-      - name: Generate sprites and compile thomas_bridge.gba
+      - name: Generate assets and compile thomas_bridge.gba
         run: |
           python3 tools/gen_graphics.py
+          python3 tools/gen_audio.py
           docker run --rm -v "$PWD:/project" -w /project sunbr0/gba-butano-base:4dd4b16 \
             bash -lc 'make -j"$(nproc)" LIBBUTANO=vendor/butano/butano PYTHON=python3'
           cp -f thomas_bridge.gba rom/thomas_bridge.gba

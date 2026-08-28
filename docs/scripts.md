@@ -13,9 +13,12 @@ Build `thomas_bridge.gba` using Docker (no local devkitARM required).
 **Steps:**
 
 1. Clone Butano into `vendor/butano` if missing
-2. Run `make` inside `sunbr0/gba-butano-base:4dd4b16`
-3. Copy `thomas_bridge.gba` → `rom/thomas_bridge.gba`
-4. Run `sync_rom_to_web.sh`
+2. Run `python3 tools/gen_graphics.py` and `python3 tools/gen_audio.py`
+3. Run `make` inside `sunbr0/gba-butano-base:4dd4b16`
+4. Copy `thomas_bridge.gba` → `rom/thomas_bridge.gba`
+5. Run `sync_rom_to_web.sh`
+
+**After major refactors:** commit the refreshed `rom/thomas_bridge.gba` — see [Building the ROM — Committing the prebuilt ROM](building-rom.md#committing-the-prebuilt-rom).
 
 **Override image:**
 

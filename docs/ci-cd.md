@@ -96,6 +96,7 @@ Reproduce CI ROM build:
 ```bash
 git clone --depth 1 https://github.com/GValiente/butano.git vendor/butano
 python3 tools/gen_graphics.py
+python3 tools/gen_audio.py
 docker run --rm -v "$PWD:/project" -w /project sunbr0/gba-butano-base:4dd4b16 \
   bash -lc 'make -j$(nproc) LIBBUTANO=vendor/butano/butano PYTHON=python3'
 cp -f thomas_bridge.gba rom/thomas_bridge.gba

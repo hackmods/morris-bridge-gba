@@ -2,6 +2,12 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-28 — Refresh prebuilt ROM + CI audio fix
+
+- CI `build-rom` now runs `tools/gen_audio.py` before `make` (fixes missing `bn_music_items_*` headers)
+- `scripts/build_rom.sh` runs `gen_audio.py`; documents when to commit `rom/thomas_bridge.gba`
+- Refreshed `rom/thomas_bridge.gba` after full expansion merge (five engines, SRAM, parallax, audio)
+
 ## 2026-08-28 — Expansion merge + E2E + train art (session close)
 
 Merged open PRs **#5–#10** into `main`; deleted remote `cursor/*` branches after integration.

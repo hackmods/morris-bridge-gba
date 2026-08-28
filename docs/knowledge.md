@@ -143,6 +143,23 @@ docs/knowledge.md           # ← this file
 
 ---
 
+## Prebuilt ROM policy
+
+**Rule:** After any major refactor, run `./scripts/build_rom.sh` and commit `rom/thomas_bridge.gba`.
+
+| Trigger | Examples |
+|---------|----------|
+| Gameplay / sim | `src/`, `include/`, level seeds, engine profiles |
+| Assets | `graphics/`, `tools/gen_graphics.py`, `tools/gen_audio.py` |
+| Build | Makefile flags, Butano version, audio backend |
+| Integration | Merging expansion/audio/graphics PRs into `main` |
+
+Skip for docs-only or web-only changes that do not alter the GBA binary.
+
+CI always builds a fresh ROM (`build-rom` job runs `gen_graphics.py` + `gen_audio.py` + Docker `make`). The committed copy is for friends who download the repo without Docker.
+
+---
+
 ## Where to start next session
 
 1. Run full local test suite (commands above).
