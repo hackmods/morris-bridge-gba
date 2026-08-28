@@ -41,6 +41,38 @@ enum class SimStatus
     no_path      ///< Start and end are not connected.
 };
 
+enum class StrutPreviewStatus
+{
+    ok,
+    same_node,
+    invalid_node,
+    duplicate,
+    struts_full,
+    zero_length,
+};
+
+struct StrutPreview
+{
+    StrutPreviewStatus status = StrutPreviewStatus::invalid_node;
+    bn::fixed length = 0;
+    bn::fixed max_tension = 0;
+};
+
+enum class UndoResult
+{
+    nothing,
+    removed_strut,
+    removed_node,
+};
+
+enum class RemoveNodeResult
+{
+    ok,
+    invalid,
+    anchored,
+    in_test,
+};
+
 struct Node
 {
     bn::fixed_point position;
@@ -109,6 +141,30 @@ public:
 
     [[nodiscard]] bn::optional<int> find_strut(int node_a, int node_b) const;
 
+    [[nodiscard]] StrutPreview preview_strut(int node_a, int node_b) const;
+
+    [[nodiscard]] UndoResult undo_last_edit();
+
+    [[nodiscard]] RemoveNodeResult remove_player_node(int node_id);
+
+    [[nodiscard]] int anchored_node_count() const
+    {
+        return _anchored_node_count;
+    }
+
+    [[nodiscard]] int player_node_count() const
+    {
+        return _nodes.size() - _anchored_node_count;
+    }
+
+    [[nodiscard]] int player_node_budget() const
+    {
+        const int budget = MAX_NODES - _anchored_node_count;
+        return budget > 0 ? budget : 0;
+    }
+
+    [[nodiscard]] bool is_player_node(int node_id) const;
+
     /**
      * @brief Begin test mode: snapshot struts, BFS a path, spawn the train.
      */
@@ -145,9 +201,19 @@ public:
     }
 
 private:
+    enum class LastEdit
+    {
+        none,
+        node,
+        strut,
+    };
+
     void _seed_level();
     void _break_strut(int strut_index);
     void _apply_tension(int strut_index, bn::fixed distance_along);
+    void _remove_strut_at(int strut_index);
+    void _record_node_edit(int node_id);
+    void _record_strut_edit(int strut_index);
     bool _bfs_path();
     void _start_falling();
 
@@ -163,6 +229,9 @@ private:
     bn::fixed _fall_vy = 0;
     bool _falling = false;
     int _level_index = 0;
+    int _anchored_node_count = 0;
+    LastEdit _last_edit = LastEdit::none;
+    int _last_edit_index = -1;
 };
 
 } // namespace bridge

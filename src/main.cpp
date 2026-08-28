@@ -4,6 +4,7 @@
 #include "bn_keypad.h"
 #include "bn_math.h"
 #include "bn_optional.h"
+#include "bn_sprite_builder.h"
 #include "bn_sprite_ptr.h"
 #include "bn_vector.h"
 
@@ -11,6 +12,8 @@
 #include "bn_sprite_items_banner.h"
 #include "bn_sprite_items_cloud.h"
 #include "bn_sprite_items_cursor.h"
+#include "bn_sprite_items_digit.h"
+#include "bn_sprite_items_ghost.h"
 #include "bn_sprite_items_ground.h"
 #include "bn_sprite_items_hatt.h"
 #include "bn_sprite_items_label.h"
@@ -18,13 +21,16 @@
 #include "bn_sprite_items_menu.h"
 #include "bn_sprite_items_node.h"
 #include "bn_sprite_items_panel.h"
+#include "bn_sprite_items_ring.h"
 #include "bn_sprite_items_splash.h"
 #include "bn_sprite_items_sky.h"
 #include "bn_sprite_items_strut.h"
+#include "bn_sprite_items_toast.h"
 #include "bn_sprite_items_train.h"
 #include "bn_sprite_items_water.h"
 
 #include "bridge_system.h"
+#include "physics.h"
 
 namespace
 {
@@ -34,6 +40,59 @@ constexpr bn::fixed CURSOR_FAST = 6;
 constexpr bn::fixed STRUT_SPRITE_WIDTH = 16;
 constexpr int CURSOR_REPEAT_DELAY = 10;
 constexpr int CURSOR_REPEAT_RATE = 3;
+constexpr bn::fixed GRID_STEP = 4;
+constexpr int TOAST_FRAMES = 90;
+
+constexpr int TOAST_DUP = 0;
+constexpr int TOAST_WEAK = 1;
+constexpr int TOAST_DEL = 2;
+
+constexpr int STRUT_IDLE = 0;
+constexpr int STRUT_HOT = 1;
+constexpr int STRUT_PREVIEW_OK = 2;
+constexpr int STRUT_PREVIEW_WEAK = 3;
+
+constexpr int Z_CURSOR = -32767;
+constexpr int Z_TOAST = -17;
+constexpr int Z_DIGIT = -19;
+constexpr int Z_RING = 4;
+constexpr int Z_NODE = 5;
+constexpr int Z_GHOST = 6;
+constexpr int Z_STRUT_PREVIEW = 9;
+constexpr int Z_STRUT = 10;
+
+enum class ToastKind
+{
+    none,
+    dup,
+    weak,
+    deleted,
+    full,
+    undo,
+};
+
+bn::sprite_ptr make_sprite(const bn::sprite_item& item, bn::fixed x, bn::fixed y, int z_order)
+{
+    bn::sprite_builder builder(item);
+    builder.set_position(x, y);
+    builder.set_z_order(z_order);
+    return builder.release_build();
+}
+
+bn::fixed clamp(bn::fixed value, bn::fixed lo, bn::fixed hi)
+{
+    if(value < lo)
+    {
+        return lo;
+    }
+
+    if(value > hi)
+    {
+        return hi;
+    }
+
+    return value;
+}
 
 constexpr int LABEL_BUILD = 0;
 constexpr int LABEL_TEST = 1;
@@ -60,19 +119,11 @@ constexpr int HATT_FURIOUS = 1;
 
 constexpr int MENU_PAUSE_BASE = 3;
 
-bn::fixed clamp(bn::fixed value, bn::fixed lo, bn::fixed hi)
+bn::fixed snap_grid(bn::fixed value)
 {
-    if(value < lo)
-    {
-        return lo;
-    }
-
-    if(value > hi)
-    {
-        return hi;
-    }
-
-    return value;
+    const int raw = value.shift_integer();
+    const int snapped = ((raw + 2) / 4) * 4;
+    return bn::fixed(snapped);
 }
 
 bn::fixed strut_angle_deg(bn::fixed_point a, bn::fixed_point b)
@@ -91,6 +142,23 @@ bn::fixed strut_angle_deg(bn::fixed_point a, bn::fixed_point b)
     return angle;
 }
 
+void position_strut_sprite(bn::sprite_ptr& sprite, bn::fixed_point a, bn::fixed_point b, int frame)
+{
+    const bn::fixed_point mid((a.x() + b.x()) / 2, (a.y() + b.y()) / 2);
+    bn::fixed scale = physics::distance(a, b).safe_division(STRUT_SPRITE_WIDTH);
+
+    if(scale < bn::fixed(1) / 8)
+    {
+        scale = bn::fixed(1) / 8;
+    }
+
+    sprite.set_position(mid);
+    sprite.set_item(bn::sprite_items::strut, frame);
+    sprite.set_horizontal_scale(scale);
+    sprite.set_rotation_angle_safe(strut_angle_deg(a, b));
+    sprite.set_visible(true);
+}
+
 class Game
 {
 public:
@@ -103,11 +171,15 @@ public:
         _logo(bn::sprite_items::logo.create_sprite(0, -52)),
         _menu_row(bn::sprite_items::menu.create_sprite(0, 8)),
         _menu_arrow(bn::sprite_items::cursor.create_sprite(-36, 8)),
-        _hatt(bn::sprite_items::hatt.create_sprite(52, 8))
+        _hatt(bn::sprite_items::hatt.create_sprite(52, 8)),
+        _ghost(make_sprite(bn::sprite_items::ghost, 0, 0, Z_GHOST)),
+        _ring(make_sprite(bn::sprite_items::ring, 0, 0, Z_RING)),
+        _preview_strut(make_sprite(bn::sprite_items::strut, 0, 0, Z_STRUT_PREVIEW)),
+        _toast(make_sprite(bn::sprite_items::toast, 0, 52, Z_TOAST))
     {
         bn::bg_palettes::set_transparent_color(bn::color(8, 14, 20));
 
-        _cursor.set_z_order(-32767);
+        _cursor.set_z_order(Z_CURSOR);
         _train.set_z_order(-15);
         _train.set_visible(false);
         _label.set_z_order(-18);
@@ -118,6 +190,15 @@ public:
         _menu_row.set_z_order(-25);
         _menu_arrow.set_z_order(-24);
         _hatt.set_z_order(-23);
+        _ghost.set_visible(false);
+        _ring.set_visible(false);
+        _preview_strut.set_visible(false);
+        _toast.set_visible(false);
+
+        _node_count_digits.push_back(make_sprite(bn::sprite_items::digit, -20, 66, Z_DIGIT));
+        _node_count_digits.push_back(make_sprite(bn::sprite_items::digit, -12, 66, Z_DIGIT));
+        _strut_count_digits.push_back(make_sprite(bn::sprite_items::digit, 12, 66, Z_DIGIT));
+        _strut_count_digits.push_back(make_sprite(bn::sprite_items::digit, 20, 66, Z_DIGIT));
 
         _place_splash_tiles();
         _place_backdrop();
@@ -650,8 +731,110 @@ private:
 
         _sync_node_sprites();
         _sync_strut_sprites();
+        _update_preview();
         _update_hud();
+        _update_toast();
         _animate_water();
+    }
+
+    void _set_counter(bn::vector<bn::sprite_ptr, 2>& digits, int value, bn::fixed x_base)
+    {
+        const int clamped = value < 0 ? 0 : (value > 99 ? 99 : value);
+        digits[0].set_item(bn::sprite_items::digit, clamped / 10);
+        digits[0].set_position(x_base, 66);
+        digits[0].set_visible(_screen == Screen::playing);
+        digits[1].set_item(bn::sprite_items::digit, clamped % 10);
+        digits[1].set_position(x_base + 8, 66);
+        digits[1].set_visible(_screen == Screen::playing);
+    }
+
+    void _show_toast(ToastKind kind)
+    {
+        _toast_kind = kind;
+        _toast_timer = TOAST_FRAMES;
+        _toast.set_visible(_screen == Screen::playing);
+
+        switch(kind)
+        {
+            case ToastKind::dup:
+                _toast.set_item(bn::sprite_items::toast, TOAST_DUP);
+                break;
+
+            case ToastKind::weak:
+                _toast.set_item(bn::sprite_items::toast, TOAST_WEAK);
+                break;
+
+            case ToastKind::deleted:
+                _toast.set_item(bn::sprite_items::toast, TOAST_DEL);
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    void _update_toast()
+    {
+        if(_toast_timer <= 0 || _screen != Screen::playing)
+        {
+            _toast.set_visible(false);
+            _toast_kind = ToastKind::none;
+            return;
+        }
+
+        --_toast_timer;
+        _toast.set_visible(true);
+    }
+
+    void _update_preview()
+    {
+        if(_screen != Screen::playing || _play_mode != PlayMode::build || !_selected)
+        {
+            _preview_strut.set_visible(false);
+            return;
+        }
+
+        const auto& nodes = _bridge.nodes();
+        const bn::fixed_point from = nodes[_selected.value()].position;
+        bn::fixed_point to = _cursor_pos;
+        bn::fixed max_tension = 0;
+        bool show = false;
+
+        const bn::optional<int> hovered = _bridge.find_node_near(_cursor_pos);
+
+        if(hovered && hovered.value() != _selected.value())
+        {
+            const bridge::StrutPreview preview =
+                _bridge.preview_strut(_selected.value(), hovered.value());
+
+            if(preview.status == bridge::StrutPreviewStatus::ok)
+            {
+                to = nodes[hovered.value()].position;
+                max_tension = preview.max_tension;
+                show = true;
+            }
+        }
+        else if(!hovered)
+        {
+            to = bn::fixed_point(snap_grid(_cursor_pos.x()), snap_grid(_cursor_pos.y()));
+            const bn::fixed length = physics::distance(from, to);
+
+            if(length > 0)
+            {
+                max_tension = physics::max_tension_for_length(length);
+                show = true;
+            }
+        }
+
+        if(show)
+        {
+            const int frame = max_tension < physics::BASE_WEIGHT ?
+                STRUT_PREVIEW_WEAK : STRUT_PREVIEW_OK;
+            position_strut_sprite(_preview_strut, from, to, frame);
+            return;
+        }
+
+        _preview_strut.set_visible(false);
     }
 
     void _place_scenery()
@@ -738,6 +921,16 @@ private:
         _cursor.set_position(draw_at);
         _cursor.set_visible(true);
 
+        if(!hovered)
+        {
+            _ghost.set_position(_cursor_pos);
+            _ghost.set_visible(true);
+        }
+        else
+        {
+            _ghost.set_visible(false);
+        }
+
         if(bn::keypad::a_pressed())
         {
             _handle_confirm(hovered, draw_at);
@@ -745,7 +938,36 @@ private:
 
         if(bn::keypad::b_pressed())
         {
-            _selected.reset();
+            if(hovered && _bridge.is_player_node(hovered.value()))
+            {
+                if(_bridge.remove_player_node(hovered.value()) == bridge::RemoveNodeResult::ok)
+                {
+                    if(_selected && _selected.value() == hovered.value())
+                    {
+                        _selected.reset();
+                    }
+                    else if(_selected && _selected.value() > hovered.value())
+                    {
+                        _selected = _selected.value() - 1;
+                    }
+
+                    _show_toast(ToastKind::deleted);
+                }
+            }
+            else
+            {
+                _selected.reset();
+            }
+        }
+
+        if(bn::keypad::l_pressed())
+        {
+            const bridge::UndoResult undone = _bridge.undo_last_edit();
+
+            if(undone == bridge::UndoResult::removed_node)
+            {
+                _selected.reset();
+            }
         }
 
         if(bn::keypad::select_pressed())
@@ -775,11 +997,20 @@ private:
         }
         else
         {
+            if(_bridge.player_node_count() >= _bridge.player_node_budget())
+            {
+                _show_toast(ToastKind::full);
+                return;
+            }
+
+            const bn::fixed snapped_x = snap_grid(place_at.x());
+            const bn::fixed snapped_y = snap_grid(place_at.y());
             const bn::optional<int> created =
-                _bridge.add_node(place_at.x(), place_at.y(), false);
+                _bridge.add_node(snapped_x, snapped_y, false);
 
             if(!created)
             {
+                _show_toast(ToastKind::full);
                 return;
             }
 
@@ -788,7 +1019,30 @@ private:
 
         if(_selected && _selected.value() != node_id)
         {
-            (void)_bridge.add_strut(_selected.value(), node_id);
+            const bridge::StrutPreview preview = _bridge.preview_strut(_selected.value(), node_id);
+
+            switch(preview.status)
+            {
+                case bridge::StrutPreviewStatus::duplicate:
+                    _show_toast(ToastKind::dup);
+                    break;
+
+                case bridge::StrutPreviewStatus::struts_full:
+                    _show_toast(ToastKind::full);
+                    break;
+
+                case bridge::StrutPreviewStatus::ok:
+                    if(preview.max_tension < physics::BASE_WEIGHT)
+                    {
+                        _show_toast(ToastKind::weak);
+                    }
+
+                    (void)_bridge.add_strut(_selected.value(), node_id);
+                    break;
+
+                default:
+                    break;
+            }
         }
 
         _selected = node_id;
@@ -799,6 +1053,9 @@ private:
         _play_mode = PlayMode::test;
         _selected.reset();
         _cursor.set_visible(false);
+        _ghost.set_visible(false);
+        _ring.set_visible(false);
+        _preview_strut.set_visible(false);
         _train.set_visible(true);
         _train_prev_x = _bridge.train_position().x();
         (void)_bridge.begin_test();
@@ -878,14 +1135,13 @@ private:
 
         while(_node_sprites.size() < nodes.size())
         {
-            _node_sprites.push_back(bn::sprite_items::node.create_sprite(0, 0));
+            _node_sprites.push_back(make_sprite(bn::sprite_items::node, 0, 0, Z_NODE));
         }
 
         for(int i = 0; i < nodes.size(); ++i)
         {
             bn::sprite_ptr& sprite = _node_sprites[i];
             sprite.set_position(nodes[i].position);
-            sprite.set_z_order(5);
 
             if(nodes[i].is_anchored)
             {
@@ -896,9 +1152,19 @@ private:
                 sprite.set_item(bn::sprite_items::node);
             }
 
-            const bool selected = _selected && _selected.value() == i;
-            const bool blink_off = selected && ((_frame / 8) % 2 == 0);
-            sprite.set_visible(_screen == Screen::playing && !blink_off);
+            sprite.set_visible(_screen == Screen::playing);
+        }
+
+        if(_screen == Screen::playing && _play_mode == PlayMode::build && _selected)
+        {
+            _ring.set_position(nodes[_selected.value()].position);
+            _ring.set_visible(true);
+            const bn::fixed pulse = (_frame % 24 < 12) ? bn::fixed(1) : bn::fixed(9) / 8;
+            _ring.set_scale(pulse);
+        }
+        else
+        {
+            _ring.set_visible(false);
         }
     }
 
@@ -914,9 +1180,7 @@ private:
 
         while(_strut_sprites.size() < struts.size())
         {
-            bn::sprite_ptr sprite = bn::sprite_items::strut.create_sprite(0, 0);
-            sprite.set_z_order(10);
-            _strut_sprites.push_back(sprite);
+            _strut_sprites.push_back(make_sprite(bn::sprite_items::strut, 0, 0, Z_STRUT));
         }
 
         for(int i = 0; i < struts.size(); ++i)
@@ -924,21 +1188,10 @@ private:
             const bridge::Strut& strut = struts[i];
             const bn::fixed_point a = nodes[strut.node_a].position;
             const bn::fixed_point b = nodes[strut.node_b].position;
-            const bn::fixed_point mid((a.x() + b.x()) / 2, (a.y() + b.y()) / 2);
-
-            bn::fixed scale = strut.length.safe_division(STRUT_SPRITE_WIDTH);
-
-            if(scale < bn::fixed(1) / 8)
-            {
-                scale = bn::fixed(1) / 8;
-            }
-
-            const bool hot = strut.current_tension * 2 > strut.max_tension;
+            const bool hot = _play_mode == PlayMode::test &&
+                strut.current_tension * 2 > strut.max_tension;
             bn::sprite_ptr& sprite = _strut_sprites[i];
-            sprite.set_position(mid);
-            sprite.set_item(bn::sprite_items::strut, hot ? 1 : 0);
-            sprite.set_horizontal_scale(scale);
-            sprite.set_rotation_angle_safe(strut_angle_deg(a, b));
+            position_strut_sprite(sprite, a, b, hot ? STRUT_HOT : STRUT_IDLE);
             sprite.set_visible(_screen == Screen::playing);
         }
     }
@@ -970,6 +1223,8 @@ private:
         }
 
         _label.set_item(bn::sprite_items::label, frame);
+        _set_counter(_node_count_digits, _bridge.player_node_count(), -20);
+        _set_counter(_strut_count_digits, _bridge.struts().size(), 12);
     }
 
     void _animate_train()
@@ -995,6 +1250,8 @@ private:
     int _menu_down_counter = 0;
     bool _train_facing_right = true;
     bn::fixed _train_prev_x = 0;
+    int _toast_timer = 0;
+    ToastKind _toast_kind = ToastKind::none;
 
     bn::sprite_ptr _cursor;
     bn::sprite_ptr _train;
@@ -1005,6 +1262,12 @@ private:
     bn::sprite_ptr _menu_row;
     bn::sprite_ptr _menu_arrow;
     bn::sprite_ptr _hatt;
+    bn::sprite_ptr _ghost;
+    bn::sprite_ptr _ring;
+    bn::sprite_ptr _preview_strut;
+    bn::sprite_ptr _toast;
+    bn::vector<bn::sprite_ptr, 2> _node_count_digits;
+    bn::vector<bn::sprite_ptr, 2> _strut_count_digits;
     bn::vector<bn::sprite_ptr, bridge::MAX_NODES> _node_sprites;
     bn::vector<bn::sprite_ptr, bridge::MAX_STRUTS> _strut_sprites;
     bn::vector<bn::sprite_ptr, 4> _ground;

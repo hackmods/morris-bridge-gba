@@ -86,6 +86,16 @@ Span too long — max tension rating drops with length. Add intermediate nodes o
 - Duplicate struts rejected
 - Max 32 struts
 
+### `No more sprite sort layers available` (Butano assert)
+
+Butano groups sprites into sort layers by **background priority + z-order**. The Makefile sets `BN_CFG_SPRITES_MAX_SORT_LAYERS=32`, and sprites are created with the correct `z_order` up front via `make_sprite()` in [`src/main.cpp`](../src/main.cpp).
+
+After changing Makefile flags, rebuild from scratch:
+
+```bash
+make clean LIBBUTANO=vendor/butano/butano && make -j$(nproc) LIBBUTANO=vendor/butano/butano
+```
+
 ## CI
 
 ### Release workflow deploy job red, others green

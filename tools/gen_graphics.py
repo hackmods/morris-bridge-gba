@@ -152,6 +152,16 @@ FONT = {
     "'": ["00100", "00100", "01000", "00000", "00000"],
     "!": ["00100", "00100", "00100", "00000", "00100"],
     " ": ["00000", "00000", "00000", "00000", "00000"],
+    "0": ["01110", "10001", "10001", "10001", "01110"],
+    "1": ["00100", "01100", "00100", "00100", "01110"],
+    "2": ["01110", "10001", "00110", "01000", "11111"],
+    "3": ["11110", "00001", "01110", "00001", "11110"],
+    "4": ["10010", "10010", "11111", "00010", "00010"],
+    "5": ["11111", "10000", "11110", "00001", "11110"],
+    "6": ["01110", "10000", "11110", "10001", "01110"],
+    "7": ["11111", "00001", "00010", "00100", "01000"],
+    "8": ["01110", "10001", "01110", "10001", "01110"],
+    "9": ["01110", "10001", "01111", "00001", "01110"],
 }
 
 
@@ -485,17 +495,68 @@ def make_anchor() -> None:
 
 
 def make_strut() -> None:
-    w, h = 16, 32
+    w, h = 16, 64
     px = fill(w, h)
-    for frame, hot in ((0, False), (1, True)):
+    frames = (
+        (5, 12, 1),
+        (9, 4, 1),
+        (8, 2, 1),
+        (9, 3, 1),
+    )
+    for frame, colors in enumerate(frames):
         y0 = frame * 16
-        body, hi, lo = (5, 12, 1) if not hot else (9, 4, 1)
+        body, hi, lo = colors
         rect(px, w, 0, y0 + 6, 16, y0 + 10, body)
         hline(px, w, 0, 16, y0 + 7, hi)
         hline(px, w, 0, 16, y0 + 9, lo)
         put(px, w, 0, y0 + 6, 1)
         put(px, w, 15, y0 + 6, 1)
     write_indexed_bmp(os.path.join(GFX, "strut.bmp"), w, h, px)
+
+
+def make_ghost() -> None:
+    w, h = 8, 8
+    px = fill(w, h)
+    for y in range(h):
+        for x in range(w):
+            d = abs(x - 3) + abs(y - 3)
+            if d == 3:
+                put(px, w, x, y, 8)
+    write_indexed_bmp(os.path.join(GFX, "ghost.bmp"), w, h, px)
+
+
+def make_ring() -> None:
+    w, h = 16, 16
+    px = fill(w, h)
+    for y in range(h):
+        for x in range(w):
+            d2 = (x - 7) * (x - 7) + (y - 7) * (y - 7)
+            if 16 <= d2 <= 36:
+                put(px, w, x, y, 3)
+            elif 9 <= d2 <= 12:
+                put(px, w, x, y, 3)
+    write_indexed_bmp(os.path.join(GFX, "ring.bmp"), w, h, px)
+
+
+def make_digit() -> None:
+    w, h = 80, 8
+    px = fill(w, h)
+    digits = "0123456789"
+    for i, ch in enumerate(digits):
+        blit_text(px, w, ch, i * 8 + 1, 1, 2, 1)
+    write_indexed_bmp(os.path.join(GFX, "digit.bmp"), w, h, px)
+
+
+def make_toast() -> None:
+    w, fh = 48, 8
+    texts = ("DUP!", "WEAK", "DEL")
+    px = fill(w, fh * len(texts))
+    colors = (9, 3, 10)
+    for i, text in enumerate(texts):
+        y0 = i * fh
+        panel_box(px, w, 1, y0 + 1, 47, y0 + 7)
+        center_text(px, w, text, y0 + 1, colors[i], 1)
+    write_indexed_bmp(os.path.join(GFX, "toast.bmp"), w, fh * len(texts), px)
 
 
 def make_train() -> None:
@@ -604,10 +665,14 @@ def main() -> None:
     make_cursor()
     make_node()
     make_anchor()
+    make_ghost()
+    make_ring()
     make_strut()
     make_train()
     make_ground()
     make_water()
+    make_digit()
+    make_toast()
     make_labels()
     make_banner()
     make_menu()
@@ -622,10 +687,14 @@ def main() -> None:
         ("cursor.json", None),
         ("node.json", None),
         ("anchor.json", None),
+        ("ghost.json", None),
+        ("ring.json", None),
         ("strut.json", {"height": 16}),
         ("train.json", {"height": 16}),
         ("ground.json", None),
         ("water.json", {"height": 8}),
+        ("digit.json", {"width": 8}),
+        ("toast.json", {"height": 8, "width": 48}),
         ("label.json", {"height": 8}),
         ("banner.json", {"height": 32}),
         ("menu.json", {"height": 32}),
