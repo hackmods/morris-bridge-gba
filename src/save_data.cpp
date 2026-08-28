@@ -31,6 +31,25 @@ bool decode_v1(progress::Progress& progress, const std::uint8_t in[SIZE])
     return true;
 }
 
+bool decode_v2(progress::Progress& progress, const std::uint8_t in[SIZE])
+{
+    if(in[15] != checksum(in, 15))
+    {
+        return false;
+    }
+
+    uint16_t costs[level::COUNT];
+
+    for(int i = 0; i < level::COUNT; ++i)
+    {
+        const int base = 9 + i * 2;
+        costs[i] = uint16_t(in[base] | (uint16_t(in[base + 1]) << 8));
+    }
+
+    progress.apply_save_v2(in[5], in[6], in[7], in[8], costs);
+    return true;
+}
+
 } // namespace
 
 bool encode(const progress::Progress& progress, std::uint8_t out[SIZE])
@@ -54,7 +73,11 @@ bool encode(const progress::Progress& progress, std::uint8_t out[SIZE])
         out[base + 1] = std::uint8_t((costs[i] >> 8) & 0xFF);
     }
 
-    out[15] = checksum(out, 15);
+    out[15] = progress.intro_seen_mask();
+    out[16] = 0;
+    out[17] = 0;
+    out[18] = 0;
+    out[19] = checksum(out, 19);
     return true;
 }
 
@@ -73,12 +96,17 @@ bool decode(progress::Progress& progress, const std::uint8_t in[SIZE])
         return decode_v1(progress, in);
     }
 
+    if(in[4] == VERSION_V2)
+    {
+        return decode_v2(progress, in);
+    }
+
     if(in[4] != VERSION)
     {
         return false;
     }
 
-    if(in[15] != checksum(in, 15))
+    if(in[19] != checksum(in, 19))
     {
         return false;
     }
@@ -91,7 +119,7 @@ bool decode(progress::Progress& progress, const std::uint8_t in[SIZE])
         costs[i] = uint16_t(in[base] | (uint16_t(in[base + 1]) << 8));
     }
 
-    progress.apply_save_v2(in[5], in[6], in[7], in[8], costs);
+    progress.apply_save_v3(in[5], in[6], in[7], in[8], costs, in[15]);
     return true;
 }
 

@@ -150,6 +150,7 @@ constexpr int LABEL_AGAIN = 15;
 constexpr int LABEL_NEW = 16;
 constexpr int LABEL_TRACK = 17;
 constexpr int LABEL_ROD = 18;
+constexpr int LABEL_INTRO_BASE = 19;
 
 constexpr int BANNER_LEVEL_SELECT = 0;
 constexpr int BANNER_HATT_OK = 1;
@@ -286,6 +287,10 @@ public:
                 _update_engine_select();
                 break;
 
+            case Screen::level_intro:
+                _update_level_intro();
+                break;
+
             case Screen::playing:
                 _update_playing();
                 break;
@@ -316,6 +321,7 @@ private:
         title,
         level_select,
         engine_select,
+        level_intro,
         playing,
         pause,
         level_complete,
@@ -822,6 +828,59 @@ private:
         _audio.play(audio::MusicCue::yard);
     }
 
+    void _begin_pending_level()
+    {
+        const level::Def& def = level::get(_pending_level);
+
+        if(def.intro_dialog_id > 0 && ! _progress.is_intro_seen(_pending_level))
+        {
+            _show_level_intro(_pending_level);
+            return;
+        }
+
+        _start_level(_pending_level);
+    }
+
+    void _show_level_intro(const int level_index)
+    {
+        const level::Def& def = level::get(level_index);
+        _screen = Screen::level_intro;
+        _hide_gameplay();
+        _set_splash_visible(false);
+        _set_backdrop_visible(true);
+        _banner.set_visible(true);
+        _banner.set_item(bn::sprite_items::banner, BANNER_LEVEL_SELECT);
+        _banner.set_position(0, -40);
+        _panel.set_visible(true);
+        _panel.set_item(bn::sprite_items::panel, PANEL_DIALOG);
+        _panel.set_position(0, 48);
+        _menu_row.set_visible(false);
+        _menu_arrow.set_visible(false);
+        _cursor.set_visible(false);
+        _train.set_visible(true);
+        _train.set_position(-56, game::TRACK_Y + game::TRAIN_Y_OFFSET);
+        _sync_train_sprite();
+        _hatt.set_visible(true);
+        _hatt.set_position(56, 44);
+        _hatt.set_item(bn::sprite_items::hatt, HATT_STERN);
+        _portrait.set_visible(false);
+        _set_weight_digits(0, false);
+        _node_count_digits[0].set_visible(false);
+        _node_count_digits[1].set_visible(false);
+        _strut_count_digits[0].set_visible(false);
+        _strut_count_digits[1].set_visible(false);
+
+        const int label_index = LABEL_INTRO_BASE + int(def.intro_dialog_id - 1) * 2;
+        _label.set_visible(true);
+        _label.set_position(0, 44);
+        _label.set_item(bn::sprite_items::label, label_index);
+        _hint_label.set_visible(true);
+        _hint_label.set_position(0, 54);
+        _hint_label.set_item(bn::sprite_items::label, label_index + 1);
+        _hint_secondary.set_visible(false);
+        _audio.play(audio::MusicCue::yard);
+    }
+
     void _start_level(int level_index)
     {
         _selected_level = level_index;
@@ -1126,7 +1185,7 @@ private:
         {
             if(_progress.is_engine_unlocked(_selected_engine))
             {
-                _start_level(_pending_level);
+                _begin_pending_level();
             }
 
             return;
@@ -1135,6 +1194,16 @@ private:
         if(bn::keypad::b_pressed())
         {
             _show_level_select();
+        }
+    }
+
+    void _update_level_intro()
+    {
+        if(bn::keypad::a_pressed() || bn::keypad::start_pressed() || bn::keypad::b_pressed())
+        {
+            _progress.mark_intro_seen(_pending_level);
+            _persist_progress();
+            _start_level(_pending_level);
         }
     }
 

@@ -88,6 +88,17 @@ int main()
     assert(loaded.best_cost(0) == 0);
     std::cout << "  ok v1 save migrates with zero stars\n";
 
+    progress.reset();
+    progress.mark_intro_seen(0);
+    progress.mark_intro_seen(2);
+    assert(save_data::encode(progress, buffer));
+    loaded.reset();
+    assert(save_data::decode(loaded, buffer));
+    assert(loaded.is_intro_seen(0));
+    assert(! loaded.is_intro_seen(1));
+    assert(loaded.is_intro_seen(2));
+    std::cout << "  ok v3 round-trip intro seen flags\n";
+
     std::cout << "All save_data tests passed.\n";
     return 0;
 }

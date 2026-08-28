@@ -46,6 +46,7 @@ constexpr Def DEFINITIONS[COUNT] = {
         bn::fixed(1) / 4,
         bn::fixed(1) / 2,
         ALLOW_TRACK,
+        1,
         5,
     },
     {
@@ -58,6 +59,7 @@ constexpr Def DEFINITIONS[COUNT] = {
         bn::fixed(1) / 3,
         bn::fixed(3) / 5,
         ALLOW_TRACK_AND_BRACE,
+        2,
         11,
     },
     {
@@ -70,6 +72,7 @@ constexpr Def DEFINITIONS[COUNT] = {
         bn::fixed(1) / 3,
         bn::fixed(2) / 3,
         ALLOW_TRACK_AND_BRACE,
+        3,
         12,
     },
 };
