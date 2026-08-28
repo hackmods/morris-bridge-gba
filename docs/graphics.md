@@ -4,14 +4,20 @@
 
 | File | Size | Role |
 |------|------|------|
-| `cursor.bmp` | 8×8 | Build-mode crosshair |
+| `cursor.bmp` | 16×16 | Build-mode corner brackets |
+| `ghost.bmp` | 8×8 | Placement preview node |
+| `ring.bmp` | 16×16 | Selection pulse ring |
 | `node.bmp` | 8×8 | Structural pin |
-| `strut.bmp` | 16×1 (line) | Beam segment (scaled/rotated) |
+| `strut.bmp` | 16×16 ×4 frames | Beam (idle, stressed, preview ok/weak) |
 | `train.bmp` | 16×16 | Tank engine |
 | `anchor.bmp` | 8×8 | Bank anchor marker |
-| `ground.bmp` | — | Canyon bank tiles |
-| `water.bmp` | — | Gap / water backdrop |
-| `label.bmp` | — | HUD text tiles (BUILD, TEST, WIN, etc.) |
+| `sky.bmp` | 32×16 | Canyon sky strip |
+| `ground.bmp` | 32×16 | Canyon bank tiles |
+| `water.bmp` | 32×8 ×2 frames | Animated gap / water |
+| `panel.bmp` | 32×8 | HUD bar segment |
+| `digit.bmp` | 8×8 ×10 | Node/strut counters |
+| `label.bmp` | 32×8 ×7 | HUD status text |
+| `toast.bmp` | 48×8 ×3 | Inline feedback (DUP, WEAK, DEL) |
 
 Each BMP has a matching **`.json`** in [`graphics/`](../graphics/) with `"type": "sprite"` (or bg type where applicable).
 

@@ -178,6 +178,42 @@ int main()
         std::cout << "  ok disconnected banks report no_path\n";
     }
 
+    {
+        bridge::BridgeSystem system;
+        assert(system.anchored_node_count() == 8);
+        assert(system.player_node_budget() == 8);
+
+        const bn::optional<int> mid = system.add_node(0, 16, false);
+        assert(mid.has_value());
+        assert(system.player_node_count() == 1);
+
+        const bridge::StrutPreview preview = system.preview_strut(bridge::START_NODE, mid.value());
+        assert(preview.status == bridge::StrutPreviewStatus::ok);
+        assert(preview.length > 0);
+        assert(preview.max_tension > 0);
+
+        const bn::optional<int> beam = system.add_strut(bridge::START_NODE, mid.value());
+        assert(beam.has_value());
+        assert(system.preview_strut(bridge::START_NODE, mid.value()).status ==
+               bridge::StrutPreviewStatus::duplicate);
+
+        assert(system.undo_last_edit() == bridge::UndoResult::removed_strut);
+        assert(system.struts().empty());
+        assert(system.undo_last_edit() == bridge::UndoResult::nothing);
+        assert(system.player_node_count() == 1);
+
+        const bn::optional<int> solo = system.add_node(-8, 24, false);
+        assert(solo.has_value());
+        assert(system.undo_last_edit() == bridge::UndoResult::removed_node);
+        assert(system.player_node_count() == 1);
+
+        const bn::optional<int> again = system.add_node(0, 20, false);
+        assert(again.has_value());
+        assert(system.remove_player_node(again.value()) == bridge::RemoveNodeResult::ok);
+        assert(system.remove_player_node(bridge::START_NODE) == bridge::RemoveNodeResult::anchored);
+        std::cout << "  ok undo, preview, and delete helpers\n";
+    }
+
     std::cout << "All host physics tests passed.\n";
     return 0;
 }

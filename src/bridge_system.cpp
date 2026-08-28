@@ -31,14 +31,18 @@ void BridgeSystem::reset_level()
     _path_index = 0;
     _fall_vy = 0;
     _falling = false;
+    _last_edit = LastEdit::none;
+    _last_edit_index = -1;
     _seed_canyon();
     _train_position = _nodes[START_NODE].position;
 }
 
 void BridgeSystem::_seed_canyon()
 {
+    _anchored_node_count = 0;
+
     // Left bank (start) then right bank (end). Additional anchors give Leo
-    // places to pin the deck without spending his 16-node budget.
+    // places to pin the deck without spending his node budget.
     // Butano screen space is centred: x in [-120, 120), y in [-80, 80).
     (void)add_node(-88, 16, true); // START_NODE
     (void)add_node(88, 16, true);  // END_NODE
@@ -61,6 +65,16 @@ bn::optional<int> BridgeSystem::add_node(bn::fixed x, bn::fixed y, bool is_ancho
     node.position = bn::fixed_point(x, y);
     node.is_anchored = is_anchored;
     _nodes.push_back(node);
+
+    if(is_anchored)
+    {
+        ++_anchored_node_count;
+    }
+    else
+    {
+        _record_node_edit(_nodes.size() - 1);
+    }
+
     return bn::optional<int>(_nodes.size() - 1);
 }
 
@@ -103,6 +117,7 @@ bn::optional<int> BridgeSystem::add_strut(int node_a, int node_b)
     strut.current_tension = 0;
     strut.max_tension = physics::max_tension_for_length(length);
     _struts.push_back(strut);
+    _record_strut_edit(_struts.size() - 1);
     return bn::optional<int>(_struts.size() - 1);
 }
 
@@ -124,6 +139,210 @@ bn::optional<int> BridgeSystem::find_node_near(bn::fixed_point point) const
     }
 
     return best;
+}
+
+StrutPreview BridgeSystem::preview_strut(int node_a, int node_b) const
+{
+    StrutPreview preview;
+
+    if(node_a == node_b)
+    {
+        preview.status = StrutPreviewStatus::same_node;
+        return preview;
+    }
+
+    if(node_a < 0 || node_b < 0 || node_a >= _nodes.size() || node_b >= _nodes.size())
+    {
+        preview.status = StrutPreviewStatus::invalid_node;
+        return preview;
+    }
+
+    if(_struts.full())
+    {
+        preview.status = StrutPreviewStatus::struts_full;
+        return preview;
+    }
+
+    const int lo = min_id(node_a, node_b);
+    const int hi = max_id(node_a, node_b);
+
+    if(find_strut(lo, hi))
+    {
+        preview.status = StrutPreviewStatus::duplicate;
+        return preview;
+    }
+
+    const bn::fixed length = physics::distance(_nodes[lo].position, _nodes[hi].position);
+
+    if(length <= 0)
+    {
+        preview.status = StrutPreviewStatus::zero_length;
+        return preview;
+    }
+
+    preview.status = StrutPreviewStatus::ok;
+    preview.length = length;
+    preview.max_tension = physics::max_tension_for_length(length);
+    return preview;
+}
+
+UndoResult BridgeSystem::undo_last_edit()
+{
+    if(_status != SimStatus::idle)
+    {
+        return UndoResult::nothing;
+    }
+
+    switch(_last_edit)
+    {
+        case LastEdit::none:
+            return UndoResult::nothing;
+
+        case LastEdit::strut:
+        {
+            if(_last_edit_index < 0 || _last_edit_index >= _struts.size())
+            {
+                _last_edit = LastEdit::none;
+                _last_edit_index = -1;
+                return UndoResult::nothing;
+            }
+
+            _remove_strut_at(_last_edit_index);
+            _last_edit = LastEdit::none;
+            _last_edit_index = -1;
+            return UndoResult::removed_strut;
+        }
+
+        case LastEdit::node:
+        {
+            if(_last_edit_index < 0 || _last_edit_index >= _nodes.size() ||
+               _nodes[_last_edit_index].is_anchored)
+            {
+                _last_edit = LastEdit::none;
+                _last_edit_index = -1;
+                return UndoResult::nothing;
+            }
+
+            const RemoveNodeResult removed = remove_player_node(_last_edit_index);
+
+            if(removed == RemoveNodeResult::ok)
+            {
+                _last_edit = LastEdit::none;
+                _last_edit_index = -1;
+                return UndoResult::removed_node;
+            }
+
+            return UndoResult::nothing;
+        }
+
+        default:
+            return UndoResult::nothing;
+    }
+}
+
+RemoveNodeResult BridgeSystem::remove_player_node(int node_id)
+{
+    if(_status != SimStatus::idle)
+    {
+        return RemoveNodeResult::in_test;
+    }
+
+    if(node_id < 0 || node_id >= _nodes.size())
+    {
+        return RemoveNodeResult::invalid;
+    }
+
+    if(_nodes[node_id].is_anchored)
+    {
+        return RemoveNodeResult::anchored;
+    }
+
+    for(int i = _struts.size() - 1; i >= 0; --i)
+    {
+        const Strut& strut = _struts[i];
+
+        if(strut.node_a == node_id || strut.node_b == node_id)
+        {
+            _remove_strut_at(i);
+        }
+    }
+
+    for(int i = node_id + 1; i < _nodes.size(); ++i)
+    {
+        _nodes[i - 1] = _nodes[i];
+    }
+
+    _nodes.pop_back();
+
+    for(int i = 0; i < _struts.size(); ++i)
+    {
+        Strut& strut = _struts[i];
+
+        if(strut.node_a > node_id)
+        {
+            --strut.node_a;
+        }
+
+        if(strut.node_b > node_id)
+        {
+            --strut.node_b;
+        }
+    }
+
+    if(_last_edit == LastEdit::node)
+    {
+        if(_last_edit_index == node_id)
+        {
+            _last_edit = LastEdit::none;
+            _last_edit_index = -1;
+        }
+        else if(_last_edit_index > node_id)
+        {
+            --_last_edit_index;
+        }
+    }
+
+    return RemoveNodeResult::ok;
+}
+
+bool BridgeSystem::is_player_node(int node_id) const
+{
+    return node_id >= 0 && node_id < _nodes.size() && !_nodes[node_id].is_anchored;
+}
+
+void BridgeSystem::_record_node_edit(int node_id)
+{
+    _last_edit = LastEdit::node;
+    _last_edit_index = node_id;
+}
+
+void BridgeSystem::_record_strut_edit(int strut_index)
+{
+    _last_edit = LastEdit::strut;
+    _last_edit_index = strut_index;
+}
+
+void BridgeSystem::_remove_strut_at(int strut_index)
+{
+    for(int i = strut_index + 1; i < _struts.size(); ++i)
+    {
+        _struts[i - 1] = _struts[i];
+    }
+
+    _struts.pop_back();
+
+    if(_last_edit == LastEdit::strut)
+    {
+        if(_last_edit_index == strut_index)
+        {
+            _last_edit = LastEdit::none;
+            _last_edit_index = -1;
+        }
+        else if(_last_edit_index > strut_index)
+        {
+            --_last_edit_index;
+        }
+    }
 }
 
 bn::optional<int> BridgeSystem::find_strut(int node_a, int node_b) const

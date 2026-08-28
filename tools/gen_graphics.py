@@ -7,6 +7,7 @@ so they can share a 4bpp sprite palette on hardware.
 
 from __future__ import annotations
 
+import json
 import os
 import struct
 
@@ -107,10 +108,16 @@ def circle(px: list[int], w: int, cx: int, cy: int, radius: int, color: int) -> 
                 put(px, w, x, y, color)
 
 
+def ring(px: list[int], w: int, cx: int, cy: int, outer: int, inner: int, color: int) -> None:
+    circle(px, w, cx, cy, outer, color)
+    circle(px, w, cx, cy, inner, 0)
+
+
 # 5x5 caps used for HUD labels.
 FONT = {
     "A": ["01110", "10001", "11111", "10001", "10001"],
     "B": ["11110", "10001", "11110", "10001", "11110"],
+    "C": ["01111", "10000", "10000", "10000", "01111"],
     "D": ["11110", "10001", "10001", "10001", "11110"],
     "E": ["11111", "10000", "11110", "10000", "11111"],
     "F": ["11111", "10000", "11110", "10000", "10000"],
@@ -119,10 +126,24 @@ FONT = {
     "L": ["10000", "10000", "10000", "10000", "11111"],
     "N": ["10001", "11001", "10101", "10011", "10001"],
     "O": ["01110", "10001", "10001", "10001", "01110"],
+    "P": ["11110", "10001", "11110", "10000", "10000"],
+    "R": ["11110", "10001", "11110", "10100", "10011"],
     "S": ["01111", "10000", "01110", "00001", "11110"],
     "T": ["11111", "00100", "00100", "00100", "00100"],
     "U": ["10001", "10001", "10001", "10001", "01110"],
     "W": ["10001", "10001", "10101", "10101", "01010"],
+    "Y": ["10001", "10001", "01110", "00100", "00100"],
+    "0": ["01110", "10001", "10001", "10001", "01110"],
+    "1": ["00100", "01100", "00100", "00100", "01110"],
+    "2": ["01110", "10001", "00110", "01000", "11111"],
+    "3": ["11110", "00001", "01110", "00001", "11110"],
+    "4": ["10010", "10010", "11111", "00010", "00010"],
+    "5": ["11111", "10000", "11110", "00001", "11110"],
+    "6": ["01110", "10000", "11110", "10001", "01110"],
+    "7": ["11111", "00001", "00010", "00100", "01000"],
+    "8": ["01110", "10001", "01110", "10001", "01110"],
+    "9": ["01110", "10001", "01111", "00001", "01110"],
+    "/": ["00001", "00010", "00100", "01000", "10000"],
     "!": ["00100", "00100", "00100", "00000", "00100"],
     " ": ["00000", "00000", "00000", "00000", "00000"],
 }
@@ -131,7 +152,7 @@ FONT = {
 def blit_text(px: list[int], w: int, text: str, origin_x: int, origin_y: int, color: int) -> None:
     x = origin_x
     for ch in text:
-        glyph = FONT[ch]
+        glyph = FONT.get(ch, FONT[" "])
         for gy, row in enumerate(glyph):
             for gx, bit in enumerate(row):
                 if bit == "1":
@@ -142,14 +163,19 @@ def blit_text(px: list[int], w: int, text: str, origin_x: int, origin_y: int, co
 def make_cursor() -> None:
     w = h = 16
     px = fill(w, h)
-    for i in range(16):
-        put(px, w, 7, i, 8)
-        put(px, w, 8, i, 8)
-        put(px, w, i, 7, 8)
-        put(px, w, i, 8, 8)
-    # Hollow center so it sits on a node cleanly.
-    rect(px, w, 6, 6, 10, 10, 0)
-    rect(px, w, 7, 7, 9, 9, 2)
+    # Corner brackets with a soft glow center.
+    for x, y in ((4, 4), (11, 4), (4, 11), (11, 11)):
+        put(px, w, x, y, 8)
+        put(px, w, x + 1, y, 8)
+        put(px, w, x, y + 1, 8)
+    rect(px, w, 4, 4, 6, 6, 8)
+    rect(px, w, 10, 4, 12, 6, 8)
+    rect(px, w, 4, 10, 6, 12, 8)
+    rect(px, w, 10, 10, 12, 12, 8)
+    put(px, w, 7, 7, 2)
+    put(px, w, 8, 7, 2)
+    put(px, w, 7, 8, 2)
+    put(px, w, 8, 8, 2)
     write_indexed_bmp(os.path.join(GFX, "cursor.bmp"), w, h, px)
 
 
@@ -157,29 +183,56 @@ def make_node() -> None:
     w = h = 8
     px = fill(w, h)
     circle(px, w, 3, 3, 3, 3)
-    circle(px, w, 3, 3, 1, 15)
+    circle(px, w, 3, 3, 2, 15)
+    put(px, w, 3, 3, 1)
     write_indexed_bmp(os.path.join(GFX, "node.bmp"), w, h, px)
+
+
+def make_ghost() -> None:
+    w = h = 8
+    px = fill(w, h)
+    ring(px, w, 3, 3, 3, 1, 8)
+    write_indexed_bmp(os.path.join(GFX, "ghost.bmp"), w, h, px)
 
 
 def make_anchor() -> None:
     w = h = 8
     px = fill(w, h)
-    rect(px, w, 1, 1, 7, 7, 4)
+    rect(px, w, 0, 0, 8, 8, 4)
+    rect(px, w, 1, 1, 7, 7, 13)
     rect(px, w, 2, 2, 6, 6, 15)
-    rect(px, w, 3, 3, 5, 5, 13)
+    rect(px, w, 3, 3, 5, 5, 4)
+    put(px, w, 3, 1, 1)
+    put(px, w, 4, 1, 1)
     write_indexed_bmp(os.path.join(GFX, "anchor.bmp"), w, h, px)
 
 
-def make_strut() -> None:
-    """Two 16x16 frames: idle brown beam, then stressed red beam."""
-    w = 16
-    h = 32
+def make_ring() -> None:
+    w = h = 16
     px = fill(w, h)
-    for frame, colors in enumerate(((5, 12), (9, 4))):
+    ring(px, w, 7, 7, 7, 4, 15)
+    ring(px, w, 7, 7, 5, 3, 3)
+    write_indexed_bmp(os.path.join(GFX, "ring.bmp"), w, h, px)
+
+
+def make_strut() -> None:
+    """Four 16x16 frames: idle, stressed, preview-strong, preview-weak."""
+    w = 16
+    h = 64
+    px = fill(w, h)
+    frames = (
+        (5, 12),
+        (9, 4),
+        (8, 2),
+        (9, 3),
+    )
+    for frame, colors in enumerate(frames):
         y0 = frame * 16
         body, highlight = colors
         rect(px, w, 0, y0 + 6, 16, y0 + 10, body)
         rect(px, w, 0, y0 + 7, 16, y0 + 8, highlight)
+        for x in (2, 7, 13):
+            put(px, w, x, y0 + 7, 15 if frame < 2 else 2)
         put(px, w, 0, y0 + 6, 1)
         put(px, w, 15, y0 + 6, 1)
         put(px, w, 0, y0 + 9, 1)
@@ -191,68 +244,114 @@ def make_train() -> None:
     """Original 16x16 tank-engine silhouette (not licensed artwork)."""
     w = h = 16
     px = fill(w, h)
-    # Wheels
     circle(px, w, 4, 13, 2, 1)
     circle(px, w, 11, 13, 2, 1)
     circle(px, w, 4, 13, 1, 10)
     circle(px, w, 11, 13, 1, 10)
-    # Boiler
     rect(px, w, 1, 6, 11, 12, 6)
     rect(px, w, 2, 7, 10, 11, 8)
     rect(px, w, 2, 7, 10, 8, 2)
-    # Cabin
     rect(px, w, 10, 3, 15, 12, 7)
     rect(px, w, 11, 4, 14, 7, 15)
-    # Funnel
     rect(px, w, 3, 2, 6, 6, 1)
     rect(px, w, 2, 1, 7, 3, 10)
-    # Cowcatcher / buffer
     rect(px, w, 0, 11, 2, 13, 10)
+    put(px, w, 12, 5, 9)
     write_indexed_bmp(os.path.join(GFX, "train.bmp"), w, h, px)
+
+
+def make_sky() -> None:
+    w, h = 32, 16
+    px = fill(w, h, 7)
+    for y in range(h):
+        color = 6 if y > 10 else (7 if y > 6 else 8)
+        rect(px, w, 0, y, 32, y + 1, color)
+    for x in range(4, 28, 9):
+        put(px, w, x, 3, 2)
+        put(px, w, x + 1, 3, 2)
+    write_indexed_bmp(os.path.join(GFX, "sky.bmp"), w, h, px)
 
 
 def make_ground() -> None:
     w, h = 32, 16
     px = fill(w, h)
-    rect(px, w, 0, 0, 32, 4, 11)
-    rect(px, w, 0, 3, 32, 4, 14)
-    rect(px, w, 0, 4, 32, 16, 13)
-    rect(px, w, 0, 4, 32, 6, 5)
-    for x, y in ((3, 8), (9, 12), (18, 7), (24, 11), (28, 9)):
+    rect(px, w, 0, 0, 32, 5, 11)
+    rect(px, w, 0, 4, 32, 5, 14)
+    rect(px, w, 0, 5, 32, 16, 13)
+    rect(px, w, 0, 5, 32, 7, 5)
+    for x, y in ((2, 9), (8, 12), (14, 8), (20, 11), (26, 9)):
         put(px, w, x, y, 12)
         put(px, w, x + 1, y, 5)
     write_indexed_bmp(os.path.join(GFX, "ground.bmp"), w, h, px)
 
 
 def make_water() -> None:
-    w, h = 32, 8
-    px = fill(w, h, 7)
-    for x in range(0, 32, 4):
-        put(px, w, x, 2, 6)
-        put(px, w, x + 1, 3, 8)
-        put(px, w, x + 2, 5, 6)
+    """Two animated 32x8 frames stacked vertically."""
+    w, h = 32, 16
+    px = fill(w, h)
+    for frame in range(2):
+        y0 = frame * 8
+        rect(px, w, 0, y0, 32, y0 + 8, 7)
+        for x in range(0, 32, 4):
+            wave = (x // 4 + frame) % 3
+            put(px, w, x, y0 + 2 + wave, 6)
+            put(px, w, x + 1, y0 + 3 + ((wave + 1) % 3), 8)
+            put(px, w, x + 2, y0 + 5 + ((wave + 2) % 3), 6)
     write_indexed_bmp(os.path.join(GFX, "water.bmp"), w, h, px)
 
 
+def make_panel() -> None:
+    w, h = 32, 8
+    px = fill(w, h, 1)
+    rect(px, w, 0, 0, 32, 8, 7)
+    rect(px, w, 1, 1, 31, 7, 1)
+    rect(px, w, 0, 0, 32, 1, 15)
+    write_indexed_bmp(os.path.join(GFX, "panel.bmp"), w, h, px)
+
+
+def make_digit() -> None:
+    w, h = 80, 8
+    px = fill(w, h)
+    for index, ch in enumerate("0123456789"):
+        blit_text(px, w, ch, index * 8 + 1, 1, 2)
+    write_indexed_bmp(os.path.join(GFX, "digit.bmp"), w, h, px)
+
+
 def make_labels() -> None:
-    """32x40 sheet, five 32x8 frames: BUILD, TEST, FAIL, WIN!, NO GO."""
+    """32x56 sheet, seven 32x8 frames."""
     w = 32
     frame_h = 8
-    texts = ("BUILD", "TEST", "FAIL", "WIN!", "NO GO")
+    texts = ("BUILD", "TEST", "FAIL", "WIN!", "NO GO", "FULL!", "UNDO")
     h = frame_h * len(texts)
     px = fill(w, h)
+    colors = (2, 8, 9, 11, 15, 9, 8)
     for index, text in enumerate(texts):
         y0 = index * frame_h
         text_w = len(text) * 6 - 1
         x0 = max(0, (w - text_w) // 2)
-        color = (2, 8, 9, 11, 15)[index]
-        blit_text(px, w, text, x0, y0 + 1, color)
+        blit_text(px, w, text, x0, y0 + 1, colors[index])
     write_indexed_bmp(os.path.join(GFX, "label.bmp"), w, h, px)
 
 
-def write_json(name: str, extra: dict | None = None) -> None:
-    import json
+def make_toast() -> None:
+    """48x32 toast sheet: DUP!, WEAK, DEL."""
+    w = 48
+    frame_h = 8
+    texts = ("DUP!", "WEAK", "DEL")
+    h = frame_h * len(texts)
+    px = fill(w, h)
+    colors = (9, 3, 10)
+    for index, text in enumerate(texts):
+        y0 = index * frame_h
+        rect(px, w, 0, y0, 48, y0 + 8, 1)
+        rect(px, w, 1, y0 + 1, 47, y0 + 7, 7)
+        text_w = len(text) * 6 - 1
+        x0 = max(2, (48 - text_w) // 2)
+        blit_text(px, w, text, x0, y0 + 1, colors[index])
+    write_indexed_bmp(os.path.join(GFX, "toast.bmp"), w, h, px)
 
+
+def write_json(name: str, extra: dict | None = None) -> None:
     data = {"type": "sprite", "bpp_mode": "bpp_4"}
     if extra:
         data.update(extra)
@@ -265,21 +364,33 @@ def main() -> None:
     os.makedirs(GFX, exist_ok=True)
     make_cursor()
     make_node()
+    make_ghost()
     make_anchor()
+    make_ring()
     make_strut()
     make_train()
+    make_sky()
     make_ground()
     make_water()
+    make_panel()
+    make_digit()
     make_labels()
+    make_toast()
 
     write_json("cursor.json")
     write_json("node.json")
+    write_json("ghost.json")
     write_json("anchor.json")
+    write_json("ring.json")
     write_json("strut.json", {"height": 16})
     write_json("train.json")
+    write_json("sky.json")
     write_json("ground.json")
-    write_json("water.json")
+    write_json("water.json", {"height": 8})
+    write_json("panel.json")
+    write_json("digit.json", {"width": 8})
     write_json("label.json", {"height": 8})
+    write_json("toast.json", {"height": 8, "width": 48})
     print(f"Wrote sprites in {GFX}")
 
 

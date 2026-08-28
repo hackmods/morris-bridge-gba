@@ -11,6 +11,8 @@ const KEY_BINDINGS: Array<[string, string]> = [
   ['X', 'B'],
   ['Enter', 'Start'],
   ['Backspace', 'Select'],
+  ['l', 'L'],
+  ['L', 'L'],
   ['r', 'R'],
   ['R', 'R'],
 ];

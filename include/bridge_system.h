@@ -28,7 +28,7 @@ inline constexpr int END_NODE = 1;
 
 inline constexpr bn::fixed TRAIN_SPEED = 1;          // pixels per frame
 inline constexpr bn::fixed GRAVITY = bn::fixed(1) / 8;
-inline constexpr bn::fixed SNAP_RADIUS = 6;
+inline constexpr bn::fixed SNAP_RADIUS = 8;
 inline constexpr bn::fixed FALL_Y_LIMIT = 90;        // off the bottom of the 160px screen
 
 enum class SimStatus
@@ -38,6 +38,38 @@ enum class SimStatus
     success,     ///< Reached the end node.
     failed_fall, ///< Strut snapped or train walked off a missing edge.
     no_path      ///< Start and end are not connected.
+};
+
+enum class StrutPreviewStatus
+{
+    ok,
+    same_node,
+    invalid_node,
+    duplicate,
+    struts_full,
+    zero_length,
+};
+
+struct StrutPreview
+{
+    StrutPreviewStatus status = StrutPreviewStatus::invalid_node;
+    bn::fixed length = 0;
+    bn::fixed max_tension = 0;
+};
+
+enum class UndoResult
+{
+    nothing,
+    removed_strut,
+    removed_node,
+};
+
+enum class RemoveNodeResult
+{
+    ok,
+    invalid,
+    anchored,
+    in_test,
 };
 
 struct Node
@@ -103,6 +135,39 @@ public:
     [[nodiscard]] bn::optional<int> find_strut(int node_a, int node_b) const;
 
     /**
+     * @brief Evaluate a potential strut without mutating the graph.
+     */
+    [[nodiscard]] StrutPreview preview_strut(int node_a, int node_b) const;
+
+    /**
+     * @brief Revert the most recent player strut or node placement.
+     */
+    [[nodiscard]] UndoResult undo_last_edit();
+
+    /**
+     * @brief Delete a player-placed node and any struts attached to it.
+     */
+    [[nodiscard]] RemoveNodeResult remove_player_node(int node_id);
+
+    [[nodiscard]] int anchored_node_count() const
+    {
+        return _anchored_node_count;
+    }
+
+    [[nodiscard]] int player_node_count() const
+    {
+        return _nodes.size() - _anchored_node_count;
+    }
+
+    [[nodiscard]] int player_node_budget() const
+    {
+        const int budget = MAX_NODES - _anchored_node_count;
+        return budget > 0 ? budget : 0;
+    }
+
+    [[nodiscard]] bool is_player_node(int node_id) const;
+
+    /**
      * @brief Begin test mode: snapshot struts, BFS a path, spawn the train.
      */
     SimStatus begin_test();
@@ -138,9 +203,19 @@ public:
     }
 
 private:
+    enum class LastEdit
+    {
+        none,
+        node,
+        strut,
+    };
+
     void _seed_canyon();
     void _break_strut(int strut_index);
     void _apply_tension(int strut_index, bn::fixed distance_along);
+    void _remove_strut_at(int strut_index);
+    void _record_node_edit(int node_id);
+    void _record_strut_edit(int strut_index);
     bool _bfs_path();
     void _start_falling();
 
@@ -155,6 +230,9 @@ private:
     int _path_index = 0;        ///< Index of the node the train is leaving.
     bn::fixed _fall_vy = 0;
     bool _falling = false;
+    int _anchored_node_count = 0;
+    LastEdit _last_edit = LastEdit::none;
+    int _last_edit_index = -1;
 };
 
 } // namespace bridge

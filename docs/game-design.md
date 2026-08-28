@@ -5,12 +5,16 @@
 ### Build mode (`SimStatus::idle`)
 
 - Crosshair cursor moves with D-Pad (hold **R** for faster movement)
-- **A** on empty space: place a node (keeps it selected for chain-building)
-- **A** on another node while one is selected: create a strut between them
-- **A** on the same node again: deselect
-- **B** cancels selection
+- **A** on empty space: place a node snapped to a 4 px grid (keeps it selected for chain-building)
+- **A** on another node while one is selected: create a strut between them (cyan preview = safe, red preview = too weak)
+- **A** on the same selected node again: deselect
+- **B** on a player-placed node: delete that node and its struts
+- **B** elsewhere: cancel selection
+- **L**: undo the last node or strut placement
 - **Start** begins test simulation
 - **Select** resets the canyon
+
+A **ghost ring** pulses on the selected node; a **preview beam** shows the strut you are about to place. Toasts appear for duplicate struts, weak spans, deletions, and undo.
 
 Anchored **start** and **end** nodes are always present on the banks.
 
@@ -34,8 +38,9 @@ Triggered by **Start** in build mode (`BridgeSystem::begin_test()`):
 |--------|------------|-----------|
 | D-Pad | Move crosshair | — |
 | R (hold) | Faster cursor | — |
-| A | Place node / connect | — |
-| B | Cancel selection | Return to build |
+| A | Place node / connect / deselect | — |
+| B | Delete node under cursor / cancel | Return to build |
+| L | Undo last placement | — |
 | Start | Run simulation | Return to build |
 | Select | Reset level | Reset level |
 
