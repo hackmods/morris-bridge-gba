@@ -118,16 +118,32 @@ jobs:
           IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${TAG}"
           echo "image=$(echo "$IMAGE" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
 
-  deploy-caprover:
-    name: Deploy to CapRover
+  caprover-ready:
+    name: Check CapRover config
     needs: build-image
     runs-on: ubuntu-latest
-    if: >-
-      github.event_name != 'pull_request' &&
-      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) &&
-      secrets.CAPROVER_SERVER != '' &&
-      secrets.CAPROVER_APP_NAME != '' &&
-      secrets.CAPROVER_APP_TOKEN != ''
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - name: Detect CapRover secrets
+        id: check
+        env:
+          CAPROVER_SERVER: ${{ secrets.CAPROVER_SERVER }}
+          CAPROVER_APP_NAME: ${{ secrets.CAPROVER_APP_NAME }}
+          CAPROVER_APP_TOKEN: ${{ secrets.CAPROVER_APP_TOKEN }}
+        run: |
+          if [ -n "$CAPROVER_SERVER" ] && [ -n "$CAPROVER_APP_NAME" ] && [ -n "$CAPROVER_APP_TOKEN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy-caprover:
+    name: Deploy to CapRover
+    needs: [build-image, caprover-ready]
+    runs-on: ubuntu-latest
+    if: needs.caprover-ready.outputs.enabled == 'true'
     environment: production
     steps:
       - name: Deploy image
