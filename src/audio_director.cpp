@@ -5,19 +5,6 @@
 
 namespace audio
 {
-namespace
-{
-
-constexpr bn::fixed NORMAL_VOLUME = bn::fixed(1) / 2;
-constexpr bn::fixed PAUSE_VOLUME = bn::fixed(1) / 5;
-
-} // namespace
-
-Director::Director() :
-    _normal_volume(NORMAL_VOLUME),
-    _pause_volume(PAUSE_VOLUME)
-{
-}
 
 void Director::play(const MusicCue cue)
 {
