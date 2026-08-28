@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""Generate 8bpp indexed BMP sprites for the Morris Bridge Butano asset pipeline.
-
-Color 0 is transparent (magenta). All images use the same 16-color palette
-so they can share a 4bpp sprite palette on hardware.
-
-Run from repo root: python3 tools/gen_graphics.py
-"""
+"""Generate Morris Bridge sprites — Pokémon-style UI, meme Thomas / Sir Topham Hatt energy."""
 
 from __future__ import annotations
 
@@ -16,24 +10,24 @@ import struct
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
 GFX = os.path.join(ROOT, "graphics")
 
-# 15-bit-friendly RGB palette (index 0 = transparent)
+# GBA-friendly palette — clean Pokémon-style UI + Sodor colours
 PALETTE = [
     (255, 0, 255),  # 0 transparent
-    (16, 12, 16),  # 1 near-black
-    (240, 236, 224),  # 2 ivory / face
-    (236, 196, 48),  # 3 node yellow
-    (208, 104, 32),  # 4 anchor orange
-    (132, 80, 44),  # 5 strut brown
-    (56, 108, 188),  # 6 Thomas blue
-    (28, 40, 84),  # 7 navy
-    (72, 220, 220),  # 8 cursor cyan
-    (204, 44, 40),  # 9 Thomas red stripe
-    (108, 108, 116),  # 10 gray
-    (56, 156, 72),  # 11 grass
-    (196, 156, 100),  # 12 tan
-    (88, 56, 36),  # 13 dark brown
-    (32, 72, 48),  # 14 dark grass
-    (248, 216, 72),  # 15 gold
+    (40, 40, 48),  # 1 outline / hat black
+    (248, 248, 240),  # 2 UI cream white
+    (248, 216, 72),  # 3 gold highlight
+    (200, 72, 56),  # 4 stress red / cheek
+    (120, 80, 48),  # 5 wood strut
+    (72, 136, 208),  # 6 Thomas blue
+    (32, 64, 136),  # 7 UI border / water deep
+    (120, 208, 232),  # 8 water shimmer / cursor
+    (208, 48, 48),  # 9 red stripe / danger
+    (136, 136, 144),  # 10 metal grey
+    (96, 184, 80),  # 11 grass bright
+    (184, 152, 104),  # 12 dirt tan
+    (88, 56, 32),  # 13 cliff dark
+    (56, 120, 56),  # 14 grass shadow
+    (168, 208, 248),  # 15 sky light
 ]
 
 
@@ -43,7 +37,6 @@ def _pad_row(row: bytes) -> bytes:
 
 
 def write_indexed_bmp(path: str, width: int, height: int, pixels: list[int]) -> None:
-    """Write an uncompressed 8bpp bottom-up BMP. pixels is top-to-bottom."""
     assert len(pixels) == width * height
     palette = bytearray()
     for i in range(256):
@@ -59,8 +52,7 @@ def write_indexed_bmp(path: str, width: int, height: int, pixels: list[int]) -> 
         rows += _pad_row(row)
 
     info_size = 40
-    header_size = 14 + info_size
-    pixel_offset = header_size + 256 * 4
+    pixel_offset = 14 + info_size + 256 * 4
     file_size = pixel_offset + len(rows)
 
     with open(path, "wb") as handle:
@@ -68,17 +60,7 @@ def write_indexed_bmp(path: str, width: int, height: int, pixels: list[int]) -> 
         handle.write(
             struct.pack(
                 "<IiiHHIIiiII",
-                info_size,
-                width,
-                height,
-                1,
-                8,
-                0,
-                len(rows),
-                0,
-                0,
-                256,
-                0,
+                info_size, width, height, 1, 8, 0, len(rows), 0, 0, 256, 0,
             )
         )
         handle.write(palette)
@@ -106,7 +88,7 @@ def circle(px: list[int], w: int, cx: int, cy: int, radius: int, color: int) -> 
     r2 = radius * radius
     for y in range(cy - radius, cy + radius + 1):
         for x in range(cx - radius, cx + radius + 1):
-            if (x - cx) * (x - cx) + (y - cy) * (y - cy) <= r2:
+            if (x - cx) ** 2 + (y - cy) ** 2 <= r2:
                 put(px, w, x, y, color)
 
 
@@ -115,7 +97,19 @@ def hline(px: list[int], w: int, x0: int, x1: int, y: int, color: int) -> None:
         put(px, w, x, y, color)
 
 
-# 5x5 pixel font caps for HUD and menus.
+def vline(px: list[int], w: int, x: int, y0: int, y1: int, color: int) -> None:
+    for y in range(y0, y1):
+        put(px, w, x, y, color)
+
+
+def panel_box(px: list[int], w: int, x0: int, y0: int, x1: int, y1: int) -> None:
+    """Pokémon-style double border dialog box."""
+    rect(px, w, x0, y0, x1, y1, 7)
+    rect(px, w, x0 + 1, y0 + 1, x1 - 1, y1 - 1, 2)
+    rect(px, w, x0 + 2, y0 + 2, x1 - 2, y1 - 2, 7)
+    rect(px, w, x0 + 3, y0 + 3, x1 - 3, y1 - 3, 2)
+
+
 FONT = {
     "A": ["01110", "10001", "11111", "10001", "10001"],
     "B": ["11110", "10001", "11110", "10001", "11110"],
@@ -150,209 +144,270 @@ FONT = {
 }
 
 
-def blit_text(px: list[int], w: int, text: str, origin_x: int, origin_y: int, color: int) -> None:
-    x = origin_x
+def blit_text(px: list[int], w: int, text: str, ox: int, oy: int, color: int) -> None:
+    x = ox
     for ch in text:
         glyph = FONT.get(ch, FONT[" "])
         for gy, row in enumerate(glyph):
             for gx, bit in enumerate(row):
                 if bit == "1":
-                    put(px, w, x + gx, origin_y + gy, color)
+                    put(px, w, x + gx, oy + gy, color)
         x += 6
 
 
 def center_text(px: list[int], w: int, text: str, y: int, color: int) -> None:
-    text_w = len(text) * 6 - 1
-    x0 = max(0, (w - text_w) // 2)
-    blit_text(px, w, text, x0, y, color)
+    tw = len(text) * 6 - 1
+    blit_text(px, w, text, max(0, (w - tw) // 2), y, color)
+
+
+def make_sky() -> None:
+    """64x64 sky gradient tile."""
+    w = h = 64
+    px = fill(w, h)
+    for y in range(h):
+        t = y / (h - 1)
+        color = 15 if t < 0.5 else (6 if t < 0.85 else 7)
+        hline(px, w, 0, w, y, color)
+    for cx, cy in ((12, 18), (44, 28), (28, 10)):
+        put(px, w, cx, cy, 2)
+        put(px, w, cx + 1, cy, 2)
+        put(px, w, cx + 2, cy, 2)
+        put(px, w, cx, cy + 1, 15)
+        put(px, w, cx + 1, cy + 1, 15)
+    write_indexed_bmp(os.path.join(GFX, "sky.bmp"), w, h, px)
+
+
+def make_cloud() -> None:
+    w = h = 16
+    px = fill(w, h)
+    for cx, cy, r in ((5, 8, 3), (9, 7, 4), (12, 9, 2)):
+        circle(px, w, cx, cy, r, 2)
+    for cx, cy, r in ((5, 8, 2), (9, 7, 3), (12, 9, 1)):
+        circle(px, w, cx, cy, r, 15)
+    write_indexed_bmp(os.path.join(GFX, "cloud.bmp"), w, h, px)
+
+
+def make_panel() -> None:
+    """64x32 UI panels: HUD bar, dialog, selection highlight."""
+    w, frame_h = 64, 32
+    h = frame_h * 3
+    px = fill(w, h)
+
+    panel_box(px, w, 2, 2, 62, 30)
+    center_text(px, w, "HUD", 12, 7)
+
+    y0 = 32
+    panel_box(px, w, 2, y0 + 2, 62, y0 + 30)
+    rect(px, w, 6, y0 + 8, 58, y0 + 26, 2)
+
+    y0 = 64
+    rect(px, w, 2, y0 + 4, 62, y0 + 28, 3)
+    rect(px, w, 4, y0 + 6, 60, y0 + 26, 2)
+    rect(px, w, 4, y0 + 6, 60, y0 + 8, 3)
+    hline(px, w, 4, 60, y0 + 26, 7)
+
+    write_indexed_bmp(os.path.join(GFX, "panel.bmp"), w, h, px)
+
+
+def make_hatt() -> None:
+    """Sir Topham Hatt — meme fat controller (original art). Two 16x16 frames: stern / furious."""
+    w, h = 16, 32
+    px = fill(w, h)
+    for frame in range(2):
+        y0 = frame * 16
+        # Top hat
+        rect(px, w, 4, y0 + 1, 12, y0 + 5, 1)
+        rect(px, w, 3, y0 + 5, 13, y0 + 7, 1)
+        hline(px, w, 3, 13, y0 + 5, 10)
+        # Face
+        circle(px, w, 8, y0 + 10, 5, 4 if frame else 2)
+        circle(px, w, 8, y0 + 10, 4, 2)
+        put(px, w, 6, y0 + 9, 1)
+        put(px, w, 10, y0 + 9, 1)
+        if frame == 0:
+            hline(px, w, 6, 11, y0 + 12, 1)
+        else:
+            rect(px, w, 5, y0 + 11, 11, y0 + 13, 9)
+        # Suit
+        rect(px, w, 5, y0 + 13, 11, y0 + 15, 7)
+        put(px, w, 8, y0 + 13, 3)
+    write_indexed_bmp(os.path.join(GFX, "hatt.bmp"), w, h, px)
 
 
 def make_cursor() -> None:
+    """Wrench cursor — Pokémon-style with white outline."""
     w = h = 16
     px = fill(w, h)
-    for i in range(16):
-        put(px, w, 7, i, 8)
-        put(px, w, 8, i, 8)
-        put(px, w, i, 7, 8)
-        put(px, w, i, 8, 8)
-    rect(px, w, 6, 6, 10, 10, 0)
-    rect(px, w, 7, 7, 9, 9, 2)
+    for dy in range(5):
+        for dx in range(5):
+            if dx + dy <= 4:
+                put(px, w, 4 + dx, 10 - dy, 1)
+    rect(px, w, 9, 4, 13, 8, 10)
+    rect(px, w, 10, 5, 12, 7, 2)
+    circle(px, w, 6, 6, 2, 3)
+    circle(px, w, 6, 6, 1, 2)
     write_indexed_bmp(os.path.join(GFX, "cursor.bmp"), w, h, px)
 
 
 def make_node() -> None:
     w = h = 8
     px = fill(w, h)
-    circle(px, w, 3, 3, 3, 3)
-    circle(px, w, 3, 3, 1, 15)
+    circle(px, w, 4, 4, 3, 10)
+    circle(px, w, 4, 4, 2, 2)
+    put(px, w, 4, 4, 5)
     write_indexed_bmp(os.path.join(GFX, "node.bmp"), w, h, px)
 
 
 def make_anchor() -> None:
     w = h = 8
     px = fill(w, h)
-    rect(px, w, 1, 1, 7, 7, 4)
-    rect(px, w, 2, 2, 6, 6, 15)
-    rect(px, w, 3, 3, 5, 5, 13)
+    rect(px, w, 1, 1, 7, 7, 13)
+    rect(px, w, 2, 2, 6, 6, 12)
+    rect(px, w, 2, 2, 6, 3, 11)
+    rect(px, w, 3, 3, 5, 5, 5)
+    put(px, w, 4, 4, 3)
     write_indexed_bmp(os.path.join(GFX, "anchor.bmp"), w, h, px)
 
 
 def make_strut() -> None:
-    """Two 16x16 frames: idle brown beam, then stressed red beam."""
-    w = 16
-    h = 32
+    w, h = 16, 32
     px = fill(w, h)
-    for frame, colors in enumerate(((5, 12), (9, 4))):
+    for frame, (body, hi, hot) in enumerate(((5, 12, False), (9, 4, True))):
         y0 = frame * 16
-        body, highlight = colors
-        rect(px, w, 0, y0 + 6, 16, y0 + 10, body)
-        rect(px, w, 0, y0 + 7, 16, y0 + 8, highlight)
-        put(px, w, 0, y0 + 6, 1)
-        put(px, w, 15, y0 + 6, 1)
-        put(px, w, 0, y0 + 9, 1)
-        put(px, w, 15, y0 + 9, 1)
+        rect(px, w, 0, y0 + 5, 16, y0 + 11, body)
+        hline(px, w, 0, 16, y0 + 6, hi)
+        hline(px, w, 0, 16, y0 + 9, 1 if not hot else 4)
+        put(px, w, 0, y0 + 5, 1)
+        put(px, w, 15, y0 + 5, 1)
     write_indexed_bmp(os.path.join(GFX, "strut.bmp"), w, h, px)
 
 
 def make_train() -> None:
-    """Thomas-inspired tank engine (original pixel art, not licensed artwork).
-
-    Two 16x16 frames: idle and chuff (smoke puff) for a little personality.
-    """
-    w = 16
-    h = 32
+    """Cheeky blue tank engine — 16x32 two-frame chuff."""
+    w, h = 16, 32
     px = fill(w, h)
-
     for frame in range(2):
         y0 = frame * 16
-        # Wheels — grey rim, red hub (cheeky Thomas nod)
         for wx in (4, 11):
             circle(px, w, wx, y0 + 13, 2, 1)
             circle(px, w, wx, y0 + 13, 1, 9)
-        # Boiler — Thomas blue with red stripe
         rect(px, w, 1, y0 + 6, 11, y0 + 12, 6)
         rect(px, w, 2, y0 + 7, 10, y0 + 11, 7)
         hline(px, w, 2, 10, y0 + 9, 9)
         hline(px, w, 2, 10, y0 + 10, 9)
-        # Face circle on smokebox door
         circle(px, w, 6, y0 + 9, 3, 2)
-        put(px, w, 5, y0 + 8, 1)  # left eye
-        put(px, w, 7, y0 + 8, 1)  # right eye
-        put(px, w, 5, y0 + 10, 1)
-        put(px, w, 6, y0 + 10, 1)
-        put(px, w, 7, y0 + 10, 1)  # smile
-        # Cabin
+        put(px, w, 5, y0 + 8, 1)
+        put(px, w, 7, y0 + 8, 1)
+        if frame == 0:
+            put(px, w, 5, y0 + 10, 1)
+            put(px, w, 6, y0 + 11, 1)
+            put(px, w, 7, y0 + 10, 1)
+        else:
+            rect(px, w, 5, y0 + 10, 8, y0 + 11, 1)
         rect(px, w, 10, y0 + 3, 15, y0 + 12, 7)
-        rect(px, w, 11, y0 + 4, 14, y0 + 7, 15)
-        # Funnel — black stack, grey rim
+        rect(px, w, 11, y0 + 4, 14, y0 + 7, 3)
         rect(px, w, 3, y0 + 2, 6, y0 + 6, 1)
         rect(px, w, 2, y0 + 1, 7, y0 + 3, 10)
-        # Red buffer beam
         rect(px, w, 0, y0 + 11, 2, y0 + 13, 9)
-        # Smoke puff on chuff frame
         if frame == 1:
-            put(px, w, 4, y0 + 0, 10)
-            put(px, w, 5, y0 + 0, 10)
-            put(px, w, 3, y0 + 1, 10)
-            put(px, w, 6, y0 + 1, 10)
-            put(px, w, 4, y0 + 1, 2)
-            put(px, w, 5, y0 + 1, 2)
-
+            for sx, sy in ((4, 0), (5, 0), (3, 1), (6, 1)):
+                put(px, w, sx, y0 + sy, 10)
     write_indexed_bmp(os.path.join(GFX, "train.bmp"), w, h, px)
 
 
 def make_ground() -> None:
     w, h = 32, 16
     px = fill(w, h)
-    rect(px, w, 0, 0, 32, 4, 11)
-    rect(px, w, 0, 3, 32, 4, 14)
-    rect(px, w, 0, 4, 32, 16, 13)
-    rect(px, w, 0, 4, 32, 6, 5)
-    for x, y in ((3, 8), (9, 12), (18, 7), (24, 11), (28, 9)):
-        put(px, w, x, y, 12)
-        put(px, w, x + 1, y, 5)
+    rect(px, w, 0, 0, 32, 5, 11)
+    rect(px, w, 0, 4, 32, 6, 14)
+    rect(px, w, 0, 6, 32, 16, 13)
+    rect(px, w, 0, 6, 32, 8, 12)
+    for x in range(0, 32, 5):
+        vline(px, w, x, 8, 14, 12)
+    hline(px, w, 0, 32, 15, 1)
     write_indexed_bmp(os.path.join(GFX, "ground.bmp"), w, h, px)
 
 
 def make_water() -> None:
-    w, h = 32, 8
-    px = fill(w, h, 7)
-    for x in range(0, 32, 4):
-        put(px, w, x, 2, 6)
-        put(px, w, x + 1, 3, 8)
-        put(px, w, x + 2, 5, 6)
+    """32x16 two-frame ripple."""
+    w, h = 32, 16
+    px = fill(w, h)
+    for frame in range(2):
+        y0 = frame * 8
+        rect(px, w, 0, y0, 32, y0 + 8, 7)
+        for x in range(0, 32, 4):
+            ox = (x + frame * 2) % 32
+            put(px, w, ox, y0 + 2, 8)
+            put(px, w, (ox + 1) % 32, y0 + 4, 6)
+            put(px, w, (ox + 2) % 32, y0 + 6, 8)
     write_indexed_bmp(os.path.join(GFX, "water.bmp"), w, h, px)
 
 
 def make_labels() -> None:
-    """32x8 frames for in-game HUD and status messages."""
     texts = (
         "BUILD",
-        "TEST",
-        "FAIL",
-        "WIN!",
+        "TEST!",
+        "DELAY",
+        "USEFUL",
         "NO GO",
         "PEEP!",
         "ASHES!",
-        "MENU",
+        "START",
         "LV 1",
         "LV 2",
         "LV 3",
     )
-    w = 32
-    frame_h = 8
-    h = frame_h * len(texts)
-    px = fill(w, h)
-    colors = (2, 8, 9, 11, 15, 11, 9, 8, 15, 15, 15)
-    for index, text in enumerate(texts):
-        y0 = index * frame_h
-        center_text(px, w, text, y0 + 1, colors[index])
-    write_indexed_bmp(os.path.join(GFX, "label.bmp"), w, h, px)
+    w, fh = 32, 8
+    px = fill(w, fh * len(texts))
+    colors = (7, 6, 9, 11, 15, 11, 9, 3, 3, 3, 3)
+    for i, text in enumerate(texts):
+        center_text(px, w, text, i * fh + 1, colors[i])
+    write_indexed_bmp(os.path.join(GFX, "label.bmp"), w, fh * len(texts), px)
 
 
 def make_banner() -> None:
-    """Title and menu banner frames (64x32 each).
-
-    Frame 0: Title screen
-    Frame 1: Level select header
-    Frame 2: Victory splash
-    Frame 3: AI credit splash
-    """
-    w = 64
-    frame_h = 32
-    frames = 4
-    h = frame_h * frames
-    px = fill(w, h)
+    """64x32: title, level select, Hatt approval, confusion & delay."""
+    w, fh = 64, 32
+    px = fill(w, fh * 4)
 
     y0 = 0
-    rect(px, w, 2, y0 + 2, 62, y0 + 30, 7)
-    rect(px, w, 4, y0 + 4, 60, y0 + 28, 6)
-    hline(px, w, 4, 60, y0 + 14, 9)
-    center_text(px, w, "MORRIS", y0 + 6, 15)
-    center_text(px, w, "BRIDGE", y0 + 14, 2)
-    center_text(px, w, "USEFUL!", y0 + 22, 15)
+    panel_box(px, w, 2, y0 + 1, 62, y0 + 31)
+    rect(px, w, 4, y0 + 4, 60, y0 + 20, 6)
+    hline(px, w, 4, 60, y0 + 12, 9)
+    center_text(px, w, "MORRIS", y0 + 5, 3)
+    center_text(px, w, "BRIDGE", y0 + 13, 2)
+    center_text(px, w, "USEFUL!", y0 + 22, 3)
 
     y0 = 32
-    rect(px, w, 4, y0 + 4, 60, y0 + 28, 13)
-    rect(px, w, 6, y0 + 6, 58, y0 + 26, 7)
-    center_text(px, w, "LEVELS", y0 + 12, 2)
+    panel_box(px, w, 2, y0 + 1, 62, y0 + 31)
+    center_text(px, w, "PICK TRACK", y0 + 12, 7)
 
     y0 = 64
+    panel_box(px, w, 2, y0 + 1, 62, y0 + 31)
     rect(px, w, 4, y0 + 6, 60, y0 + 26, 11)
-    center_text(px, w, "PEEP PEEP!", y0 + 12, 15)
+    center_text(px, w, "HATT OK!", y0 + 12, 2)
 
     y0 = 96
-    rect(px, w, 4, y0 + 8, 60, y0 + 24, 1)
-    center_text(px, w, "AI BUILT", y0 + 12, 15)
+    panel_box(px, w, 2, y0 + 1, 62, y0 + 31)
+    rect(px, w, 4, y0 + 6, 60, y0 + 26, 9)
+    center_text(px, w, "DELAY!", y0 + 12, 2)
 
-    write_indexed_bmp(os.path.join(GFX, "banner.bmp"), w, h, px)
+    write_indexed_bmp(os.path.join(GFX, "banner.bmp"), w, fh * 4, px)
 
 
 def make_menu() -> None:
-    """Menu highlight rows (32x16 each) — pairs with label level names."""
-    w = 32
-    frame_h = 16
+    """32x32 menu rows — meme level names (valid GBA sprite size)."""
+    w, fh = 32, 32
     rows = (
+        "1-KNA",
+        "2-GOR",
+        "3-DEL",
+        "> GO",
+        "> RST",
+        "> LVL",
+        "> TOP",
+    )
+    full_names = (
         "KNAPFORD",
         "GORDON",
         "VICARS",
@@ -361,28 +416,34 @@ def make_menu() -> None:
         "LEVELS",
         "TITLE",
     )
-    h = frame_h * len(rows)
-    px = fill(w, h)
-    for index, text in enumerate(rows):
-        y0 = index * frame_h
-        bg = 13 if index < 3 else 7
-        rect(px, w, 0, y0 + 2, 32, y0 + 14, bg)
-        # Left-align; names may clip slightly on 32px width.
-        blit_text(px, w, text[:5], 2, y0 + 5, 2 if index != 1 else 15)
-    write_indexed_bmp(os.path.join(GFX, "menu.bmp"), w, h, px)
+    px = fill(w, fh * len(rows))
+    for i, (code, name) in enumerate(zip(rows, full_names)):
+        y0 = i * fh
+        bg = 13 if i < 3 else 7
+        rect(px, w, 1, y0 + 4, 31, y0 + 28, bg)
+        rect(px, w, 3, y0 + 6, 29, y0 + 26, 2 if i < 3 else 15)
+        if i < 3:
+            rect(px, w, 3, y0 + 6, 29, y0 + 10, 11 if i != 1 else 3)
+        center_text(px, w, code, y0 + 10, 7)
+        center_text(px, w, name[:5], y0 + 18, 1)
+    write_indexed_bmp(os.path.join(GFX, "menu.bmp"), w, fh * len(rows), px)
 
 
 def write_json(name: str, extra: dict | None = None) -> None:
     data = {"type": "sprite", "bpp_mode": "bpp_4"}
     if extra:
         data.update(extra)
-    with open(os.path.join(GFX, name), "w", encoding="utf-8") as handle:
-        json.dump(data, handle, indent=4)
-        handle.write("\n")
+    with open(os.path.join(GFX, name), "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4)
+        f.write("\n")
 
 
 def main() -> None:
     os.makedirs(GFX, exist_ok=True)
+    make_sky()
+    make_cloud()
+    make_panel()
+    make_hatt()
     make_cursor()
     make_node()
     make_anchor()
@@ -394,16 +455,20 @@ def main() -> None:
     make_banner()
     make_menu()
 
+    write_json("sky.json")
+    write_json("cloud.json")
+    write_json("panel.json", {"height": 32})
+    write_json("hatt.json", {"height": 16})
     write_json("cursor.json")
     write_json("node.json")
     write_json("anchor.json")
     write_json("strut.json", {"height": 16})
     write_json("train.json", {"height": 16})
     write_json("ground.json")
-    write_json("water.json")
+    write_json("water.json", {"height": 8})
     write_json("label.json", {"height": 8})
     write_json("banner.json", {"height": 32})
-    write_json("menu.json", {"height": 16})
+    write_json("menu.json", {"height": 32})
     print(f"Morris Bridge sprites written to {GFX}")
 
 

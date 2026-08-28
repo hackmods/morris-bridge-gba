@@ -2,118 +2,72 @@
 
 ## Morris Bridge
 
-A bridge-building puzzle game for Game Boy Advance. Morris (and you) help a cheeky blue tank engine cross Sodor-inspired gaps by placing nodes and struts. Original fiction and pixel art — a playful homage, not a licensed Thomas & Friends product.
+A meme-forward bridge-building puzzle for Game Boy Advance. Help a cheeky blue tank engine cross Sodor gaps while **Sir Topham Hatt** watches — no confusion, no delay.
+
+Original pixel art and parody dialogue; not a licensed Thomas & Friends product.
+
+## Meme flavour
+
+| Moment | Line / beat |
+|--------|-------------|
+| Title | "REALLY USEFUL!" |
+| Win | "HATT OK!" + PEEP! |
+| Snap / fall | "DELAY!" + ASHES! |
+| No path | NO GO |
+| All levels done | USEFUL! |
+
+Sir Topham Hatt appears stern on menus and **furious** when you cause confusion and delay.
 
 ## Screens & navigation
 
 | Screen | Enter | Controls |
 |--------|-------|----------|
-| **Title** | Boot | Start → level select |
-| **Level select** | Title / pause | Up/Down pick level, A/Start play, B → title |
+| **Title** | Boot | Start / A → level select |
+| **Level select** | Title / pause | Up/Down (repeat), A/Start play, B → title |
 | **Build** | Level select | D-Pad cursor, A nodes/struts, Start test, Select pause |
-| **Test** | Start in build | Train runs; B/Start cancel; success → level complete |
-| **Pause** | Select in build | Up/Down option, A confirm, B resume |
-| **Level complete** | Test success | A next level, B level select |
-| **All complete** | Beat level 3 | Any button → title |
+| **Test** | Start in build | Train runs; B cancel; success → Hatt approval |
+| **Fail** | Strut snaps | B → rebuild |
+| **Pause** | Select in build | Up/Down, A confirm, B resume |
 
 ## Levels
 
-| # | Name | Challenge |
-|---|------|-----------|
-| 1 | Knapford Creek | Tutorial gap — generous anchor points |
+| # | Name | Vibe |
+|---|------|------|
+| 1 | Knapford Creek | Tutorial — generous anchors |
 | 2 | Gordon's Hill | Wider span, higher banks |
-| 3 | Vicarstown Gap | Widest crossing — plan your deck carefully |
-
-## Modes
-
-### Build mode (`SimStatus::idle`)
-
-- Crosshair cursor moves with D-Pad (hold **R** for faster movement)
-- **A** on empty space: place a node (keeps it selected for chain-building)
-- **A** on another node while one is selected: create a strut between them
-- **A** on the same node again: deselect
-- **B** cancels selection
-- **Start** begins test simulation
-- **Select** opens pause menu
-
-Anchored **start** and **end** nodes are always present on the banks.
-
-### Test mode
-
-Triggered by **Start** in build mode (`BridgeSystem::begin_test()`):
-
-1. Snapshot current struts
-2. BFS from start node → end node
-3. If no path: status `no_path` (HUD shows "NO GO")
-4. If path exists: train moves along struts at `TRAIN_SPEED` (1 px/frame)
-5. Tension applied to the strut under the train each frame
-6. If tension exceeds max: strut breaks, train enters fall state ("ASHES!")
-7. Success when train reaches end node ("PEEP!" / victory banner)
-
-**B** or **Start** during test returns to build mode and restores struts.
+| 3 | Vicarstown | Widest gap — delay incoming if you slack |
 
 ## Controls (GBA)
 
 | Button | Build mode | Test mode |
 |--------|------------|-----------|
-| D-Pad | Move crosshair | — |
+| D-Pad | Move crosshair (magnetic snap to nodes) | — |
 | R (hold) | Faster cursor | — |
-| A | Place node / connect | — |
-| B | Cancel selection | Return to build |
-| Start | Run simulation | Return to build |
-| Select | Pause menu | Reset + pause |
+| A | Place / connect / deselect same node | — |
+| B | Cancel selection | Cancel test |
+| Start | Run simulation | Cancel test |
+| Select | Pause menu | — |
 
-## Chain-building
+### Feel improvements
 
-After placing a node with **A**, that node stays selected. The next **A** on another node creates a strut without re-selecting. This lets you walk a deck across the gap quickly.
+- Faster base cursor speed with diagonal normalisation
+- Larger snap radius (10 px) — cursor locks to nearby nodes
+- D-Pad repeat on menus
+- Cursor starts beside the left bank each level
+- Train flips to face travel direction
 
 ## Win / lose
 
-| Outcome | Condition | HUD label |
-|---------|-----------|-----------|
-| Success | Train reaches end node | PEEP! / WIN! |
-| No path | Disconnected graph at test start | NO GO |
-| Failure | Strut snaps, train falls off screen | ASHES! |
-| Running | Train en route | TEST |
-
-## Difficulty knobs (constants)
-
-Defined in [`include/physics.h`](../include/physics.h) and [`include/bridge_system.h`](../include/bridge_system.h):
-
-| Constant | Value | Effect |
-|----------|-------|--------|
-| `BASE_WEIGHT` | 4 | Train load in tension formula |
-| `SAFE_LENGTH` | 48 px | Reference span for strength rating |
-| `BASE_MAX_TENSION` | 8 | Max tension at `SAFE_LENGTH` |
-| `TRAIN_SPEED` | 1 px/frame | Crossing speed |
-| `GRAVITY` | 1/8 | Fall acceleration after snap |
-| `SNAP_RADIUS` | 6 px | Node pick radius |
-| `MAX_NODES` | 16 | Hard cap |
-| `MAX_STRUTS` | 32 | Hard cap |
-| `LEVEL_COUNT` | 3 | Playable levels at launch |
-
-Longer spans get a **lower** `max_tension` (weaker). A ~176 px single span is rated below train weight and will snap mid-crossing.
-
-## Browser controls
-
-Mapped in [`web/src/keyboard.ts`](../web/src/keyboard.ts):
-
-| Key | GBA button |
-|-----|------------|
-| Arrow keys | D-Pad |
-| Z / X | A / B |
-| Enter | Start |
-| Backspace | Select |
-| R | R (fast cursor) |
-
-Command queue tokens: `up down left right a b start select r`
+| Outcome | Condition | HUD |
+|---------|-----------|-----|
+| Success | Train reaches end | USEFUL / PEEP! |
+| No path | Disconnected graph | NO GO |
+| Failure | Strut snaps | ASHES! + DELAY! banner |
 
 ## Graphics tool
-
-Sprites are generated by [`tools/gen_graphics.py`](../tools/gen_graphics.py):
 
 ```bash
 python3 tools/gen_graphics.py
 ```
 
-Regenerates Thomas-inspired train frames, title banner, level menu rows, and HUD labels into `graphics/`.
+Generates Pokémon-style UI panels, sky backdrop, Sir Topham Hatt sprites, Thomas engine, and HUD labels.

@@ -29,7 +29,7 @@ inline constexpr int END_NODE = 1;
 
 inline constexpr bn::fixed TRAIN_SPEED = 1;          // pixels per frame
 inline constexpr bn::fixed GRAVITY = bn::fixed(1) / 8;
-inline constexpr bn::fixed SNAP_RADIUS = 6;
+inline constexpr bn::fixed SNAP_RADIUS = 10;
 inline constexpr bn::fixed FALL_Y_LIMIT = 90;        // off the bottom of the 160px screen
 
 enum class SimStatus

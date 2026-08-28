@@ -2,7 +2,7 @@
 
 **Morris Bridge** — a Game Boy Advance bridge-building game (Butano / C++20).
 
-Morris pins nodes across Sodor-inspired canyons and ties struts so a cheeky blue tank engine can cross. Long spans snap under tension. Original mechanics and pixel art — a playful Thomas & Friends *homage*, not a licensed product. Built with AI assistance to show what a focused prototype can become.
+Morris pins nodes across Sodor-inspired canyons so a cheeky blue tank engine can cross — while Sir Topham Hatt watches for **confusion and delay**. Long spans snap under tension. Original pixel art and meme energy; not a licensed Thomas product.
 
 ## Play now
 
@@ -16,8 +16,9 @@ Morris pins nodes across Sodor-inspired canyons and ties struts so a cheeky blue
 
 - **Title screen & level select** — three levels: Knapford Creek, Gordon's Hill, Vicarstown Gap
 - **Pause menu** — resume, restart, level select, title (Select during build)
-- **Thomas-inspired engine** — blue boiler, red stripe, chuffing animation, cheeky win/fail lines
-- **AI-built polish** — graphics generated via `tools/gen_graphics.py`, full menu flow from proof-of-concept
+- **Sir Topham Hatt** — stern/furious reactions on win and fail
+- **Meme HUD** — PEEP!, ASHES!, DELAY!, HATT OK!
+- **Pokémon-style UI** — bordered panels, sky backdrop, animated water
 
 ## Documentation wiki
 
