@@ -43,13 +43,44 @@ npm test
 | `web/src/input-queue.test.ts` | Token parsing, unknown commands, queue pause/clear |
 | `web/src/layout.test.ts` | Canvas scale math, max scale cap, GBA dimensions |
 
+## Web playtest E2E (Playwright)
+
+End-to-end tests boot the real mGBA-WASM emulator in Chromium, load `thomas_bridge.gba`, and verify rendering plus basic gameplay flows.
+
+**Prerequisite:** sync a built ROM into the web public folder:
+
+```bash
+./scripts/sync_rom_to_web.sh   # copies rom/thomas_bridge.gba → web/public/rom/
+```
+
+Run E2E locally:
+
+```bash
+cd web
+npm ci
+npx playwright install chromium
+npm run test:e2e
+```
+
+| Spec | Scenarios |
+|------|-----------|
+| `web/e2e/rom-boot.spec.ts` | ROM load, COOP/COEP isolation, canvas screenshot after boot |
+| `web/e2e/rendering.spec.ts` | Canvas screenshot checks, soft reset, PNG payload size |
+| `web/e2e/command-queue.spec.ts` | Enqueue Start, multi-token input, pause/clear |
+| `web/e2e/gameplay.spec.ts` | Title → level → build via Start/queue, theater mode |
+
+Dev builds expose `window.__TEST__` hooks (`web/src/test-hooks.ts`) for frame waits and canvas sampling. Production builds omit these hooks.
+
+CI runs E2E in the **Release** workflow (`web-e2e` job) after the ROM artifact is built.
+
 ## CI integration
 
 The **Release** workflow runs:
 
 1. `make -C tests` in the `host-tests` job
 2. `npm test` in the `web-tests` job
-3. Docker image build after both pass
+3. `npm run test:e2e` in the `web-e2e` job (Playwright + ROM artifact)
+4. Docker image build after all three pass
 
 See [CI/CD](ci-cd.md).
 

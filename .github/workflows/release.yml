@@ -70,9 +70,51 @@ jobs:
           npm ci
           npm test
 
+  web-e2e:
+    name: Web playtest E2E
+    runs-on: ubuntu-latest
+    needs: [build-rom]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: thomas-bridge-gba
+          path: rom
+
+      - name: Stage ROM for playtest
+        run: |
+          mkdir -p web/public/rom
+          cp rom/thomas_bridge.gba web/public/rom/thomas_bridge.gba
+          ls -la web/public/rom/
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies and Playwright Chromium
+        working-directory: web
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E tests
+        working-directory: web
+        run: npm run test:e2e
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: web/playwright-report/
+          retention-days: 7
+
   build-image:
     name: Build and push Docker image
-    needs: [build-rom, host-tests, web-tests]
+    needs: [build-rom, host-tests, web-tests, web-e2e]
     runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.image.outputs.image }}
