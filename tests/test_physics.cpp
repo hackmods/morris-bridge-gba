@@ -18,6 +18,7 @@
 #include "physics.h"
 #include "bridge_system.h"
 #include "engine.h"
+#include "level_solutions.h"
 
 namespace
 {
@@ -193,8 +194,8 @@ int main()
 
     {
         bridge::BridgeSystem system;
-        assert(system.anchored_node_count() == 8);
-        assert(system.player_node_budget() == 8);
+        assert(system.anchored_node_count() == 6);
+        assert(system.player_node_budget() == 10);
 
         const bn::optional<int> mid = system.add_node(0, 52, false);
         assert(mid.has_value());
@@ -279,13 +280,15 @@ int main()
     {
         bridge::BridgeSystem system;
         system.load_level(0);
-        assert(system.anchored_node_count() == 8);
+        assert(system.anchored_node_count() == 6);
         assert(system.nodes()[bridge::START_NODE].position.x().integer() == -88);
         assert(system.nodes()[bridge::START_NODE].position.y().integer() == 52);
+        assert(system.level_def().deck_y.integer() == 52);
 
         system.load_level(1);
         assert(system.anchored_node_count() == 6);
         assert(system.nodes()[bridge::START_NODE].position.y().integer() == 44);
+        assert(system.level_def().deck_y.integer() == 44);
 
         system.load_level(2);
         assert(system.anchored_node_count() == 6);
@@ -356,6 +359,12 @@ int main()
 
         assert(!system.add_node(0, 32, false).has_value());
         std::cout << "  ok player node budget is enforced\n";
+    }
+
+    {
+        bridge::BridgeSystem system;
+        assert(level_solutions::run_knapford_playthrough(system));
+        std::cout << "  ok documented Knapford playthrough succeeds\n";
     }
 
     std::cout << "All host physics tests passed.\n";

@@ -527,6 +527,12 @@ private:
             const level::Def& def = _bridge.level_def();
             shift = _bridge.train_position().x().safe_multiplication(def.parallax_front);
         }
+        else if(_screen == Screen::playing || _screen == Screen::engine_select ||
+                _screen == Screen::level_select)
+        {
+            // Gentle idle drift so build screens do not look frozen.
+            shift = bn::fixed(_frame).safe_division(512);
+        }
 
         _parallax_shift = shift;
     }
@@ -539,23 +545,39 @@ private:
 
         for(int i = 0; i < _sky.size(); ++i)
         {
-            bn::fixed x = bn::fixed(-96 + i * 64) - back_shift / 4;
-            _sky[i].set_x(x);
+            _sky[i].set_x(_sky_base_x[i] - back_shift / 4);
+            _sky[i].set_y(_sky_base_y[i]);
+        }
+
+        for(int i = 0; i < _clouds.size(); ++i)
+        {
+            bn::sprite_ptr& cloud = _clouds[i];
+            bn::fixed x = cloud.position().x() + bn::fixed(1) / 8;
+
+            if(x > 130)
+            {
+                x = -130;
+            }
+
+            cloud.set_x(x);
         }
 
         for(int i = 0; i < _hills.size(); ++i)
         {
-            _hills[i].set_x(bn::fixed(-96 + i * 64) - back_shift / 2);
+            _hills[i].set_x(_hill_base_x[i] - back_shift / 2);
+            _hills[i].set_y(_hill_base_y[i]);
         }
 
         for(int i = 0; i < _ground.size(); ++i)
         {
-            _ground[i].set_x(bn::fixed(-104 + i * 32) - front_shift / 3);
+            _ground[i].set_x(_ground_base_x[i] - front_shift / 3);
+            _ground[i].set_y(_ground_base_y[i]);
         }
 
         for(int i = 0; i < _water.size(); ++i)
         {
-            _water[i].set_x(bn::fixed(-40 + i * 32) - front_shift / 2);
+            _water[i].set_x(_water_base_x[i] - front_shift / 2);
+            _water[i].set_y(_water_base_y[i]);
         }
     }
 
@@ -706,6 +728,8 @@ private:
                 bn::sprite_ptr tile = bn::sprite_items::sky.create_sprite(x, y);
                 tile.set_z_order(30);
                 _sky.push_back(tile);
+                _sky_base_x.push_back(x);
+                _sky_base_y.push_back(y);
             }
         }
 
@@ -737,7 +761,8 @@ private:
         }
 
         if(_screen == Screen::playing || _screen == Screen::engine_select ||
-           _screen == Screen::level_select)
+           _screen == Screen::level_select || _screen == Screen::level_complete ||
+           _screen == Screen::level_failed)
         {
             _apply_parallax_to_backdrop();
         }
@@ -748,6 +773,7 @@ private:
         _screen = Screen::title;
         _play_mode = PlayMode::build;
         _hide_gameplay();
+        _reset_scenery_layout();
         _set_backdrop_visible(false);
         _set_splash_visible(true);
         _logo.set_visible(true);
@@ -776,6 +802,7 @@ private:
     {
         _screen = Screen::level_select;
         _hide_gameplay();
+        _reset_scenery_layout();
         _set_splash_visible(false);
         _set_backdrop_visible(true);
         _banner.set_visible(true);
@@ -853,6 +880,7 @@ private:
         _build_hint_timer = 0;
         _cursor_pos = _bridge.nodes()[bridge::START_NODE].position;
         _cursor_pos.set_x(_cursor_pos.x() + 16);
+        _layout_scenery_for_level();
         _show_gameplay();
         _sync_node_sprites();
         _sync_strut_sprites();
@@ -1212,6 +1240,7 @@ private:
         if(bn::keypad::a_pressed() || bn::keypad::start_pressed())
         {
             _bridge.end_test();
+            _play_mode = PlayMode::build;
 
             if(_bridge.current_level() + 1 >= bridge::LEVEL_COUNT)
             {
@@ -1220,7 +1249,7 @@ private:
             else
             {
                 _pending_level = _bridge.current_level() + 1;
-                _show_engine_select();
+                _start_level(_pending_level);
             }
 
             return;
@@ -1229,6 +1258,7 @@ private:
         if(bn::keypad::b_pressed())
         {
             _bridge.end_test();
+            _play_mode = PlayMode::build;
             _show_level_select();
         }
     }
@@ -1380,6 +1410,8 @@ private:
             bn::sprite_ptr tile = bn::sprite_items::ground.create_sprite(x, game::GROUND_TILE_Y);
             tile.set_z_order(20);
             _ground.push_back(tile);
+            _ground_base_x.push_back(x);
+            _ground_base_y.push_back(game::GROUND_TILE_Y);
         }
 
         for(int x : { -96, -32, 32, 96 })
@@ -1387,6 +1419,8 @@ private:
             bn::sprite_ptr tile = bn::sprite_items::scenery_far.create_sprite(x, 24);
             tile.set_z_order(22);
             _hills.push_back(tile);
+            _hill_base_x.push_back(x);
+            _hill_base_y.push_back(24);
         }
 
         for(int x : water_x)
@@ -1394,7 +1428,50 @@ private:
             bn::sprite_ptr tile = bn::sprite_items::water.create_sprite(x, 62);
             tile.set_z_order(21);
             _water.push_back(tile);
+            _water_base_x.push_back(x);
+            _water_base_y.push_back(62);
         }
+    }
+
+    void _reset_scenery_layout()
+    {
+        for(int i = 0; i < _ground.size(); ++i)
+        {
+            _ground_base_y[i] = game::GROUND_TILE_Y;
+            _ground[i].set_y(game::GROUND_TILE_Y);
+        }
+
+        for(int i = 0; i < _water.size(); ++i)
+        {
+            _water_base_y[i] = 62;
+            _water[i].set_y(62);
+        }
+
+        _apply_parallax_to_backdrop();
+    }
+
+    void _layout_scenery_for_level()
+    {
+        const level::Def& def = _bridge.level_def();
+        const bn::fixed bank_ground_y = def.deck_y + (game::GROUND_TILE_Y - game::TRACK_Y);
+        const bn::fixed water_y = bank_ground_y + 6;
+
+        for(int i = 0; i < _ground.size(); ++i)
+        {
+            const bn::fixed x = _ground_base_x[i];
+            const bool bank_tile = x < -48 || x > 48;
+            const bn::fixed y = bank_tile ? bank_ground_y : game::GROUND_TILE_Y;
+            _ground_base_y[i] = y;
+            _ground[i].set_y(y);
+        }
+
+        for(int i = 0; i < _water.size(); ++i)
+        {
+            _water_base_y[i] = water_y;
+            _water[i].set_y(water_y);
+        }
+
+        _apply_parallax_to_backdrop();
     }
 
     void _animate_water()
@@ -1489,7 +1566,7 @@ private:
         }
 
         _cursor_pos.set_x(clamp(_cursor_pos.x(), -112, 112));
-        _cursor_pos.set_y(clamp(_cursor_pos.y(), -72, game::TRACK_Y));
+        _cursor_pos.set_y(clamp(_cursor_pos.y(), -72, game::UNDERGROUND_Y));
 
         const bn::optional<int> hovered = _bridge.find_node_near(_cursor_pos);
         bn::fixed_point draw_at = hovered ?
@@ -1640,9 +1717,11 @@ private:
 
         if(_bridge.status() == bridge::SimStatus::no_path)
         {
-            _label.set_item(bn::sprite_items::label, LABEL_NO_GO);
             play_music(MusicCue::none, _music_cue);
             bn::sound_items::delay.play();
+            _no_go_timer = 60;
+            _leave_test();
+            return;
         }
         else
         {
@@ -1697,16 +1776,6 @@ private:
         if(status == bridge::SimStatus::failed_fall)
         {
             _show_level_failed();
-            return;
-        }
-
-        if(status == bridge::SimStatus::no_path)
-        {
-            if(bn::keypad::b_pressed() || bn::keypad::start_pressed())
-            {
-                _leave_test();
-            }
-
             return;
         }
 
@@ -1799,7 +1868,12 @@ private:
     {
         int frame = LABEL_BUILD;
 
-        if(_play_mode == PlayMode::test)
+        if(_no_go_timer > 0)
+        {
+            --_no_go_timer;
+            frame = LABEL_NO_GO;
+        }
+        else if(_play_mode == PlayMode::test)
         {
             switch(_bridge.status())
             {
@@ -1876,6 +1950,7 @@ private:
     ToastKind _toast_kind = ToastKind::none;
     bool _build_hints_seen = false;
     int _build_hint_timer = 0;
+    int _no_go_timer = 0;
 
     bn::sprite_ptr _cursor;
     bn::sprite_ptr _train;
@@ -1906,6 +1981,14 @@ private:
     bn::vector<bn::sprite_ptr, 4> _splash;
     bn::vector<bn::sprite_ptr, 8> _sky;
     bn::vector<bn::sprite_ptr, 2> _clouds;
+    bn::vector<bn::fixed, 8> _sky_base_x;
+    bn::vector<bn::fixed, 8> _sky_base_y;
+    bn::vector<bn::fixed, 4> _hill_base_x;
+    bn::vector<bn::fixed, 4> _hill_base_y;
+    bn::vector<bn::fixed, 8> _ground_base_x;
+    bn::vector<bn::fixed, 8> _ground_base_y;
+    bn::vector<bn::fixed, 8> _water_base_x;
+    bn::vector<bn::fixed, 8> _water_base_y;
 };
 
 } // namespace

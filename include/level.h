@@ -27,7 +27,8 @@ struct Def
     int seed_count;
     int bg_theme_id;
     engine::Id recommended_engine;
-    bn::fixed safe_length; ///< 0 → use physics::SAFE_LENGTH default.
+    bn::fixed deck_y;       ///< Rail / start-end height for this track.
+    bn::fixed safe_length;  ///< 0 → use physics::SAFE_LENGTH default.
     bn::fixed parallax_back;  ///< Far layer scroll factor (fixed 8 = 1.0).
     bn::fixed parallax_front; ///< Near layer scroll factor.
 };

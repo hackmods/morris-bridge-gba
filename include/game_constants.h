@@ -18,8 +18,11 @@ namespace game
 /// Center Y of ground scenery tiles (32×16 sprites).
 inline constexpr bn::fixed GROUND_TILE_Y = 56;
 
-/// Rail / structural node height — wheels and joints align here.
+/// Default flat-track rail height — wheels and joints align here.
 inline constexpr bn::fixed TRACK_Y = 52;
+
+/// Deepest build-grid row for pier foundations below the deck.
+inline constexpr bn::fixed UNDERGROUND_Y = 64;
 
 /// 4 px build grid (matches cursor snap in main.cpp).
 inline constexpr bn::fixed GRID_STEP = 4;
