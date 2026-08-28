@@ -162,6 +162,11 @@ CI always builds a fresh ROM (`build-rom` job runs `gen_graphics.py` + `gen_audi
 
 ## Where to start next session
 
+**Full ship:** Use [Session goal](session-goal.md) — copy the GOAL block into a new Cloud Agent session. Read [Master plan](master-plan.md) first (Engine v2 architecture, phases 1–7, AV spec).
+
+**Incremental:** Run full local test suite (commands above), then pick from **Outstanding work** below.
+
 1. Run full local test suite (commands above).
-2. Check GitHub Actions **Release** workflow on latest `main` — all five jobs green.
-3. Pick one item from **Outstanding work → High value** or a **QoL** row that matches your goal (art vs automation vs deploy).
+2. Check GitHub Actions **Release** workflow on latest `main` — all jobs green.
+3. For v2 engine work: start **Phase 1** in [master-plan.md](master-plan.md) (LinkRole + track-only path + Gordon's Hill vertical slice).
+4. For polish-only: pick one item from **Outstanding work → High value** or **QoL**.
