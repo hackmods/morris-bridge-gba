@@ -1,16 +1,8 @@
 #---------------------------------------------------------------------------------------------------------------------
-# Ryan's Bridge (leo_bridge) — Butano / GBA Makefile
-#
-# Expected layout (Butano template convention):
-#   butano/
-#     butano/          <- engine (LIBBUTANO)
-#     leo_bridge/      <- this project
-#
-# Override the engine path if you keep the repo elsewhere:
-#   make LIBBUTANO=/absolute/path/to/butano
+# Thomas's Bridge — Butano / GBA Makefile
 #---------------------------------------------------------------------------------------------------------------------
 
-TARGET       :=  leo_bridge
+TARGET       :=  thomas_bridge
 BUILD        :=  build
 ifeq ($(wildcard vendor/butano/butano/butano.mak),)
 LIBBUTANO    :=  ../butano
@@ -27,8 +19,8 @@ AUDIOBACKEND :=  null
 AUDIOTOOL    :=
 DMGAUDIO     :=  dmg_audio
 DMGAUDIOBACKEND := null
-ROMTITLE     :=  RYANS BRIDGE
-ROMCODE      :=  RYAN
+ROMTITLE     :=  THOMASBRIDGE
+ROMCODE      :=  THOM
 USERFLAGS    :=  -DBN_CFG_SPRITE_AFFINE_MATS_MAX_ITEMS=32
 USERCXXFLAGS :=  -std=c++20
 USERASFLAGS  :=
@@ -40,14 +32,8 @@ STACKTRACE   :=
 USERBUILD    :=
 EXTTOOL      :=
 
-#---------------------------------------------------------------------------------------------------------------------
-# Export absolute butano path:
-#---------------------------------------------------------------------------------------------------------------------
 ifndef LIBBUTANOABS
     export LIBBUTANOABS := $(realpath $(LIBBUTANO))
 endif
 
-#---------------------------------------------------------------------------------------------------------------------
-# Include main makefile:
-#---------------------------------------------------------------------------------------------------------------------
 include $(LIBBUTANOABS)/butano.mak

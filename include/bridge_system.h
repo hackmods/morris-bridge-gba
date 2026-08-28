@@ -1,9 +1,9 @@
-#ifndef RYANS_BRIDGE_BRIDGE_SYSTEM_H
-#define RYANS_BRIDGE_BRIDGE_SYSTEM_H
+#ifndef MORRIS_BRIDGE_BRIDGE_SYSTEM_H
+#define MORRIS_BRIDGE_BRIDGE_SYSTEM_H
 
 /**
  * @file
- * Node/strut graph and train traversal for Ryan's Bridge.
+ * Node/strut graph and train traversal for Morris Bridge.
  *
  * Storage is `bn::vector` with compile-time capacities (16 nodes, 32 struts).
  * Nothing here calls `new`/`delete` or the heap.
@@ -21,6 +21,7 @@ namespace bridge
 
 inline constexpr int MAX_NODES = 16;
 inline constexpr int MAX_STRUTS = 32;
+inline constexpr int LEVEL_COUNT = 3;
 
 /// Indices of the seeded start (left bank) and end (right bank) nodes.
 inline constexpr int START_NODE = 0;
@@ -28,7 +29,7 @@ inline constexpr int END_NODE = 1;
 
 inline constexpr bn::fixed TRAIN_SPEED = 1;          // pixels per frame
 inline constexpr bn::fixed GRAVITY = bn::fixed(1) / 8;
-inline constexpr bn::fixed SNAP_RADIUS = 6;
+inline constexpr bn::fixed SNAP_RADIUS = 10;
 inline constexpr bn::fixed FALL_Y_LIMIT = 90;        // off the bottom of the 160px screen
 
 enum class SimStatus
@@ -61,6 +62,12 @@ public:
     BridgeSystem();
 
     void reset_level();
+    void load_level(int level_index);
+
+    [[nodiscard]] int current_level() const
+    {
+        return _level_index;
+    }
 
     [[nodiscard]] const bn::vector<Node, MAX_NODES>& nodes() const
     {
@@ -138,7 +145,7 @@ public:
     }
 
 private:
-    void _seed_canyon();
+    void _seed_level();
     void _break_strut(int strut_index);
     void _apply_tension(int strut_index, bn::fixed distance_along);
     bool _bfs_path();
@@ -155,6 +162,7 @@ private:
     int _path_index = 0;        ///< Index of the node the train is leaving.
     bn::fixed _fall_vy = 0;
     bool _falling = false;
+    int _level_index = 0;
 };
 
 } // namespace bridge

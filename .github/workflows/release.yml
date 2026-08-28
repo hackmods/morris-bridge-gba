@@ -29,17 +29,18 @@ jobs:
       - name: Clone Butano
         run: git clone --depth 1 https://github.com/GValiente/butano.git vendor/butano
 
-      - name: Compile leo_bridge.gba
+      - name: Generate sprites and compile thomas_bridge.gba
         run: |
+          python3 tools/gen_graphics.py
           docker run --rm -v "$PWD:/project" -w /project sunbr0/gba-butano-base:4dd4b16 \
             bash -lc 'make -j"$(nproc)" LIBBUTANO=vendor/butano/butano PYTHON=python3'
-          cp -f leo_bridge.gba rom/leo_bridge.gba
-          file rom/leo_bridge.gba
+          cp -f thomas_bridge.gba rom/thomas_bridge.gba
+          file rom/thomas_bridge.gba
 
       - uses: actions/upload-artifact@v4
         with:
-          name: leo_bridge-gba
-          path: rom/leo_bridge.gba
+          name: thomas-bridge-gba
+          path: rom/thomas_bridge.gba
           retention-days: 14
 
   host-tests:
@@ -62,13 +63,13 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: leo_bridge-gba
+          name: thomas-bridge-gba
           path: rom
 
       - name: Stage ROM for web build
         run: |
           mkdir -p web/public/rom
-          cp rom/leo_bridge.gba web/public/rom/leo_bridge.gba
+          cp rom/thomas_bridge.gba web/public/rom/thomas_bridge.gba
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

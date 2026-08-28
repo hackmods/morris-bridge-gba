@@ -6,11 +6,12 @@ web/node_modules/
 web/dist/
 tests/test_physics
 *.gba
-!rom/leo_bridge.gba
-!web/public/rom/leo_bridge.gba
-leo_bridge.gba
-leo_bridge.elf
-leo_bridge.map
+!rom/thomas_bridge.gba
+!web/public/rom/thomas_bridge.gba
+thomas_bridge.gba
+thomas_bridge.elf
+thomas_bridge.map
+morris_bridge.gba
 __pycache__/
 *.o
 .idea/

@@ -1,9 +1,9 @@
-#ifndef RYANS_BRIDGE_PHYSICS_H
-#define RYANS_BRIDGE_PHYSICS_H
+#ifndef MORRIS_BRIDGE_PHYSICS_H
+#define MORRIS_BRIDGE_PHYSICS_H
 
 /**
  * @file
- * Fixed-point structural math for Ryan's Bridge.
+ * Fixed-point structural math for Morris Bridge.
  *
  * Every quantity is a Butano `bn::fixed` (20.12). There is no `float` or
  * `double` in this module: distances, lengths, and tension are computed with
