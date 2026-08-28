@@ -33,7 +33,7 @@ The cloud agent **cannot** push to GitHub directly (no `gh` auth / 403 on privat
 | **Name** | `morris-bridge-gba` |
 | **Origin URL** | `https://origin.cursor.com/git/hackmods/morris-bridge-gba.git` |
 | **Default branch** | `main` |
-| **ROM codename** | `leo_bridge` |
+| **ROM codename** | `thomas_bridge` |
 
 ## Remotes
 
@@ -73,7 +73,7 @@ git push -u origin main
 | Tracked | Ignored |
 |---------|---------|
 | Source, graphics, docs | `build/`, `vendor/` |
-| `rom/leo_bridge.gba` (prebuilt) | `*.elf`, root `*.gba` except `rom/` |
+| `rom/thomas_bridge.gba` (prebuilt) | `*.elf`, root `*.gba` except `rom/` |
 | `web/` source + lockfile | `web/node_modules/`, `web/dist/` |
 | CI, Docker, CapRover config | `web/public/rom/*.gba` (synced at build) |
 

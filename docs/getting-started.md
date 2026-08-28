@@ -1,6 +1,6 @@
 # Getting started
 
-Three ways to run Ryan's Bridge, fastest first.
+Three ways to run Thomas's Bridge, fastest first.
 
 ## 1. Browser playtest (no GBA hardware)
 
@@ -9,13 +9,13 @@ Three ways to run Ryan's Bridge, fastest first.
 cd web && npm install && npm run dev
 ```
 
-Open **http://localhost:4317**. Use arrow keys + Z/X or the command queue (`right a start`).
+Open **http://127.0.0.1:4317**. Use arrow keys + Z/X or the command queue (`right a start`).
 
 See [Web playtest](web-playtest.md) for full details.
 
 ## 2. Pre-built ROM (emulator or flash cart)
 
-The repo ships **`rom/leo_bridge.gba`**.
+The repo ships **`rom/thomas_bridge.gba`**.
 
 - **Emulator:** drag into mGBA or VisualBoyAdvance-M
 - **EverDrive GBA:** copy to the `GBA` folder on your SD card
@@ -40,7 +40,7 @@ Requires devkitARM + Butano, or Docker:
 ./scripts/build_rom.sh
 ```
 
-Output: `leo_bridge.gba` (also copied to `rom/` and `web/public/rom/`).
+Output: `thomas_bridge.gba` (also copied to `rom/` and `web/public/rom/`).
 
 See [Building the ROM](building-rom.md).
 
@@ -51,3 +51,10 @@ make -C tests
 ```
 
 All assertions should pass. See [Testing](testing.md).
+
+## Run web E2E (optional)
+
+```bash
+./scripts/sync_rom_to_web.sh
+cd web && npx playwright install chromium && npm run test:e2e
+```
