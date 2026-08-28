@@ -102,9 +102,11 @@ constexpr int LABEL_NO_GO = 4;
 constexpr int LABEL_PEEP = 5;
 constexpr int LABEL_ASHES = 6;
 constexpr int LABEL_START = 7;
-constexpr int LABEL_LV1 = 8;
-constexpr int LABEL_LV2 = 9;
-constexpr int LABEL_LV3 = 10;
+constexpr int LABEL_HINT_NODE = 8;
+constexpr int LABEL_HINT_TEST = 9;
+constexpr int LABEL_HINT_PAUSE = 10;
+
+constexpr int BUILD_HINT_FRAMES = 240;
 
 constexpr int BANNER_LEVEL_SELECT = 0;
 constexpr int BANNER_HATT_OK = 1;
@@ -166,6 +168,8 @@ public:
         _cursor(bn::sprite_items::cursor.create_sprite(0, 0)),
         _train(bn::sprite_items::train.create_sprite(_bridge.train_position())),
         _label(bn::sprite_items::label.create_sprite(0, 66)),
+        _hint_label(bn::sprite_items::label.create_sprite(0, 44)),
+        _hint_secondary(bn::sprite_items::label.create_sprite(0, 54)),
         _panel(bn::sprite_items::panel.create_sprite(0, 66)),
         _banner(bn::sprite_items::banner.create_sprite(0, -36)),
         _logo(bn::sprite_items::logo.create_sprite(0, -52)),
@@ -183,6 +187,10 @@ public:
         _train.set_z_order(-15);
         _train.set_visible(false);
         _label.set_z_order(-18);
+        _hint_label.set_z_order(-18);
+        _hint_secondary.set_z_order(-18);
+        _hint_label.set_visible(false);
+        _hint_secondary.set_visible(false);
         _panel.set_z_order(-19);
         _banner.set_z_order(-30);
         _logo.set_z_order(-29);
@@ -329,16 +337,20 @@ private:
     void _place_backdrop()
     {
         const int sky_x[] = { -96, -32, 32, 96 };
+        const int sky_y[] = { -56, 8 };
 
-        for(int x : sky_x)
+        for(int y : sky_y)
         {
-            bn::sprite_ptr tile = bn::sprite_items::sky.create_sprite(x, -48);
-            tile.set_z_order(30);
-            _sky.push_back(tile);
+            for(int x : sky_x)
+            {
+                bn::sprite_ptr tile = bn::sprite_items::sky.create_sprite(x, y);
+                tile.set_z_order(30);
+                _sky.push_back(tile);
+            }
         }
 
-        _clouds.push_back(bn::sprite_items::cloud.create_sprite(-80, -56));
-        _clouds.push_back(bn::sprite_items::cloud.create_sprite(24, -64));
+        _clouds.push_back(bn::sprite_items::cloud.create_sprite(-80, -64));
+        _clouds.push_back(bn::sprite_items::cloud.create_sprite(24, -72));
         _clouds.back().set_horizontal_scale(bn::fixed(3) / 2);
 
         for(bn::sprite_ptr& cloud : _clouds)
@@ -379,6 +391,12 @@ private:
         _label.set_visible(true);
         _label.set_position(0, 60);
         _label.set_item(bn::sprite_items::label, LABEL_START);
+        _hint_label.set_visible(true);
+        _hint_label.set_position(0, 42);
+        _hint_label.set_item(bn::sprite_items::label, LABEL_HINT_NODE);
+        _hint_secondary.set_visible(true);
+        _hint_secondary.set_position(0, 50);
+        _hint_secondary.set_item(bn::sprite_items::label, LABEL_HINT_TEST);
         _menu_row.set_visible(false);
         _menu_arrow.set_visible(false);
         _train.set_visible(false);
@@ -393,18 +411,18 @@ private:
         _set_backdrop_visible(true);
         _banner.set_visible(true);
         _banner.set_item(bn::sprite_items::banner, BANNER_LEVEL_SELECT);
-        _banner.set_position(0, -48);
+        _banner.set_position(0, -52);
         _panel.set_visible(true);
         _panel.set_item(bn::sprite_items::panel, PANEL_SELECT);
-        _panel.set_position(0, 20);
+        _panel.set_position(0, 16);
         _menu_row.set_visible(true);
         _menu_row.set_item(bn::sprite_items::menu, _selected_level);
-        _menu_row.set_position(0, 8);
+        _menu_row.set_position(0, 4);
         _menu_arrow.set_visible(true);
-        _menu_arrow.set_position(-38, 16);
-        _label.set_visible(true);
-        _label.set_position(0, -28);
-        _label.set_item(bn::sprite_items::label, LABEL_LV1 + _selected_level);
+        _menu_arrow.set_position(-38, 12);
+        _label.set_visible(false);
+        _hint_label.set_visible(false);
+        _hint_secondary.set_visible(false);
         _train.set_visible(true);
         _train.set_position(-56, 44);
         _hatt.set_visible(true);
@@ -420,6 +438,7 @@ private:
         _play_mode = PlayMode::build;
         _selected.reset();
         _pause_option = PauseOption::resume;
+        _build_hint_timer = 0;
         _cursor_pos = _bridge.nodes()[bridge::START_NODE].position;
         _cursor_pos.set_x(_cursor_pos.x() + 16);
         _show_gameplay();
@@ -440,6 +459,8 @@ private:
         _label.set_visible(true);
         _label.set_position(0, 68);
         _label.set_item(bn::sprite_items::label, LABEL_BUILD);
+        _hint_secondary.set_visible(false);
+        _update_build_hints();
         _cursor.set_visible(true);
         _train.set_visible(false);
         _set_backdrop_visible(true);
@@ -501,6 +522,8 @@ private:
         _panel.set_item(bn::sprite_items::panel, PANEL_SELECT);
         _panel.set_position(0, 12);
         _label.set_visible(false);
+        _hint_label.set_visible(false);
+        _hint_secondary.set_visible(false);
         _menu_row.set_visible(true);
         _menu_row.set_item(bn::sprite_items::menu, MENU_PAUSE_BASE + int(_pause_option));
         _menu_row.set_position(0, 0);
@@ -541,6 +564,8 @@ private:
         _label.set_visible(true);
         _label.set_position(0, 50);
         _label.set_item(bn::sprite_items::label, LABEL_PEEP);
+        _hint_label.set_visible(false);
+        _hint_secondary.set_visible(false);
         _menu_arrow.set_visible(false);
         _cursor.set_visible(false);
         _train.set_visible(true);
@@ -563,6 +588,8 @@ private:
         _label.set_visible(true);
         _label.set_position(0, 50);
         _label.set_item(bn::sprite_items::label, LABEL_ASHES);
+        _hint_label.set_visible(false);
+        _hint_secondary.set_visible(false);
         _cursor.set_visible(false);
         _train.set_visible(_train.position().y() < bridge::FALL_Y_LIMIT);
         _hatt.set_visible(true);
@@ -583,6 +610,8 @@ private:
         _label.set_visible(true);
         _label.set_position(0, 42);
         _label.set_item(bn::sprite_items::label, LABEL_USEFUL);
+        _hint_label.set_visible(false);
+        _hint_secondary.set_visible(false);
         _menu_row.set_visible(false);
         _menu_arrow.set_visible(false);
         _train.set_visible(true);
@@ -608,14 +637,12 @@ private:
         {
             _selected_level = (_selected_level + bridge::LEVEL_COUNT - 1) % bridge::LEVEL_COUNT;
             _menu_row.set_item(bn::sprite_items::menu, _selected_level);
-            _label.set_item(bn::sprite_items::label, LABEL_LV1 + _selected_level);
         }
 
         if(_dir_repeat(bn::keypad::down_pressed(), bn::keypad::down_held(), _menu_down_counter))
         {
             _selected_level = (_selected_level + 1) % bridge::LEVEL_COUNT;
             _menu_row.set_item(bn::sprite_items::menu, _selected_level);
-            _label.set_item(bn::sprite_items::label, LABEL_LV1 + _selected_level);
         }
 
         if(bn::keypad::a_pressed() || bn::keypad::start_pressed())
@@ -723,9 +750,11 @@ private:
         if(_play_mode == PlayMode::build)
         {
             _update_build();
+            _update_build_hints();
         }
         else
         {
+            _update_build_hints();
             _update_test();
         }
 
@@ -839,19 +868,19 @@ private:
 
     void _place_scenery()
     {
-        const int ground_x[] = { -104, -72, 72, 104 };
-        const int water_x[] = { -40, -8, 24, 56 };
+        const int ground_x[] = { -120, -88, -56, -24, 8, 40, 72, 104 };
+        const int water_x[] = { -56, -24, 8, 40, 72, 104, -88, 120 };
 
         for(int x : ground_x)
         {
-            bn::sprite_ptr tile = bn::sprite_items::ground.create_sprite(x, 56);
+            bn::sprite_ptr tile = bn::sprite_items::ground.create_sprite(x, 48);
             tile.set_z_order(20);
             _ground.push_back(tile);
         }
 
         for(int x : water_x)
         {
-            bn::sprite_ptr tile = bn::sprite_items::water.create_sprite(x, 72);
+            bn::sprite_ptr tile = bn::sprite_items::water.create_sprite(x, 62);
             tile.set_z_order(21);
             _water.push_back(tile);
         }
@@ -865,6 +894,47 @@ private:
         {
             tile.set_item(bn::sprite_items::water, frame);
         }
+    }
+
+    void _update_build_hints()
+    {
+        if(_screen != Screen::playing || _play_mode != PlayMode::build)
+        {
+            _hint_label.set_visible(false);
+            return;
+        }
+
+        if(!_build_hints_seen)
+        {
+            ++_build_hint_timer;
+
+            if(_build_hint_timer >= BUILD_HINT_FRAMES ||
+               bn::keypad::any_pressed())
+            {
+                _build_hints_seen = true;
+            }
+
+            const int phase = (_build_hint_timer / 60) % 3;
+            int frame = LABEL_HINT_NODE;
+
+            if(phase == 1)
+            {
+                frame = LABEL_HINT_TEST;
+            }
+            else if(phase == 2)
+            {
+                frame = LABEL_HINT_PAUSE;
+            }
+
+            _hint_label.set_visible(true);
+            _hint_label.set_position(0, 52);
+            _hint_label.set_item(bn::sprite_items::label, frame);
+            return;
+        }
+
+        _hint_label.set_visible(true);
+        _hint_label.set_position(0, 52);
+        _hint_label.set_item(bn::sprite_items::label, LABEL_HINT_PAUSE);
     }
 
     void _update_build()
@@ -908,7 +978,7 @@ private:
         }
 
         _cursor_pos.set_x(clamp(_cursor_pos.x(), -112, 112));
-        _cursor_pos.set_y(clamp(_cursor_pos.y(), -72, 56));
+        _cursor_pos.set_y(clamp(_cursor_pos.y(), -64, 48));
 
         const bn::optional<int> hovered = _bridge.find_node_near(_cursor_pos);
         bn::fixed_point draw_at = _cursor_pos;
@@ -1252,10 +1322,14 @@ private:
     bn::fixed _train_prev_x = 0;
     int _toast_timer = 0;
     ToastKind _toast_kind = ToastKind::none;
+    bool _build_hints_seen = false;
+    int _build_hint_timer = 0;
 
     bn::sprite_ptr _cursor;
     bn::sprite_ptr _train;
     bn::sprite_ptr _label;
+    bn::sprite_ptr _hint_label;
+    bn::sprite_ptr _hint_secondary;
     bn::sprite_ptr _panel;
     bn::sprite_ptr _banner;
     bn::sprite_ptr _logo;
@@ -1270,10 +1344,10 @@ private:
     bn::vector<bn::sprite_ptr, 2> _strut_count_digits;
     bn::vector<bn::sprite_ptr, bridge::MAX_NODES> _node_sprites;
     bn::vector<bn::sprite_ptr, bridge::MAX_STRUTS> _strut_sprites;
-    bn::vector<bn::sprite_ptr, 4> _ground;
-    bn::vector<bn::sprite_ptr, 4> _water;
+    bn::vector<bn::sprite_ptr, 8> _ground;
+    bn::vector<bn::sprite_ptr, 8> _water;
     bn::vector<bn::sprite_ptr, 4> _splash;
-    bn::vector<bn::sprite_ptr, 4> _sky;
+    bn::vector<bn::sprite_ptr, 8> _sky;
     bn::vector<bn::sprite_ptr, 2> _clouds;
 };
 

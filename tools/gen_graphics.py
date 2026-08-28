@@ -595,10 +595,22 @@ def make_water() -> None:
 
 
 def make_labels() -> None:
-    texts = ("BUILD", "TEST!", "DELAY", "USEFUL", "NO GO", "PEEP!", "ASHES!", "START", "LV 1", "LV 2", "LV 3")
+    texts = (
+        "BUILD",
+        "TEST!",
+        "DELAY",
+        "USEFUL",
+        "NO GO",
+        "PEEP!",
+        "ASHES!",
+        "START",
+        "A NOD",
+        "START",
+        "PAUSE",
+    )
     w, fh = 32, 8
     px = fill(w, fh * len(texts))
-    colors = (2, 2, 2, 3, 2, 3, 2, 3, 3, 3, 3)
+    colors = (2, 2, 2, 3, 2, 3, 2, 3, 2, 2, 2)
     for i, text in enumerate(texts):
         y0 = i * fh
         rect(px, w, 0, y0, 32, y0 + fh, 7 if i < 8 else 13)

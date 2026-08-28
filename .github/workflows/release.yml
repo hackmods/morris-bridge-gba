@@ -52,9 +52,27 @@ jobs:
       - name: Run test_physics
         run: make -C tests
 
+  web-tests:
+    name: Web playtest tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install and run Vitest
+        working-directory: web
+        run: |
+          npm ci
+          npm test
+
   build-image:
     name: Build and push Docker image
-    needs: [build-rom, host-tests]
+    needs: [build-rom, host-tests, web-tests]
     runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.image.outputs.image }}

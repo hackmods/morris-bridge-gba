@@ -23,10 +23,18 @@ Launch title: **Thomas's Bridge**. (Tank Bridge is too generic; Morris was the w
 
 | Screen | Controls |
 |--------|----------|
-| **Title** | Full splash artwork; Start / A → levels |
-| **Level select** | Up/Down, A play, B back |
-| **Build** | D-Pad, A nodes, Start test, Select pause |
+| **Title** | Full splash artwork; hints for **A NOD** and **START**; Start / A → levels |
+| **Level select** | Up/Down, A play, B back — track name shown in menu row |
+| **Build** | D-Pad, A nodes, Start test, Select pause, B delete, L undo |
 | **Test** | Train runs; B cancel |
+
+## Onboarding
+
+The ROM now teaches controls directly:
+
+- **Title:** static hint labels (**A NOD**, **START**) above the dialog panel
+- **First build session:** rotating hints (`A NOD` → `START` → `PAUSE`) for a few seconds, dismissible with any button
+- **Build HUD:** persistent **PAUSE** reminder after the intro cycle
 
 ## Levels
 

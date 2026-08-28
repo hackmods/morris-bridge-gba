@@ -23,32 +23,32 @@ struct LevelSeed
 
 // Sodor-inspired level layouts (original geometry, cheeky names only).
 constexpr LevelSeed LEVEL_0[] = {
-    { -88, 16, true },  // START
-    { 88, 16, true },   // END
-    { -104, 40, true },
-    { -88, 40, true },
-    { -72, 40, true },
-    { 72, 40, true },
-    { 88, 40, true },
-    { 104, 40, true },
+    { -88, 24, true },  // START
+    { 88, 24, true },   // END
+    { -104, 48, true },
+    { -88, 48, true },
+    { -72, 48, true },
+    { 72, 48, true },
+    { 88, 48, true },
+    { 104, 48, true },
 };
 
 constexpr LevelSeed LEVEL_1[] = {
-    { -96, 8, true },   // START — higher banks, Gordon's Hill vibes
-    { 96, 8, true },    // END
-    { -112, 32, true },
-    { -80, 32, true },
-    { 80, 32, true },
-    { 112, 32, true },
+    { -96, 16, true },  // START — higher banks, Gordon's Hill vibes
+    { 96, 16, true },   // END
+    { -112, 40, true },
+    { -80, 40, true },
+    { 80, 40, true },
+    { 112, 40, true },
 };
 
 constexpr LevelSeed LEVEL_2[] = {
-    { -104, 12, true }, // START — widest gap on the island
-    { 104, 12, true },  // END
-    { -120, 36, true },
-    { -88, 36, true },
-    { 88, 36, true },
-    { 120, 36, true },
+    { -104, 20, true }, // START — widest gap on the island
+    { 104, 20, true },  // END
+    { -120, 44, true },
+    { -88, 44, true },
+    { 88, 44, true },
+    { 120, 44, true },
 };
 
 constexpr const LevelSeed* const LEVELS[] = {
