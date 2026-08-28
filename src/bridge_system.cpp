@@ -67,7 +67,16 @@ constexpr int LEVEL_SIZES[] = {
 
 BridgeSystem::BridgeSystem()
 {
+    set_engine(engine::default_engine());
     load_level(0);
+}
+
+void BridgeSystem::set_engine(const engine::Id id)
+{
+    _engine = id;
+    const engine::Profile& profile = engine::profile(id);
+    _train_weight = profile.weight;
+    _train_speed = profile.speed;
 }
 
 void BridgeSystem::load_level(int level_index)
@@ -556,7 +565,7 @@ void BridgeSystem::_start_falling()
 void BridgeSystem::_apply_tension(int strut_index, bn::fixed distance_along)
 {
     Strut& strut = _struts[strut_index];
-    strut.current_tension = physics::tension(physics::BASE_WEIGHT, distance_along, strut.length);
+    strut.current_tension = physics::tension(_train_weight, distance_along, strut.length);
 }
 
 SimStatus BridgeSystem::update()
@@ -607,7 +616,7 @@ SimStatus BridgeSystem::update()
     const Node& a = _nodes[from];
     const Node& b = _nodes[to];
     const bn::fixed length = _struts[strut_index].length;
-    const bn::fixed dt = length > 0 ? TRAIN_SPEED.safe_division(length) : bn::fixed(1);
+    const bn::fixed dt = length > 0 ? _train_speed.safe_division(length) : bn::fixed(1);
 
     _train_t += dt;
 

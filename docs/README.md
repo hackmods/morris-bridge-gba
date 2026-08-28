@@ -9,6 +9,7 @@ Knowledge base for **Ryan's Bridge** (internal codename `leo_bridge`): a Game Bo
 | Play the ROM right now | [Getting started](getting-started.md) |
 | Understand the game | [Game design](game-design.md) |
 | Optional creepy lore (PG, friends-only) | [Lore leak](lore-leak.md) |
+| Full game + graphics roadmap | [Future expansion](future-expansion.md) |
 | Build the GBA ROM | [Building the ROM](building-rom.md) |
 | Run physics tests on PC | [Testing](testing.md) |
 | Play in a browser | [Web playtest](web-playtest.md) |
@@ -28,6 +29,7 @@ docs/
 ├── architecture.md        Code modules and data flow
 ├── game-design.md         Modes, controls, win/lose
 ├── lore-leak.md           Optional PG copypasta backstory (friends)
+├── future-expansion.md    Engines, progression, graphics roadmap
 ├── physics.md             Fixed-point math and tension model
 ├── graphics.md            Sprites, palettes, asset pipeline
 ├── building-rom.md        devkitARM, Butano, Makefile, Docker

@@ -38,6 +38,12 @@ Optional **PG lore** for friends: [Lore leak](lore-leak.md) (creepy copypasta ba
 
 See [README](../README.md) and in-game HUD. Cursor snap radius: 10px.
 
+## Roadmap
+
+Engine unlocks, weight-based difficulty, and graphics upgrade plan: [Future expansion](future-expansion.md).
+
+Starter types: [`include/engine.h`](../include/engine.h), [`include/progress.h`](../include/progress.h).
+
 ## Graphics
 
 ```bash

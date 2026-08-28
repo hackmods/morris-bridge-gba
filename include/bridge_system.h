@@ -15,6 +15,7 @@
 #include "bn_vector.h"
 
 #include "physics.h"
+#include "engine.h"
 
 namespace bridge
 {
@@ -200,6 +201,23 @@ public:
         return _path.size();
     }
 
+    void set_engine(engine::Id id);
+
+    [[nodiscard]] engine::Id engine() const
+    {
+        return _engine;
+    }
+
+    [[nodiscard]] bn::fixed train_weight() const
+    {
+        return _train_weight;
+    }
+
+    [[nodiscard]] bn::fixed train_speed() const
+    {
+        return _train_speed;
+    }
+
 private:
     enum class LastEdit
     {
@@ -230,6 +248,9 @@ private:
     bool _falling = false;
     int _level_index = 0;
     int _anchored_node_count = 0;
+    engine::Id _engine = engine::default_engine();
+    bn::fixed _train_weight = physics::BASE_WEIGHT;
+    bn::fixed _train_speed = TRAIN_SPEED;
     LastEdit _last_edit = LastEdit::none;
     int _last_edit_index = -1;
 };
