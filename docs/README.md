@@ -10,6 +10,7 @@ Knowledge base for **Thomas's Bridge** (ROM codename `thomas_bridge`): a Game Bo
 | Understand the game | [Game design](game-design.md) |
 | Optional creepy lore (PG, friends-only) | [Lore leak](lore-leak.md) |
 | Full game + graphics roadmap | [Future expansion](future-expansion.md) |
+| **Engine v2 master plan + ship goal** | [Master plan](master-plan.md) · [Session goal](session-goal.md) |
 | Session learnings & backlog | [Session knowledge](knowledge.md) |
 | Build the GBA ROM | [Building the ROM](building-rom.md) |
 | Run physics tests on PC | [Testing](testing.md) |
@@ -32,6 +33,8 @@ docs/
 ├── game-design.md         Modes, controls, win/lose
 ├── lore-leak.md           Optional PG copypasta backstory (friends)
 ├── future-expansion.md    Engines, progression, graphics roadmap
+├── master-plan.md         Engine v2 architecture → ship (READ FIRST for v2)
+├── session-goal.md        Copy-paste goal for full implementation session
 ├── knowledge.md           Session learnings, pitfalls, backlog
 ├── physics.md             Fixed-point math and tension model
 ├── graphics.md            Sprites, palettes, asset pipeline

@@ -25,6 +25,11 @@ Merged open PRs **#5–#10** into `main`; deleted remote `cursor/*` branches aft
 
 See [Session knowledge](knowledge.md) for pitfalls, backlog, and stretch goals.
 
+## 2026-08-28 — Engine v2 master plan
+
+- Added [master-plan.md](master-plan.md): GBA architecture, LinkRole/session layer, AV spec, lore hooks, phased ship checklist
+- Added [session-goal.md](session-goal.md): copy-paste goal for full implementation session through gold master
+
 ## 2026-08-28 — Documentation wiki
 
 - Added `docs/` wiki with full architecture, physics, deploy, and repo guides
