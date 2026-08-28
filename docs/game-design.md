@@ -26,9 +26,24 @@ Optional **PG lore** for friends: [Lore leak](lore-leak.md) (creepy copypasta ba
 | Screen | Controls |
 |--------|----------|
 | **Title** | Full splash artwork; Start / A → levels |
-| **Level select** | Up/Down, A play, B back |
+| **Level select** | Up/Down (locked tracks skipped), A → engine pick, B back |
+| **Engine select** | Up/Down (locked engines skipped), weight shown; A start, B back |
 | **Build** | D-Pad, A nodes, Start test, Select pause |
 | **Test** | Train runs; B cancel |
+
+## Engines and unlocks
+
+| Engine | Load | Unlock |
+|--------|------|--------|
+| Thomas | 4 | Start |
+| Percy | 3 | First clear — Knapford Creek |
+| Edward | 5 | First clear — Gordon's Hill |
+| James | 6 | First clear — Vicarstown |
+| Gordon | 10 | All three tracks cleared |
+
+Heavier engines snap struts sooner. Build-mode weak-strut warnings use the selected engine's load.
+
+Code: [`include/engine.h`](../include/engine.h), [`include/progress.h`](../include/progress.h).
 
 ## Levels
 

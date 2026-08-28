@@ -240,6 +240,30 @@ TRAIN_16 = """
 111111111111111
 """
 
+
+def tint_train_template(body: str, stripe: str) -> str:
+    rows = []
+    for line in TRAIN_16.strip("\n").split("\n"):
+        row = ""
+        for ch in line:
+            if ch == "6":
+                row += body
+            elif ch == "9":
+                row += stripe
+            else:
+                row += ch
+        rows.append(row)
+    return "\n".join(rows)
+
+
+ENGINE_TINTS = (
+    ("6", "9"),  # Thomas — blue / red stripe
+    ("b", "9"),  # Percy — green
+    ("5", "c"),  # Edward — brown / sand
+    ("9", "3"),  # James — red / gold
+    ("a", "1"),  # Gordon — grey express
+)
+
 HATT_16 = """
 .....11111.....
 ....12221.....
@@ -560,14 +584,16 @@ def make_toast() -> None:
 
 
 def make_train() -> None:
-    w, h = 16, 32
-    px = fill(w, h)
-    blit_map(px, w, 0, 0, TRAIN_16)
-    # chuff frame — smoke puffs
-    blit_map(px, w, 0, 16, TRAIN_16)
-    for sx, sy in ((5, 16), (6, 16), (7, 16), (4, 17), (8, 17)):
-        put(px, w, sx, sy, 10)
-    write_indexed_bmp(os.path.join(GFX, "train.bmp"), w, h, px)
+    w, fh = 16, 16
+    px = fill(w, fh * 2 * len(ENGINE_TINTS))
+    for i, (body, stripe) in enumerate(ENGINE_TINTS):
+        art = tint_train_template(body, stripe)
+        y0 = i * fh * 2
+        blit_map(px, w, 0, y0, art)
+        blit_map(px, w, 0, y0 + fh, art)
+        for sx, sy in ((5, y0 + fh), (6, y0 + fh), (7, y0 + fh), (4, y0 + fh + 1), (8, y0 + fh + 1)):
+            put(px, w, sx, sy, 10)
+    write_indexed_bmp(os.path.join(GFX, "train.bmp"), w, fh * 2 * len(ENGINE_TINTS), px)
 
 
 def make_ground() -> None:
@@ -613,10 +639,11 @@ def make_labels() -> None:
         "OOPS!",
         "WAIT!",
         "AGAIN!",
+        "NEW!",
     )
     w, fh = 32, 8
     px = fill(w, fh * len(texts))
-    colors = (2, 2, 2, 3, 2, 3, 2, 3, 3, 3, 3, 3, 3, 2, 3, 3)
+    colors = (2, 2, 2, 3, 2, 3, 2, 3, 3, 3, 3, 3, 3, 2, 3, 3, 3)
     for i, text in enumerate(texts):
         y0 = i * fh
         rect(px, w, 0, y0, 32, y0 + fh, 7 if i < 8 else 13)
@@ -633,6 +660,7 @@ def make_banner() -> None:
         ("DELAY!", "CONFUSION", 9),
         ("HATT OK!", "PEEP PEEP", 11),
         ("DELAY!", "LISTEN", 9),
+        ("PICK ENGIN", "LOAD", 7),
     )
     px = fill(w, fh * len(entries))
     for frame, (title, sub, bg) in enumerate(entries):
@@ -648,20 +676,42 @@ def make_banner() -> None:
 
 def make_menu() -> None:
     w, fh = 32, 32
-    names = ("KNAPFORD", "GORDON", "VICARS", "RESUME", "RESTART", "LEVELS", "TITLE")
+    names = (
+        "KNAPFORD",
+        "GORDON",
+        "VICARS",
+        "RESUME",
+        "RESTART",
+        "LEVELS",
+        "TITLE",
+        "THOMAS",
+        "PERCY",
+        "EDWARD",
+        "JAMES",
+        "GORDON",
+    )
     px = fill(w, fh * len(names))
     for i, name in enumerate(names):
         y0 = i * fh
-        outer = 13 if i < 3 else 7
-        inner = 2 if i < 3 else 15
+        is_level = i < 3
+        is_engine = 7 <= i <= 11
+        outer = 13 if is_level else (11 if is_engine else 7)
+        inner = 2 if is_level else (15 if is_engine else 15)
         accent = 11 if i != 1 else 3
+        if is_engine:
+            accent = (6, 11, 5, 9, 10)[i - 7]
         rect(px, w, 1, y0 + 3, 31, y0 + 29, outer)
         rect(px, w, 3, y0 + 5, 29, y0 + 27, inner)
-        if i < 3:
+        if is_level or is_engine:
             rect(px, w, 3, y0 + 5, 29, y0 + 9, accent)
-        label = f"{i + 1}" if i < 3 else ">"
-        center_text(px, w, label, y0 + 7, 7 if i < 3 else 1, 13)
-        center_text(px, w, name[:5], y0 + 17, 1 if i < 3 else 7, 13 if i < 3 else 1)
+        if is_level:
+            label = f"{i + 1}"
+            center_text(px, w, label, y0 + 7, 7, 13)
+        elif is_engine:
+            center_text(px, w, f"E{i - 6}", y0 + 7, 1, 13)
+        else:
+            center_text(px, w, ">", y0 + 7, 1, 13)
+        center_text(px, w, name[:5], y0 + 17, 1 if is_level or is_engine else 7, 13 if is_level or is_engine else 1)
     write_indexed_bmp(os.path.join(GFX, "menu.bmp"), w, fh * len(names), px)
 
 

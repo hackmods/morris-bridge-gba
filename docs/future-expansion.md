@@ -24,14 +24,9 @@ Starter code lives in [`include/engine.h`](../include/engine.h) and [`include/pr
 
 | Field | Purpose | Gameplay effect |
 |-------|---------|-----------------|
-| `weight` | Load on struts | **Primary difficulty knob** — heavier = shorter safe spans |
-| `speed` | Pixels/frame along strut | Faster crossing = less time on weak struts, more impact on long spans |
-| `coach_count` | Visual + optional load ramp | Multi-car: tension rises as each coach enters span |
-| `sprite_base` | Train sheet frame index | Unique look per character |
-| `menu_frame` | Select-screen tile | Locked vs unlocked palette |
-| `unlock_level` | Progress gate | Which clear awards this engine |
-| `peep_sfx_id` | Audio (future) | Character identity |
-| `lore_tag` | String table index | Rare PG lines tied to character |
+| `weight` / `speed` | Simulation load and crossing rate |
+| `menu_frame(id)` | Derived from `Id` — select-screen tile index |
+| `train_frame_base(id)` | Derived from `Id` — sprite sheet row |
 
 ### Launch roster (v1 target)
 

@@ -30,7 +30,9 @@
 #include "bn_sprite_items_water.h"
 
 #include "bridge_system.h"
+#include "engine.h"
 #include "physics.h"
+#include "progress.h"
 
 namespace
 {
@@ -111,12 +113,14 @@ constexpr int LABEL_TOOT = 12;
 constexpr int LABEL_OOPS = 13;
 constexpr int LABEL_WAIT = 14;
 constexpr int LABEL_AGAIN = 15;
+constexpr int LABEL_NEW = 16;
 
 constexpr int BANNER_LEVEL_SELECT = 0;
 constexpr int BANNER_HATT_OK = 1;
 constexpr int BANNER_DELAY = 2;
 constexpr int BANNER_HATT_PEEP = 3;
 constexpr int BANNER_DELAY_LISTEN = 4;
+constexpr int BANNER_ENGINE_SELECT = 5;
 
 constexpr int PANEL_HUD = 0;
 constexpr int PANEL_DIALOG = 1;
@@ -126,6 +130,7 @@ constexpr int HATT_STERN = 0;
 constexpr int HATT_FURIOUS = 1;
 
 constexpr int MENU_PAUSE_BASE = 3;
+constexpr int MENU_ENGINE_BASE = 7;
 
 bn::fixed snap_grid(bn::fixed value)
 {
@@ -207,6 +212,8 @@ public:
         _node_count_digits.push_back(make_sprite(bn::sprite_items::digit, -12, 66, Z_DIGIT));
         _strut_count_digits.push_back(make_sprite(bn::sprite_items::digit, 12, 66, Z_DIGIT));
         _strut_count_digits.push_back(make_sprite(bn::sprite_items::digit, 20, 66, Z_DIGIT));
+        _weight_digits.push_back(make_sprite(bn::sprite_items::digit, -4, 66, Z_DIGIT));
+        _weight_digits.push_back(make_sprite(bn::sprite_items::digit, 4, 66, Z_DIGIT));
 
         _place_splash_tiles();
         _place_backdrop();
@@ -227,6 +234,10 @@ public:
 
             case Screen::level_select:
                 _update_level_select();
+                break;
+
+            case Screen::engine_select:
+                _update_engine_select();
                 break;
 
             case Screen::playing:
@@ -258,6 +269,7 @@ private:
     {
         title,
         level_select,
+        engine_select,
         playing,
         pause,
         level_complete,
@@ -328,6 +340,88 @@ private:
     int _pick_fail_banner() const
     {
         return _lore_rare(6) ? BANNER_DELAY_LISTEN : BANNER_DELAY;
+    }
+
+    [[nodiscard]] engine::Id _active_engine() const
+    {
+        if(_screen == Screen::level_complete && _show_unlock_flash &&
+           engine::is_playable(_newly_unlocked))
+        {
+            return _newly_unlocked;
+        }
+
+        if(_screen == Screen::playing || _screen == Screen::pause ||
+           _screen == Screen::level_complete || _screen == Screen::level_failed)
+        {
+            return _bridge.engine();
+        }
+
+        return _selected_engine;
+    }
+
+    void _sync_train_sprite()
+    {
+        if(! _train.visible())
+        {
+            return;
+        }
+
+        const engine::Id id = _active_engine();
+        const int chuff = (_frame / 10) % engine::FRAMES_PER_ENGINE;
+        _train.set_item(bn::sprite_items::train, engine::train_frame_base(id) + chuff);
+    }
+
+    void _set_weight_digits(int value, bool visible)
+    {
+        const int clamped = value < 0 ? 0 : (value > 99 ? 99 : value);
+        _weight_digits[0].set_item(bn::sprite_items::digit, clamped / 10);
+        _weight_digits[0].set_position(-4, 66);
+        _weight_digits[0].set_visible(visible && clamped >= 10);
+        _weight_digits[1].set_item(bn::sprite_items::digit, clamped % 10);
+        _weight_digits[1].set_position(clamped >= 10 ? 4 : 0, 66);
+        _weight_digits[1].set_visible(visible);
+    }
+
+    void _step_level(const int delta)
+    {
+        int next = _selected_level;
+
+        for(int attempt = 0; attempt < bridge::LEVEL_COUNT; ++attempt)
+        {
+            next = (next + delta + bridge::LEVEL_COUNT) % bridge::LEVEL_COUNT;
+
+            if(_progress.is_level_unlocked(next))
+            {
+                _selected_level = next;
+                break;
+            }
+        }
+
+        _menu_row.set_item(bn::sprite_items::menu, _selected_level);
+        _label.set_item(bn::sprite_items::label, LABEL_LV1 + _selected_level);
+        _sync_train_sprite();
+    }
+
+    void _step_engine(const int delta)
+    {
+        int index = int(_selected_engine);
+
+        for(int attempt = 0; attempt < engine::engine_count(); ++attempt)
+        {
+            index = (index + delta + engine::engine_count()) % engine::engine_count();
+            const engine::Id candidate = static_cast<engine::Id>(index);
+
+            if(_progress.is_engine_unlocked(candidate))
+            {
+                _selected_engine = candidate;
+                break;
+            }
+        }
+
+        const engine::Profile& profile = engine::profile(_selected_engine);
+        _menu_row.set_item(bn::sprite_items::menu, engine::menu_frame(_selected_engine));
+        _set_weight_digits(profile.weight.integer(), true);
+        _sync_train_sprite();
     }
 
     bool _dir_repeat(bool pressed, bool held, int& counter)
@@ -465,15 +559,53 @@ private:
         _label.set_item(bn::sprite_items::label, LABEL_LV1 + _selected_level);
         _train.set_visible(true);
         _train.set_position(-56, 44);
+        _sync_train_sprite();
         _hatt.set_visible(true);
         _hatt.set_position(56, 44);
         _hatt.set_item(bn::sprite_items::hatt, HATT_STERN);
+        _set_weight_digits(0, false);
+        _node_count_digits[0].set_visible(false);
+        _node_count_digits[1].set_visible(false);
+        _strut_count_digits[0].set_visible(false);
+        _strut_count_digits[1].set_visible(false);
+    }
+
+    void _show_engine_select()
+    {
+        _screen = Screen::engine_select;
+        _hide_gameplay();
+        _set_splash_visible(false);
+        _set_backdrop_visible(true);
+        _banner.set_visible(true);
+        _banner.set_item(bn::sprite_items::banner, BANNER_ENGINE_SELECT);
+        _banner.set_position(0, -48);
+        _panel.set_visible(true);
+        _panel.set_item(bn::sprite_items::panel, PANEL_SELECT);
+        _panel.set_position(0, 20);
+        _menu_row.set_visible(true);
+        _menu_row.set_item(bn::sprite_items::menu, engine::menu_frame(_selected_engine));
+        _menu_row.set_position(0, 8);
+        _menu_arrow.set_visible(true);
+        _menu_arrow.set_position(-38, 16);
+        _label.set_visible(false);
+        _train.set_visible(true);
+        _train.set_position(-56, 44);
+        _sync_train_sprite();
+        _set_weight_digits(engine::profile(_selected_engine).weight.integer(), true);
+        _hatt.set_visible(true);
+        _hatt.set_position(56, 44);
+        _hatt.set_item(bn::sprite_items::hatt, HATT_STERN);
+        _node_count_digits[0].set_visible(false);
+        _node_count_digits[1].set_visible(false);
+        _strut_count_digits[0].set_visible(false);
+        _strut_count_digits[1].set_visible(false);
     }
 
     void _start_level(int level_index)
     {
         _selected_level = level_index;
         _bridge.load_level(level_index);
+        _bridge.set_engine(_selected_engine);
         _screen = Screen::playing;
         _play_mode = PlayMode::build;
         _selected.reset();
@@ -590,6 +722,17 @@ private:
     {
         _screen = Screen::level_complete;
         _set_splash_visible(false);
+        _newly_unlocked = engine::none;
+        _show_unlock_flash = false;
+
+        engine::Id unlocked = engine::none;
+
+        if(_progress.on_level_cleared(_bridge.current_level(), unlocked))
+        {
+            _newly_unlocked = unlocked;
+            _show_unlock_flash = true;
+        }
+
         _banner.set_visible(true);
         _banner.set_item(bn::sprite_items::banner, _pick_win_banner());
         _banner.set_position(0, -28);
@@ -598,7 +741,8 @@ private:
         _panel.set_position(0, 48);
         _label.set_visible(true);
         _label.set_position(0, 50);
-        _label.set_item(bn::sprite_items::label, _pick_win_label());
+        _label.set_item(bn::sprite_items::label,
+                        _show_unlock_flash ? LABEL_NEW : _pick_win_label());
         _menu_arrow.set_visible(false);
         _cursor.set_visible(false);
         _train.set_visible(true);
@@ -606,6 +750,8 @@ private:
         _hatt.set_visible(true);
         _hatt.set_position(-56, 8);
         _hatt.set_item(bn::sprite_items::hatt, HATT_STERN);
+        _sync_train_sprite();
+        _set_weight_digits(0, false);
     }
 
     void _show_level_failed()
@@ -623,9 +769,11 @@ private:
         _label.set_item(bn::sprite_items::label, _pick_fail_label());
         _cursor.set_visible(false);
         _train.set_visible(_train.position().y() < bridge::FALL_Y_LIMIT);
+        _sync_train_sprite();
         _hatt.set_visible(true);
         _hatt.set_position(-56, 8);
         _hatt.set_item(bn::sprite_items::hatt, HATT_FURIOUS);
+        _set_weight_digits(0, false);
     }
 
     void _show_all_complete()
@@ -664,26 +812,63 @@ private:
     {
         if(_dir_repeat(bn::keypad::up_pressed(), bn::keypad::up_held(), _menu_up_counter))
         {
-            _selected_level = (_selected_level + bridge::LEVEL_COUNT - 1) % bridge::LEVEL_COUNT;
-            _menu_row.set_item(bn::sprite_items::menu, _selected_level);
-            _label.set_item(bn::sprite_items::label, LABEL_LV1 + _selected_level);
+            _step_level(-1);
         }
 
         if(_dir_repeat(bn::keypad::down_pressed(), bn::keypad::down_held(), _menu_down_counter))
         {
-            _selected_level = (_selected_level + 1) % bridge::LEVEL_COUNT;
-            _menu_row.set_item(bn::sprite_items::menu, _selected_level);
-            _label.set_item(bn::sprite_items::label, LABEL_LV1 + _selected_level);
+            _step_level(1);
         }
 
         if(bn::keypad::a_pressed() || bn::keypad::start_pressed())
         {
-            _start_level(_selected_level);
+            if(! _progress.is_level_unlocked(_selected_level))
+            {
+                return;
+            }
+
+            _pending_level = _selected_level;
+
+            if(! _progress.is_engine_unlocked(_selected_engine))
+            {
+                _selected_engine = engine::default_engine();
+            }
+
+            _show_engine_select();
+            return;
         }
 
         if(bn::keypad::b_pressed())
         {
             _show_title();
+        }
+    }
+
+    void _update_engine_select()
+    {
+        if(_dir_repeat(bn::keypad::up_pressed(), bn::keypad::up_held(), _menu_up_counter))
+        {
+            _step_engine(-1);
+        }
+
+        if(_dir_repeat(bn::keypad::down_pressed(), bn::keypad::down_held(), _menu_down_counter))
+        {
+            _step_engine(1);
+        }
+
+        if(bn::keypad::a_pressed() || bn::keypad::start_pressed())
+        {
+            if(_progress.is_engine_unlocked(_selected_engine))
+            {
+                _start_level(_pending_level);
+            }
+
+            return;
+        }
+
+        if(bn::keypad::b_pressed())
+        {
+            _show_level_select();
         }
     }
 
@@ -743,14 +928,19 @@ private:
     {
         if(bn::keypad::a_pressed() || bn::keypad::start_pressed())
         {
+            _bridge.end_test();
+
             if(_bridge.current_level() + 1 >= bridge::LEVEL_COUNT)
             {
                 _show_all_complete();
             }
             else
             {
-                _start_level(_bridge.current_level() + 1);
+                _pending_level = _bridge.current_level() + 1;
+                _show_engine_select();
             }
+
+            return;
         }
 
         if(bn::keypad::b_pressed())
@@ -886,8 +1076,8 @@ private:
 
         if(show)
         {
-            const int frame = max_tension < physics::BASE_WEIGHT ?
-                STRUT_PREVIEW_WEAK : STRUT_PREVIEW_OK;
+            const bn::fixed load = _bridge.train_weight();
+            const int frame = max_tension < load ? STRUT_PREVIEW_WEAK : STRUT_PREVIEW_OK;
             position_strut_sprite(_preview_strut, from, to, frame);
             return;
         }
@@ -1090,7 +1280,7 @@ private:
                     break;
 
                 case bridge::StrutPreviewStatus::ok:
-                    if(preview.max_tension < physics::BASE_WEIGHT)
+                    if(preview.max_tension < _bridge.train_weight())
                     {
                         _show_toast(ToastKind::weak);
                     }
@@ -1283,19 +1473,19 @@ private:
         _label.set_item(bn::sprite_items::label, frame);
         _set_counter(_node_count_digits, _bridge.player_node_count(), -20);
         _set_counter(_strut_count_digits, _bridge.struts().size(), 12);
+        _set_weight_digits(_bridge.train_weight().integer(), true);
     }
 
     void _animate_train()
     {
-        if(!_train.visible())
-        {
-            return;
-        }
-
-        const int chuff_frame = (_frame / 10) % 2;
-        _train.set_item(bn::sprite_items::train, chuff_frame);
+        _sync_train_sprite();
     }
 
+    progress::Progress _progress;
+    engine::Id _selected_engine = engine::default_engine();
+    engine::Id _newly_unlocked = engine::none;
+    int _pending_level = 0;
+    bool _show_unlock_flash = false;
     bridge::BridgeSystem _bridge;
     Screen _screen = Screen::title;
     PlayMode _play_mode = PlayMode::build;
@@ -1326,6 +1516,7 @@ private:
     bn::sprite_ptr _toast;
     bn::vector<bn::sprite_ptr, 2> _node_count_digits;
     bn::vector<bn::sprite_ptr, 2> _strut_count_digits;
+    bn::vector<bn::sprite_ptr, 2> _weight_digits;
     bn::vector<bn::sprite_ptr, bridge::MAX_NODES> _node_sprites;
     bn::vector<bn::sprite_ptr, bridge::MAX_STRUTS> _strut_sprites;
     bn::vector<bn::sprite_ptr, 4> _ground;

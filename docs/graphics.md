@@ -29,6 +29,8 @@ python3 tools/gen_graphics.py
 
 This overwrites BMPs in `graphics/`. Replace with your own art but keep JSON filenames aligned — Butano generates `bn::sprite_items::<name>` from the BMP basename.
 
+**Upgrade path:** procedural placeholders → Aseprite indexed BMPs → optional validator. See [Future expansion — Graphics upgrade strategy](future-expansion.md#5-graphics-upgrade-strategy-immersive-on-gba).
+
 ## Rendering struts in code
 
 [`src/main.cpp`](../src/main.cpp):

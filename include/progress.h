@@ -38,6 +38,8 @@ public:
 private:
     void _unlock_engine(engine::Id id);
 
+    bool _try_unlock(engine::Id id, engine::Id& out_unlocked);
+
     int _max_unlocked_level = 0;
     unsigned _cleared_levels = 0;
     unsigned _unlocked_engines = 0;

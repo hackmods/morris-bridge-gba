@@ -10,8 +10,12 @@ all: test
 test_physics: test_physics.cpp ../src/physics.cpp ../src/bridge_system.cpp ../src/engine.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $@ test_physics.cpp ../src/physics.cpp ../src/bridge_system.cpp ../src/engine.cpp
 
-test: test_physics
+test_progress: test_progress.cpp ../src/progress.cpp ../src/engine.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $@ test_progress.cpp ../src/progress.cpp ../src/engine.cpp
+
+test: test_physics test_progress
 	./test_physics
+	./test_progress
 
 clean:
-	rm -f test_physics test_physics.exe
+	rm -f test_physics test_progress test_physics.exe test_progress.exe

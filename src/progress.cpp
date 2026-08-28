@@ -17,6 +17,11 @@ bool Progress::is_level_unlocked(const int level_index) const
 
 bool Progress::is_engine_unlocked(const engine::Id id) const
 {
+    if(! engine::is_playable(id))
+    {
+        return false;
+    }
+
     const unsigned bit = 1u << unsigned(id);
     return (_unlocked_engines & bit) != 0;
 }
@@ -31,9 +36,21 @@ bool Progress::is_level_cleared(const int level_index) const
     return (_cleared_levels & (1u << unsigned(level_index))) != 0;
 }
 
+bool Progress::_try_unlock(const engine::Id id, engine::Id& out_unlocked)
+{
+    if(! engine::is_playable(id) || is_engine_unlocked(id))
+    {
+        return false;
+    }
+
+    _unlock_engine(id);
+    out_unlocked = id;
+    return true;
+}
+
 bool Progress::on_level_cleared(const int level_index, engine::Id& out_unlocked)
 {
-    out_unlocked = engine::Id::count;
+    out_unlocked = engine::none;
 
     if(level_index < 0 || level_index >= bridge::LEVEL_COUNT)
     {
@@ -41,57 +58,37 @@ bool Progress::on_level_cleared(const int level_index, engine::Id& out_unlocked)
     }
 
     const unsigned level_bit = 1u << unsigned(level_index);
-    const bool first_clear = (_cleared_levels & level_bit) == 0;
     _cleared_levels |= level_bit;
 
-    if(level_index < _max_unlocked_level)
-    {
-        // already had access to later tracks
-    }
-    else if(level_index + 1 < bridge::LEVEL_COUNT)
+    if(level_index >= _max_unlocked_level && level_index + 1 < bridge::LEVEL_COUNT)
     {
         _max_unlocked_level = level_index + 1;
     }
 
-    engine::Id reward = engine::Id::count;
-
-    switch(level_index)
-    {
-        case 0:
-            reward = engine::Id::percy;
-            break;
-
-        case 1:
-            reward = engine::Id::edward;
-            break;
-
-        case 2:
-            reward = engine::Id::james;
-            break;
-
-        default:
-            break;
-    }
-
     bool unlocked_new = false;
 
-    if(reward != engine::Id::count && ! is_engine_unlocked(reward))
+    if(_try_unlock(engine::unlock_for_level_clear(level_index), out_unlocked))
     {
-        _unlock_engine(reward);
-        out_unlocked = reward;
         unlocked_new = true;
     }
 
     const unsigned all_cleared = (1u << unsigned(bridge::LEVEL_COUNT)) - 1u;
 
-    if(_cleared_levels == all_cleared && ! is_engine_unlocked(engine::Id::gordon))
+    if(_cleared_levels == all_cleared)
     {
-        _unlock_engine(engine::Id::gordon);
-        out_unlocked = engine::Id::gordon;
-        unlocked_new = true;
+        engine::Id bonus = engine::none;
+
+        if(_try_unlock(engine::all_tracks_bonus_engine(), bonus))
+        {
+            if(! unlocked_new)
+            {
+                out_unlocked = bonus;
+            }
+
+            unlocked_new = true;
+        }
     }
 
-    (void)first_clear;
     return unlocked_new;
 }
 
@@ -100,11 +97,16 @@ void Progress::reset()
     _max_unlocked_level = 0;
     _cleared_levels = 0;
     _unlocked_engines = 0;
-    _unlock_engine(engine::Id::thomas);
+    _unlock_engine(engine::default_engine());
 }
 
 void Progress::_unlock_engine(const engine::Id id)
 {
+    if(! engine::is_playable(id))
+    {
+        return;
+    }
+
     _unlocked_engines |= 1u << unsigned(id);
 }
 
