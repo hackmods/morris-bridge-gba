@@ -13,25 +13,6 @@ namespace view
 namespace
 {
 
-constexpr int HILL_FRAME_KNAPFORD = 0;
-constexpr int HILL_FRAME_HILL = 1;
-constexpr int HILL_FRAME_VIADUCT = 2;
-
-[[nodiscard]] int hill_frame_for_theme(const int bg_theme_id)
-{
-    switch(bg_theme_id)
-    {
-        case 1:
-            return HILL_FRAME_HILL;
-
-        case 2:
-            return HILL_FRAME_VIADUCT;
-
-        default:
-            return HILL_FRAME_KNAPFORD;
-    }
-}
-
 [[nodiscard]] bn::fixed hill_y_for_theme(const int bg_theme_id)
 {
     switch(bg_theme_id)
@@ -44,6 +25,21 @@ constexpr int HILL_FRAME_VIADUCT = 2;
 
         default:
             return 24;
+    }
+}
+
+[[nodiscard]] bn::fixed hill_scale_for_theme(const int bg_theme_id)
+{
+    switch(bg_theme_id)
+    {
+        case 1:
+            return bn::fixed(11) / 10;
+
+        case 2:
+            return bn::fixed(9) / 10;
+
+        default:
+            return bn::fixed(1);
     }
 }
 
@@ -155,7 +151,8 @@ void BackdropView::reset_scenery_layout()
     {
         _hill_base_y[i] = 24;
         _hills[i].set_y(24);
-        _hills[i].set_item(bn::sprite_items::scenery_far, HILL_FRAME_KNAPFORD);
+        _hills[i].set_horizontal_scale(bn::fixed(1));
+        _hills[i].set_vertical_scale(bn::fixed(1));
     }
 }
 
@@ -164,7 +161,7 @@ void BackdropView::layout_for_level(const level::Def& def)
     const bn::fixed bank_ground_y = def.deck_y + (game::GROUND_TILE_Y - game::TRACK_Y);
     const bn::fixed water_y = bank_ground_y + 6;
     const bn::fixed hill_y = hill_y_for_theme(def.bg_theme_id);
-    const int hill_frame = hill_frame_for_theme(def.bg_theme_id);
+    const bn::fixed hill_scale = hill_scale_for_theme(def.bg_theme_id);
 
     for(int i = 0; i < _ground.size(); ++i)
     {
@@ -185,7 +182,8 @@ void BackdropView::layout_for_level(const level::Def& def)
     {
         _hill_base_y[i] = hill_y;
         _hills[i].set_y(hill_y);
-        _hills[i].set_item(bn::sprite_items::scenery_far, hill_frame);
+        _hills[i].set_horizontal_scale(hill_scale);
+        _hills[i].set_vertical_scale(hill_scale);
     }
 }
 

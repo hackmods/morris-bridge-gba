@@ -822,23 +822,13 @@ def make_portrait() -> None:
 
 def make_scenery_far() -> None:
     w, h = 64, 32
-    themes = (
-        (0, 14, 11),   # knapford — gentle meadow
-        (2, 13, 10),   # hill — steep embankment
-        (-1, 12, 9),   # viaduct — industrial dusk
-    )
-    px = fill(w, h * len(themes))
-
-    for i, (peak_bias, ridge, grass) in enumerate(themes):
-        y0 = i * h
-        sky_gradient(px, w, h * len(themes), y0, y0 + 18)
-        for x in range(w):
-            hill = 18 + abs((x - 32) // 5) + peak_bias
-            hill = min(hill, h - 2)
-            for y in range(hill, h):
-                put(px, w, x, y0 + y, ridge if y == hill else grass)
-
-    write_indexed_bmp(os.path.join(GFX, "scenery_far.bmp"), w, h * len(themes), px)
+    px = fill(w, h)
+    sky_gradient(px, w, h, 0, 18)
+    for x in range(w):
+        hill = 18 + abs((x - 32) // 5)
+        for y in range(hill, h):
+            put(px, w, x, y, 14 if y == hill else 11)
+    write_indexed_bmp(os.path.join(GFX, "scenery_far.bmp"), w, h, px)
 
 
 def make_ground() -> None:
