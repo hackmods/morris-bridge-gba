@@ -44,6 +44,7 @@
 #include "level.h"
 #include "physics.h"
 #include "progress.h"
+#include "run_score.h"
 #include "save_data.h"
 
 namespace
@@ -1013,6 +1014,8 @@ private:
 
         _persist_progress();
 
+        _last_run_score = session::compute_run_score(_bridge, _bridge.level_def());
+
         _banner.set_visible(true);
         _banner.set_item(bn::sprite_items::banner, _pick_win_banner());
         _banner.set_position(0, -28);
@@ -1036,7 +1039,7 @@ private:
         _hatt.set_position(-56, 8);
         _hatt.set_item(bn::sprite_items::hatt, HATT_STERN);
         _sync_train_sprite();
-        _set_weight_digits(0, false);
+        _set_weight_digits(_last_run_score.stars, _last_run_score.stars > 0);
     }
 
     void _show_level_failed()
@@ -1997,6 +2000,7 @@ private:
     bool _build_hints_seen = false;
     int _build_hint_timer = 0;
     int _no_go_timer = 0;
+    session::RunScore _last_run_score;
 
     bn::sprite_ptr _cursor;
     bn::sprite_ptr _train;

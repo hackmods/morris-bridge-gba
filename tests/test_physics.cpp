@@ -19,6 +19,7 @@
 #include "bridge_system.h"
 #include "engine.h"
 #include "level_solutions.h"
+#include "run_score.h"
 
 namespace
 {
@@ -378,7 +379,12 @@ int main()
     {
         bridge::BridgeSystem system;
         assert(level_solutions::run_gordon_hill_playthrough(system));
-        std::cout << "  ok documented Gordon's Hill playthrough succeeds\n";
+        const session::RunScore score =
+            session::compute_run_score(system, system.level_def());
+        assert(score.stars == 3);
+        assert(score.total_cost <= system.level_def().par_cost);
+        std::cout << "  ok Gordon's Hill reference scores 3 stars (cost=" << score.total_cost
+                  << " par=" << system.level_def().par_cost << ")\n";
     }
 
     std::cout << "All host physics tests passed.\n";

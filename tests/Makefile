@@ -7,8 +7,8 @@ INCLUDES := -Ihost_bn -I../include
 
 all: test
 
-test_physics: test_physics.cpp ../src/physics.cpp ../src/bridge_system.cpp ../src/engine.cpp ../src/level.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $@ test_physics.cpp ../src/physics.cpp ../src/bridge_system.cpp ../src/engine.cpp ../src/level.cpp
+test_physics: test_physics.cpp ../src/physics.cpp ../src/bridge_system.cpp ../src/engine.cpp ../src/level.cpp ../src/run_score.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $@ test_physics.cpp ../src/physics.cpp ../src/bridge_system.cpp ../src/engine.cpp ../src/level.cpp ../src/run_score.cpp
 
 test_progress: test_progress.cpp ../src/progress.cpp ../src/engine.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $@ test_progress.cpp ../src/progress.cpp ../src/engine.cpp
