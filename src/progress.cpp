@@ -166,11 +166,40 @@ void Progress::apply_save_v2(const int max_unlocked_level, const unsigned cleare
     }
 }
 
+void Progress::apply_save_v3(const int max_unlocked_level, const unsigned cleared_levels,
+                             const unsigned unlocked_engines, const uint8_t packed_stars,
+                             const uint16_t best_costs[level::COUNT], const uint8_t intro_seen_mask)
+{
+    apply_save_v2(max_unlocked_level, cleared_levels, unlocked_engines, packed_stars, best_costs);
+    _intro_seen = intro_seen_mask;
+}
+
+bool Progress::is_intro_seen(const int level_index) const
+{
+    if(level_index < 0 || level_index >= level::COUNT)
+    {
+        return true;
+    }
+
+    return (_intro_seen & (1u << unsigned(level_index))) != 0;
+}
+
+void Progress::mark_intro_seen(const int level_index)
+{
+    if(level_index < 0 || level_index >= level::COUNT)
+    {
+        return;
+    }
+
+    _intro_seen |= 1u << unsigned(level_index);
+}
+
 void Progress::reset()
 {
     _max_unlocked_level = 0;
     _cleared_levels = 0;
     _unlocked_engines = 0;
+    _intro_seen = 0;
 
     for(int i = 0; i < level::COUNT; ++i)
     {

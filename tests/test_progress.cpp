@@ -67,6 +67,12 @@ int main()
     assert(progress.best_cost(0) == 5);
     std::cout << "  ok record_level_result keeps best stars and cost\n";
 
+    assert(! progress.is_intro_seen(0));
+    progress.mark_intro_seen(0);
+    assert(progress.is_intro_seen(0));
+    assert(! progress.is_intro_seen(1));
+    std::cout << "  ok intro seen flags per level\n";
+
     std::cout << "All progress tests passed.\n";
     return 0;
 }

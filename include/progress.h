@@ -52,6 +52,19 @@ public:
     void apply_save_v2(int max_unlocked_level, unsigned cleared_levels, unsigned unlocked_engines,
                        uint8_t packed_stars, const uint16_t best_costs[level::COUNT]);
 
+    void apply_save_v3(int max_unlocked_level, unsigned cleared_levels, unsigned unlocked_engines,
+                       uint8_t packed_stars, const uint16_t best_costs[level::COUNT],
+                       uint8_t intro_seen_mask);
+
+    [[nodiscard]] bool is_intro_seen(int level_index) const;
+
+    void mark_intro_seen(int level_index);
+
+    [[nodiscard]] uint8_t intro_seen_mask() const
+    {
+        return _intro_seen;
+    }
+
     [[nodiscard]] unsigned cleared_levels_mask() const
     {
         return _cleared_levels;
@@ -79,6 +92,7 @@ private:
     unsigned _unlocked_engines = 0;
     uint8_t _best_stars[level::COUNT] = {};
     uint16_t _best_cost[level::COUNT] = {};
+    uint8_t _intro_seen = 0;
 };
 
 } // namespace progress
