@@ -44,7 +44,14 @@ Regenerate placeholder indexed BMP sprites in `graphics/`. Run after editing spr
 python3 tools/gen_graphics.py
 ```
 
-## Typical workflows
+## `tools/gen_audio.py`
+
+Regenerate original parody music (MOD) and SFX (WAV), plus 16-bit previews in `audio_preview/`.
+
+```bash
+python3 tools/gen_audio.py
+python3 tools/gen_audio.py --check
+```
 
 | Goal | Commands |
 |------|----------|

@@ -45,7 +45,7 @@ Session knowledge captured from the morris-bridge-gba / Ryan's Bridge prototype 
 | mGBA-WASM for browser | Full GBA compatibility vs partial JS emulators |
 | nginx not Vite in production | Static files + header control for COOP/COEP |
 | Docker ROM build in CI | Reproducible; no devkitARM on GitHub runners |
-| Audio backend `null` | Scope reduction for mechanics prototype |
+| Audio backend `maxmod` | Original parody BGM + steam SFX (not licensed TV audio) |
 
 ## Version tags (recommended)
 

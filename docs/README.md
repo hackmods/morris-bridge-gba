@@ -11,6 +11,7 @@ Knowledge base for **Ryan's Bridge** (internal codename `leo_bridge`): a Game Bo
 | Build the GBA ROM | [Building the ROM](building-rom.md) |
 | Run physics tests on PC | [Testing](testing.md) |
 | Play in a browser | [Web playtest](web-playtest.md) |
+| Hear the parody score | [Audio](audio.md) |
 | Deploy for friends | [Deployment](deployment.md) |
 | Set up CI/CD | [CI/CD pipeline](ci-cd.md) |
 | Flash cart / hardware | [Hardware](hardware.md) |
@@ -28,6 +29,7 @@ docs/
 ├── game-design.md         Modes, controls, win/lose
 ├── physics.md             Fixed-point math and tension model
 ├── graphics.md            Sprites, palettes, asset pipeline
+├── audio.md               Original parody score, SFX, Maxmod import
 ├── building-rom.md        devkitARM, Butano, Makefile, Docker
 ├── testing.md             Host unit tests and manual QA
 ├── web-playtest.md        mGBA-WASM browser emulator

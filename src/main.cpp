@@ -3,13 +3,24 @@
 #include "bn_bg_palettes.h"
 #include "bn_keypad.h"
 #include "bn_math.h"
+#include "bn_music.h"
 #include "bn_optional.h"
 #include "bn_sound_items.h"
 #include "bn_sprite_builder.h"
 #include "bn_sprite_ptr.h"
 #include "bn_vector.h"
 
+#include "bn_music_items_full_steam.h"
+#include "bn_music_items_island_line.h"
+#include "bn_music_items_workshop.h"
+#include "bn_music_items_yard.h"
 #include "bn_sound_items_chuff.h"
+#include "bn_sound_items_delay.h"
+#include "bn_sound_items_peep.h"
+#include "bn_sound_items_snap.h"
+#include "bn_sound_items_splash.h"
+#include "bn_sound_items_ui.h"
+#include "bn_sound_items_useful.h"
 #include "bn_sound_items_whistle.h"
 
 #include "bn_sprite_items_anchor.h"
@@ -47,6 +58,8 @@ constexpr int CURSOR_REPEAT_DELAY = 10;
 constexpr int CURSOR_REPEAT_RATE = 3;
 constexpr int TOAST_FRAMES = 90;
 constexpr int CHUFF_FRAMES = 10;
+constexpr bn::fixed MUSIC_VOLUME = bn::fixed(1) / 2;
+constexpr bn::fixed MUSIC_PAUSE_VOLUME = bn::fixed(1) / 5;
 
 constexpr int TOAST_DUP = 0;
 constexpr int TOAST_WEAK = 1;
@@ -99,9 +112,46 @@ bn::fixed clamp(bn::fixed value, bn::fixed lo, bn::fixed hi)
     return value;
 }
 
-void set_train_sprite_position(bn::sprite_ptr& train, bn::fixed_point track_position)
+enum class MusicCue
 {
-    train.set_position(game::train_display_position(track_position));
+    none,
+    island_line,
+    yard,
+    workshop,
+    full_steam,
+};
+
+void play_music(MusicCue cue, MusicCue& current)
+{
+    if(cue == current)
+    {
+        return;
+    }
+
+    current = cue;
+
+    switch(cue)
+    {
+        case MusicCue::none:
+            bn::music::stop();
+            break;
+
+        case MusicCue::island_line:
+            bn::music_items::island_line.play(MUSIC_VOLUME, true);
+            break;
+
+        case MusicCue::yard:
+            bn::music_items::yard.play(MUSIC_VOLUME, true);
+            break;
+
+        case MusicCue::workshop:
+            bn::music_items::workshop.play(MUSIC_VOLUME, true);
+            break;
+
+        case MusicCue::full_steam:
+            bn::music_items::full_steam.play(MUSIC_VOLUME, true);
+            break;
+    }
 }
 
 constexpr int LABEL_BUILD = 0;
@@ -390,6 +440,7 @@ private:
         _menu_arrow.set_visible(false);
         _train.set_visible(false);
         _hatt.set_visible(false);
+        play_music(MusicCue::island_line, _music_cue);
     }
 
     void _show_level_select()
@@ -417,6 +468,7 @@ private:
         _hatt.set_visible(true);
         _hatt.set_position(56, 44);
         _hatt.set_item(bn::sprite_items::hatt, HATT_STERN);
+        play_music(MusicCue::yard, _music_cue);
     }
 
     void _start_level(int level_index)
@@ -432,6 +484,7 @@ private:
         _show_gameplay();
         _sync_node_sprites();
         _sync_strut_sprites();
+        play_music(MusicCue::workshop, _music_cue);
     }
 
     void _show_gameplay()
@@ -517,6 +570,11 @@ private:
         _hatt.set_visible(true);
         _hatt.set_position(56, 8);
         _hatt.set_item(bn::sprite_items::hatt, HATT_FURIOUS);
+
+        if(bn::music::playing())
+        {
+            bn::music::set_volume(MUSIC_PAUSE_VOLUME);
+        }
     }
 
     void _leave_pause()
@@ -533,6 +591,11 @@ private:
         _label.set_position(0, 68);
         _label.set_item(bn::sprite_items::label, LABEL_BUILD);
         _cursor.set_visible(true);
+
+        if(bn::music::playing())
+        {
+            bn::music::set_volume(MUSIC_VOLUME);
+        }
     }
 
     void _show_level_complete()
@@ -552,6 +615,8 @@ private:
         _cursor.set_visible(false);
         _train.set_visible(true);
         set_train_sprite_position(_train, _bridge.train_position());
+        play_music(MusicCue::none, _music_cue);
+        bn::sound_items::useful.play();
         bn::sound_items::whistle.play();
         _hatt.set_visible(true);
         _hatt.set_position(-56, 8);
@@ -573,6 +638,10 @@ private:
         _label.set_item(bn::sprite_items::label, LABEL_ASHES);
         _cursor.set_visible(false);
         _train.set_visible(_train.position().y() < bridge::FALL_Y_LIMIT);
+        play_music(MusicCue::none, _music_cue);
+        bn::sound_items::snap.play();
+        bn::sound_items::delay.play();
+        bn::sound_items::splash.play();
         _hatt.set_visible(true);
         _hatt.set_position(-56, 8);
         _hatt.set_item(bn::sprite_items::hatt, HATT_FURIOUS);
@@ -598,6 +667,8 @@ private:
         _hatt.set_visible(true);
         _hatt.set_position(56, 16);
         _hatt.set_item(bn::sprite_items::hatt, HATT_STERN);
+        play_music(MusicCue::island_line, _music_cue);
+        bn::sound_items::useful.play();
     }
 
     void _update_title()
@@ -617,6 +688,7 @@ private:
             _selected_level = (_selected_level + bridge::LEVEL_COUNT - 1) % bridge::LEVEL_COUNT;
             _menu_row.set_item(bn::sprite_items::menu, _selected_level);
             _label.set_item(bn::sprite_items::label, LABEL_LV1 + _selected_level);
+            bn::sound_items::ui.play();
         }
 
         if(_dir_repeat(bn::keypad::down_pressed(), bn::keypad::down_held(), _menu_down_counter))
@@ -624,6 +696,7 @@ private:
             _selected_level = (_selected_level + 1) % bridge::LEVEL_COUNT;
             _menu_row.set_item(bn::sprite_items::menu, _selected_level);
             _label.set_item(bn::sprite_items::label, LABEL_LV1 + _selected_level);
+            bn::sound_items::ui.play();
         }
 
         if(bn::keypad::a_pressed() || bn::keypad::start_pressed())
@@ -643,11 +716,13 @@ private:
         {
             _pause_option = PauseOption((int(_pause_option) + int(PauseOption::count) - 1) %
                                         int(PauseOption::count));
+            bn::sound_items::ui.play();
         }
 
         if(_dir_repeat(bn::keypad::down_pressed(), bn::keypad::down_held(), _menu_down_counter))
         {
             _pause_option = PauseOption((int(_pause_option) + 1) % int(PauseOption::count));
+            bn::sound_items::ui.play();
         }
 
         _menu_row.set_item(bn::sprite_items::menu, MENU_PAUSE_BASE + int(_pause_option));
@@ -668,6 +743,7 @@ private:
                     _leave_pause();
                     _sync_node_sprites();
                     _sync_strut_sprites();
+                    play_music(MusicCue::workshop, _music_cue);
                     break;
 
                 case PauseOption::levels:
@@ -1068,6 +1144,13 @@ private:
         if(_bridge.status() == bridge::SimStatus::no_path)
         {
             _label.set_item(bn::sprite_items::label, LABEL_NO_GO);
+            play_music(MusicCue::none, _music_cue);
+            bn::sound_items::delay.play();
+        }
+        else
+        {
+            play_music(MusicCue::full_steam, _music_cue);
+            bn::sound_items::peep.play();
         }
     }
 
@@ -1078,6 +1161,7 @@ private:
         _train.set_visible(false);
         _cursor.set_visible(true);
         _cursor.set_position(_cursor_pos);
+        play_music(MusicCue::workshop, _music_cue);
     }
 
     void _update_test()
@@ -1266,6 +1350,7 @@ private:
     bn::optional<int> _selected;
     int _selected_level = 0;
     PauseOption _pause_option = PauseOption::resume;
+    MusicCue _music_cue = MusicCue::none;
     int _frame = 0;
     int _menu_up_counter = 0;
     int _menu_down_counter = 0;

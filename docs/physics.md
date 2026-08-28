@@ -54,12 +54,18 @@ When `current_tension > max_tension`, the strut breaks, the train keeps its lerp
 
 ## Audio
 
-Direct Sound effects via Maxmod:
+Original parody loops via Maxmod (`AUDIOBACKEND := maxmod`):
 
-- `chuff.wav` — synced to train sprite chuff animation during test mode
-- `whistle.wav` — level-complete PEEP
+| Track | Cue |
+|-------|-----|
+| `island_line.mod` | Title march |
+| `yard.mod` | Level select |
+| `workshop.mod` | Build mode |
+| `full_steam.mod` | Crossing |
 
-Generate assets: `python3 tools/gen_audio.py`
+SFX: `chuff`, `peep`, `whistle`, `useful`, `snap`, `delay`, `splash`, `ui`.
+
+See [Audio](audio.md). Generate with `python3 tools/gen_audio.py`.
 
 ## Host test coverage
 

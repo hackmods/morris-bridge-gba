@@ -12,6 +12,7 @@ test_physics: test_physics.cpp ../src/physics.cpp ../src/bridge_system.cpp
 
 test: test_physics
 	./test_physics
+	python3 ../tools/gen_audio.py --check
 
 clean:
 	rm -f test_physics test_physics.exe

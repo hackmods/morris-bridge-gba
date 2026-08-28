@@ -36,7 +36,9 @@ Launch title: **Thomas's Bridge**. (Tank Bridge is too generic; Morris was the w
 
 See [README](../README.md) and in-game HUD. Cursor snap radius: 10px.
 
-## Graphics
+## Audio
+
+Original parody score (not the licensed TV theme): title march, yard idler, workshop build loop, full-steam crossing. Steam chuffs, peeps, and a win whistle. See [Audio](audio.md).
 
 ```bash
 python3 tools/gen_graphics.py
