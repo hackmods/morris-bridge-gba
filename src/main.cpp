@@ -17,6 +17,7 @@
 #include "bn_sprite_items_menu.h"
 #include "bn_sprite_items_node.h"
 #include "bn_sprite_items_panel.h"
+#include "bn_sprite_items_splash.h"
 #include "bn_sprite_items_sky.h"
 #include "bn_sprite_items_strut.h"
 #include "bn_sprite_items_train.h"
@@ -115,6 +116,7 @@ public:
         _menu_arrow.set_z_order(-24);
         _hatt.set_z_order(-23);
 
+        _place_splash_tiles();
         _place_backdrop();
         _place_scenery();
         _show_title();
@@ -211,6 +213,30 @@ private:
         return false;
     }
 
+    void _place_splash_tiles()
+    {
+        const int frames[] = { 0, 1, 2, 3 };
+        const int xs[] = { -32, 32, -32, 32 };
+        const int ys[] = { -32, -32, 32, 32 };
+
+        for(int i = 0; i < 4; ++i)
+        {
+            bn::sprite_ptr tile = bn::sprite_items::splash.create_sprite(xs[i], ys[i]);
+            tile.set_item(bn::sprite_items::splash, frames[i]);
+            tile.set_z_order(-28);
+            tile.set_visible(false);
+            _splash.push_back(tile);
+        }
+    }
+
+    void _set_splash_visible(bool visible)
+    {
+        for(bn::sprite_ptr& tile : _splash)
+        {
+            tile.set_visible(visible);
+        }
+    }
+
     void _place_backdrop()
     {
         const int sky_x[] = { -96, -32, 32, 96 };
@@ -253,29 +279,26 @@ private:
         _screen = Screen::title;
         _play_mode = PlayMode::build;
         _hide_gameplay();
-        _set_backdrop_visible(true);
-        _banner.set_visible(true);
-        _banner.set_item(bn::sprite_items::banner, BANNER_TITLE);
-        _banner.set_position(0, -36);
+        _set_backdrop_visible(false);
+        _set_splash_visible(true);
+        _banner.set_visible(false);
         _panel.set_visible(true);
         _panel.set_item(bn::sprite_items::panel, PANEL_DIALOG);
-        _panel.set_position(0, 52);
+        _panel.set_position(0, 58);
         _label.set_visible(true);
-        _label.set_position(0, 54);
+        _label.set_position(0, 60);
         _label.set_item(bn::sprite_items::label, LABEL_START);
         _menu_row.set_visible(false);
         _menu_arrow.set_visible(false);
-        _train.set_visible(true);
-        _train.set_position(-48, 20);
-        _hatt.set_visible(true);
-        _hatt.set_position(56, 12);
-        _hatt.set_item(bn::sprite_items::hatt, HATT_STERN);
+        _train.set_visible(false);
+        _hatt.set_visible(false);
     }
 
     void _show_level_select()
     {
         _screen = Screen::level_select;
         _hide_gameplay();
+        _set_splash_visible(false);
         _set_backdrop_visible(true);
         _banner.set_visible(true);
         _banner.set_item(bn::sprite_items::banner, BANNER_LEVEL_SELECT);
@@ -315,6 +338,7 @@ private:
 
     void _show_gameplay()
     {
+        _set_splash_visible(false);
         _banner.set_visible(false);
         _menu_row.set_visible(false);
         _menu_arrow.set_visible(false);
@@ -377,6 +401,7 @@ private:
     void _enter_pause()
     {
         _screen = Screen::pause;
+        _set_splash_visible(false);
         _pause_option = PauseOption::resume;
         _banner.set_visible(true);
         _banner.set_item(bn::sprite_items::banner, BANNER_LEVEL_SELECT);
@@ -415,6 +440,7 @@ private:
     void _show_level_complete()
     {
         _screen = Screen::level_complete;
+        _set_splash_visible(false);
         _banner.set_visible(true);
         _banner.set_item(bn::sprite_items::banner, BANNER_HATT_OK);
         _banner.set_position(0, -28);
@@ -436,6 +462,7 @@ private:
     void _show_level_failed()
     {
         _screen = Screen::level_failed;
+        _set_splash_visible(false);
         _banner.set_visible(true);
         _banner.set_item(bn::sprite_items::banner, BANNER_DELAY);
         _banner.set_position(0, -28);
@@ -455,6 +482,7 @@ private:
     void _show_all_complete()
     {
         _screen = Screen::all_complete;
+        _set_splash_visible(false);
         _banner.set_visible(true);
         _banner.set_item(bn::sprite_items::banner, BANNER_HATT_OK);
         _banner.set_position(0, -36);
@@ -970,6 +998,7 @@ private:
     bn::vector<bn::sprite_ptr, bridge::MAX_STRUTS> _strut_sprites;
     bn::vector<bn::sprite_ptr, 4> _ground;
     bn::vector<bn::sprite_ptr, 4> _water;
+    bn::vector<bn::sprite_ptr, 4> _splash;
     bn::vector<bn::sprite_ptr, 4> _sky;
     bn::vector<bn::sprite_ptr, 2> _clouds;
 };

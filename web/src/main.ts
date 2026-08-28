@@ -175,7 +175,7 @@ async function main(): Promise<void> {
     await emulator.init();
     setupKeyboard(emulator);
     setEnabled(true);
-    appendFeedLine('Morris Bridge ready — keyboard or queue inputs accepted');
+    appendFeedLine('Thomas\'s Bridge ready — keyboard or queue inputs accepted');
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     showError(message);

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Morris Bridge sprites — Pokémon-style UI, meme Thomas / Sir Topham Hatt energy."""
+"""Generate Thomas's Bridge sprites — high-quality GBA pixel art."""
 
 from __future__ import annotations
 
@@ -158,6 +158,142 @@ def blit_text(px: list[int], w: int, text: str, ox: int, oy: int, color: int) ->
 def center_text(px: list[int], w: int, text: str, y: int, color: int) -> None:
     tw = len(text) * 6 - 1
     blit_text(px, w, text, max(0, (w - tw) // 2), y, color)
+
+
+def blit_text_2x(px: list[int], w: int, text: str, ox: int, oy: int, color: int, shadow: int = 1) -> None:
+    """Double-size title lettering with outline shadow."""
+    x = ox
+    for ch in text:
+        glyph = FONT.get(ch, FONT[" "])
+        for gy, row in enumerate(glyph):
+            for gx, bit in enumerate(row):
+                if bit != "1":
+                    continue
+                for dy in (0, 1):
+                    for dx in (0, 1):
+                        put(px, w, x + gx * 2 + dx, oy + gy * 2 + dy, color)
+                        put(px, w, x + gx * 2 + dx + 1, oy + gy * 2 + dy + 1, shadow)
+        x += 12
+
+
+def draw_train_hero(px: list[int], w: int, ox: int, oy: int) -> None:
+    """Detailed 28x22 tank engine for splash art."""
+    # Shadow on track
+    hline(px, w, ox - 2, ox + 30, oy + 21, 1)
+    # Wheels
+    for wx in (ox + 6, ox + 18):
+        circle(px, w, wx, oy + 19, 3, 1)
+        circle(px, w, wx, oy + 19, 2, 10)
+        circle(px, w, wx, oy + 19, 1, 9)
+    # Boiler
+    rect(px, w, ox + 2, oy + 8, ox + 22, oy + 18, 6)
+    rect(px, w, ox + 3, oy + 9, ox + 21, oy + 17, 7)
+    hline(px, w, ox + 3, ox + 21, oy + 13, 9)
+    hline(px, w, ox + 3, ox + 21, oy + 14, 9)
+    # Face
+    circle(px, w, ox + 12, oy + 13, 5, 2)
+    put(px, w, ox + 10, oy + 11, 1)
+    put(px, w, ox + 14, oy + 11, 1)
+    put(px, w, ox + 10, oy + 15, 1)
+    put(px, w, ox + 11, oy + 16, 1)
+    put(px, w, ox + 12, oy + 16, 1)
+    put(px, w, ox + 13, oy + 16, 1)
+    put(px, w, ox + 14, oy + 15, 1)
+    # Cab
+    rect(px, w, ox + 20, oy + 4, ox + 28, oy + 18, 7)
+    rect(px, w, ox + 21, oy + 5, ox + 27, oy + 10, 3)
+    rect(px, w, ox + 22, oy + 6, ox + 26, oy + 9, 15)
+    # Funnel + smoke
+    rect(px, w, ox + 6, oy + 3, ox + 10, oy + 8, 1)
+    rect(px, w, ox + 5, oy + 1, ox + 11, oy + 4, 10)
+    for sx, sy in ((7, 0), (8, 0), (9, 0), (6, 1), (10, 1)):
+        put(px, w, ox + sx, oy + sy, 10)
+    # Buffer
+    rect(px, w, ox, oy + 16, ox + 3, oy + 20, 9)
+
+
+def draw_hatt_hero(px: list[int], w: int, ox: int, oy: int) -> None:
+    """Sir Topham Hatt watching from the cliff — splash size."""
+    rect(px, w, ox + 4, oy, ox + 16, oy + 5, 1)
+    rect(px, w, ox + 2, oy + 5, ox + 18, oy + 8, 1)
+    hline(px, w, ox + 2, ox + 18, oy + 5, 10)
+    circle(px, w, ox + 10, oy + 14, 7, 4)
+    circle(px, w, ox + 10, oy + 14, 6, 2)
+    put(px, w, ox + 7, oy + 12, 1)
+    put(px, w, ox + 13, oy + 12, 1)
+    hline(px, w, ox + 7, ox + 14, oy + 16, 1)
+    rect(px, w, ox + 5, oy + 20, ox + 15, oy + 26, 7)
+    put(px, w, ox + 10, oy + 20, 3)
+
+
+def draw_cliff(px: list[int], w: int, x0: int, x1: int, top: int, bottom: int, flip: bool = False) -> None:
+    """Grass-topped cliff mass."""
+    rect(px, w, x0, top + 4, x1, bottom, 13)
+    rect(px, w, x0, top, x1, top + 6, 11)
+    rect(px, w, x0 + 1, top + 1, x1 - 1, top + 5, 14)
+    for i, tx in enumerate(range(x0 + 2, x1 - 2, 5)):
+        tree_y = top - 2 - (i % 2)
+        circle(px, w, tx, tree_y, 2, 14)
+        circle(px, w, tx, tree_y - 1, 1, 11)
+    # Track bed
+    hline(px, w, x0, x1, top + 8, 12)
+    hline(px, w, x0, x1, top + 9, 1)
+
+
+def make_splash() -> None:
+    """128x128 hero illustration split into four 64x64 GBA tiles."""
+    big_w = big_h = 128
+    big = fill(big_w, big_h)
+
+    for y in range(56):
+        c = 15 if y < 20 else (8 if y < 40 else 6)
+        hline(big, big_w, 0, big_w, y, c)
+
+    circle(big, big_w, 104, 18, 8, 3)
+    circle(big, big_w, 104, 18, 6, 2)
+
+    for cx, cy in ((20, 16), (56, 10), (88, 22)):
+        circle(big, big_w, cx, cy, 4, 2)
+        circle(big, big_w, cx + 5, cy - 1, 5, 2)
+        circle(big, big_w, cx + 3, cy + 1, 3, 15)
+
+    for x in range(big_w):
+        hill_y = 52 + abs((x - 64) // 8)
+        put(big, big_w, x, hill_y, 14)
+        put(big, big_w, x, hill_y + 1, 11)
+
+    for y in range(88, big_h):
+        for x in range(big_w):
+            put(big, big_w, x, y, 7 if (x + y) % 4 else 8)
+
+    draw_cliff(big, big_w, 0, 42, 58, 92)
+    draw_cliff(big, big_w, 86, big_w, 58, 92)
+
+    # Broken bridge over gap
+    for bx in range(44, 84, 8):
+        rect(big, big_w, bx, 66, bx + 6, 70, 5)
+        hline(big, big_w, bx, bx + 6, 67, 12)
+    # Rope / missing planks
+    vline(big, big_w, 52, 70, 82, 5)
+    vline(big, big_w, 76, 70, 84, 5)
+
+    draw_train_hero(big, big_w, 6, 58)
+    draw_hatt_hero(big, big_w, 96, 52)
+
+    # Title lettering baked into artwork
+    blit_text_2x(big, big_w, "THOMAS'S", 16, 96, 3, 1)
+    blit_text_2x(big, big_w, "BRIDGE", 34, 114, 2, 1)
+
+    # Split into 4 x 64x64 frames (vertical strip for Butano)
+    tile = 64
+    out = []
+    for fy in range(2):
+        for fx in range(2):
+            for y in range(tile):
+                for x in range(tile):
+                    out.append(big[(fy * tile + y) * big_w + (fx * tile + x)])
+
+    write_indexed_bmp(os.path.join(GFX, "splash.bmp"), tile, tile * 4, out)
 
 
 def make_sky() -> None:
@@ -374,7 +510,7 @@ def make_banner() -> None:
     panel_box(px, w, 2, y0 + 1, 62, y0 + 31)
     rect(px, w, 4, y0 + 4, 60, y0 + 20, 6)
     hline(px, w, 4, 60, y0 + 12, 9)
-    center_text(px, w, "MORRIS", y0 + 5, 3)
+    center_text(px, w, "THOMAS'S", y0 + 4, 3)
     center_text(px, w, "BRIDGE", y0 + 13, 2)
     center_text(px, w, "USEFUL!", y0 + 22, 3)
 
@@ -440,6 +576,7 @@ def write_json(name: str, extra: dict | None = None) -> None:
 
 def main() -> None:
     os.makedirs(GFX, exist_ok=True)
+    make_splash()
     make_sky()
     make_cloud()
     make_panel()
@@ -455,6 +592,7 @@ def main() -> None:
     make_banner()
     make_menu()
 
+    write_json("splash.json", {"height": 64})
     write_json("sky.json")
     write_json("cloud.json")
     write_json("panel.json", {"height": 32})
@@ -469,7 +607,7 @@ def main() -> None:
     write_json("label.json", {"height": 8})
     write_json("banner.json", {"height": 32})
     write_json("menu.json", {"height": 32})
-    print(f"Morris Bridge sprites written to {GFX}")
+    print(f"Thomas's Bridge sprites written to {GFX}")
 
 
 if __name__ == "__main__":

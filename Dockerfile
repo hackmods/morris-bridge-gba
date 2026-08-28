@@ -11,7 +11,7 @@ RUN npm ci
 COPY web/ ./
 
 # CI copies rom/morris_bridge.gba here before docker build.
-RUN test -f public/rom/morris_bridge.gba || (echo "Missing public/rom/morris_bridge.gba — run scripts/sync_rom_to_web.sh" && exit 1)
+RUN test -f public/rom/thomas_bridge.gba || (echo "Missing public/rom/thomas_bridge.gba — run scripts/sync_rom_to_web.sh" && exit 1)
 
 RUN npm run build
 

@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# Copy the canonical ROM into the web playtest public folder.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SRC="${ROOT}/rom/morris_bridge.gba"
+SRC="${ROOT}/rom/thomas_bridge.gba"
 DEST_DIR="${ROOT}/web/public/rom"
-DEST="${DEST_DIR}/morris_bridge.gba"
+DEST="${DEST_DIR}/thomas_bridge.gba"
 
 if [[ ! -f "${SRC}" ]]; then
   echo "Missing ${SRC}. Build it first: ./scripts/build_rom.sh" >&2

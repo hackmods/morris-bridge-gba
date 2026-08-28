@@ -1,73 +1,45 @@
 # Game design
 
-## Morris Bridge
+## Thomas's Bridge
 
-A meme-forward bridge-building puzzle for Game Boy Advance. Help a cheeky blue tank engine cross Sodor gaps while **Sir Topham Hatt** watches — no confusion, no delay.
+A meme-forward bridge-building puzzle for Game Boy Advance. Help Thomas cross Sodor gaps while **Sir Topham Hatt** watches — no confusion, no delay.
 
 Original pixel art and parody dialogue; not a licensed Thomas & Friends product.
+
+## Naming
+
+Launch title: **Thomas's Bridge**. (Tank Bridge is too generic; Morris was the working codename.)
 
 ## Meme flavour
 
 | Moment | Line / beat |
 |--------|-------------|
-| Title | "REALLY USEFUL!" |
-| Win | "HATT OK!" + PEEP! |
-| Snap / fall | "DELAY!" + ASHES! |
+| Splash | Illustrated canyon + THOMAS'S BRIDGE logo |
+| Win | HATT OK! + PEEP! |
+| Snap / fall | DELAY! + ASHES! |
 | No path | NO GO |
-| All levels done | USEFUL! |
 
-Sir Topham Hatt appears stern on menus and **furious** when you cause confusion and delay.
+## Screens
 
-## Screens & navigation
-
-| Screen | Enter | Controls |
-|--------|-------|----------|
-| **Title** | Boot | Start / A → level select |
-| **Level select** | Title / pause | Up/Down (repeat), A/Start play, B → title |
-| **Build** | Level select | D-Pad cursor, A nodes/struts, Start test, Select pause |
-| **Test** | Start in build | Train runs; B cancel; success → Hatt approval |
-| **Fail** | Strut snaps | B → rebuild |
-| **Pause** | Select in build | Up/Down, A confirm, B resume |
+| Screen | Controls |
+|--------|----------|
+| **Title** | Full splash artwork; Start / A → levels |
+| **Level select** | Up/Down, A play, B back |
+| **Build** | D-Pad, A nodes, Start test, Select pause |
+| **Test** | Train runs; B cancel |
 
 ## Levels
 
-| # | Name | Vibe |
-|---|------|------|
-| 1 | Knapford Creek | Tutorial — generous anchors |
-| 2 | Gordon's Hill | Wider span, higher banks |
-| 3 | Vicarstown | Widest gap — delay incoming if you slack |
+1. Knapford Creek · 2. Gordon's Hill · 3. Vicarstown
 
-## Controls (GBA)
+## Controls
 
-| Button | Build mode | Test mode |
-|--------|------------|-----------|
-| D-Pad | Move crosshair (magnetic snap to nodes) | — |
-| R (hold) | Faster cursor | — |
-| A | Place / connect / deselect same node | — |
-| B | Cancel selection | Cancel test |
-| Start | Run simulation | Cancel test |
-| Select | Pause menu | — |
+See [README](../README.md) and in-game HUD. Cursor snap radius: 10px.
 
-### Feel improvements
-
-- Faster base cursor speed with diagonal normalisation
-- Larger snap radius (10 px) — cursor locks to nearby nodes
-- D-Pad repeat on menus
-- Cursor starts beside the left bank each level
-- Train flips to face travel direction
-
-## Win / lose
-
-| Outcome | Condition | HUD |
-|---------|-----------|-----|
-| Success | Train reaches end | USEFUL / PEEP! |
-| No path | Disconnected graph | NO GO |
-| Failure | Strut snaps | ASHES! + DELAY! banner |
-
-## Graphics tool
+## Graphics
 
 ```bash
 python3 tools/gen_graphics.py
 ```
 
-Generates Pokémon-style UI panels, sky backdrop, Sir Topham Hatt sprites, Thomas engine, and HUD labels.
+Produces splash (128×128 hero art), sky, panels, Hatt, train, and HUD sprites.
