@@ -53,5 +53,5 @@ docs/
 
 - **Name:** `morris-bridge-gba`
 - **Origin:** `https://origin.cursor.com/git/hackmods/morris-bridge-gba.git`
-- **ROM output:** `rom/thomas_bridge.gba` (~95 KB)
+- **ROM output:** `rom/thomas_bridge.gba` (~264 KB)
 - **License:** zlib (same as Butano) — see root [README](../README.md)

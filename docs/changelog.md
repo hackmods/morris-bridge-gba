@@ -6,7 +6,7 @@ Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prot
 
 - CI `build-rom` now runs `tools/gen_audio.py` before `make` (fixes missing `bn_music_items_*` headers)
 - `scripts/build_rom.sh` runs `gen_audio.py`; documents when to commit `rom/thomas_bridge.gba`
-- Refreshed `rom/thomas_bridge.gba` after full expansion merge (five engines, SRAM, parallax, audio)
+- Refreshed `rom/thomas_bridge.gba` after full expansion merge (~264 KB; five engines, SRAM, parallax, audio)
 
 ## 2026-08-28 — Expansion merge + E2E + train art (session close)
 
@@ -46,7 +46,7 @@ See [Session knowledge](knowledge.md) for pitfalls, backlog, and stretch goals.
 
 ## 2026-08-28 — Prebuilt ROM in repo
 
-- `rom/thomas_bridge.gba` committed (~95 KB)
+- `rom/thomas_bridge.gba` committed (~264 KB)
 - `scripts/build_rom.sh` (Docker + Butano)
 - Verified on EverDrive GBA guidance documented
 

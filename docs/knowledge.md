@@ -10,7 +10,7 @@ Living notes from Cloud Agent sessions: what shipped, what broke, and what to pi
 |------|-------|
 | **Base branch** | `main` @ `9d60af2` (Playwright E2E merged) |
 | **Game title** | Thomas's Bridge |
-| **ROM** | `rom/thomas_bridge.gba` (~95 KB) |
+| **ROM** | `rom/thomas_bridge.gba` (~264 KB) |
 | **Repo** | `morris-bridge-gba` (historical name; keep for URLs/remotes) |
 
 ### Shipped this session (merged PRs)
