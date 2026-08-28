@@ -57,9 +57,9 @@ See [CI/CD](ci-cd.md).
 
 ### GBA / emulator
 
-- [ ] Title shows **A NODE**, **START RUN**, and blinking **START**
+- [ ] Title shows **A NOD**, **START**, and blinking **START**
 - [ ] Level select shows track names without overlapping labels
-- [ ] First build shows rotating hints, then **SEL PAUSE**
+- [ ] First build shows rotating hints, then **PAUSE**
 - [ ] D-Pad moves cursor; R speeds it up
 - [ ] A places nodes and connects chain
 - [ ] Start runs train; short bridge succeeds
