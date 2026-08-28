@@ -43,6 +43,24 @@ function appendFeedLine(line: string): void {
   }
 }
 
+const LORE_READY_LINES = [
+  'Thomas\'s Bridge ready — keyboard or queue inputs accepted',
+  'Thomas\'s Bridge ready — no confusion, no delay',
+  'Thomas\'s Bridge ready — Percy says listen to the rails',
+  'Thomas\'s Bridge ready — really useful builders welcome',
+  'Thomas\'s Bridge ready — timetable looks normal today',
+  'Thomas\'s Bridge ready — watch for rare PEEP PEEP banners',
+];
+
+function pickReadyFeedLine(): string {
+  if (Math.floor(Math.random() * 100) >= 8) {
+    return LORE_READY_LINES[0];
+  }
+
+  const index = 1 + Math.floor(Math.random() * (LORE_READY_LINES.length - 1));
+  return LORE_READY_LINES[index];
+}
+
 async function main(): Promise<void> {
   const canvas = $('game-canvas') as HTMLCanvasElement;
   const statusBar = $('status-bar');
@@ -175,7 +193,7 @@ async function main(): Promise<void> {
     await emulator.init();
     setupKeyboard(emulator);
     setEnabled(true);
-    appendFeedLine('Thomas\'s Bridge ready — keyboard or queue inputs accepted');
+    appendFeedLine(pickReadyFeedLine());
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     showError(message);

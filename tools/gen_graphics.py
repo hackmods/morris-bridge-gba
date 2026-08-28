@@ -595,10 +595,28 @@ def make_water() -> None:
 
 
 def make_labels() -> None:
-    texts = ("BUILD", "TEST!", "DELAY", "USEFUL", "NO GO", "PEEP!", "ASHES!", "START", "LV 1", "LV 2", "LV 3")
+    # Indices 0-10: core HUD. 11-15: rare PG lore alternates (see docs/lore-leak.md).
+    texts = (
+        "BUILD",
+        "TEST!",
+        "DELAY",
+        "USEFUL",
+        "NO GO",
+        "PEEP!",
+        "ASHES!",
+        "START",
+        "LV 1",
+        "LV 2",
+        "LV 3",
+        "CHUFF!",
+        "TOOT!",
+        "OOPS!",
+        "WAIT!",
+        "AGAIN!",
+    )
     w, fh = 32, 8
     px = fill(w, fh * len(texts))
-    colors = (2, 2, 2, 3, 2, 3, 2, 3, 3, 3, 3)
+    colors = (2, 2, 2, 3, 2, 3, 2, 3, 3, 3, 3, 3, 3, 2, 3, 3)
     for i, text in enumerate(texts):
         y0 = i * fh
         rect(px, w, 0, y0, 32, y0 + fh, 7 if i < 8 else 13)
@@ -613,6 +631,8 @@ def make_banner() -> None:
         ("PICK TRACK", "", 7),
         ("HATT OK!", "USEFUL", 11),
         ("DELAY!", "CONFUSION", 9),
+        ("HATT OK!", "PEEP PEEP", 11),
+        ("DELAY!", "LISTEN", 9),
     )
     px = fill(w, fh * len(entries))
     for frame, (title, sub, bg) in enumerate(entries):

@@ -106,9 +106,17 @@ constexpr int LABEL_LV1 = 8;
 constexpr int LABEL_LV2 = 9;
 constexpr int LABEL_LV3 = 10;
 
+constexpr int LABEL_CHUFF = 11;
+constexpr int LABEL_TOOT = 12;
+constexpr int LABEL_OOPS = 13;
+constexpr int LABEL_WAIT = 14;
+constexpr int LABEL_AGAIN = 15;
+
 constexpr int BANNER_LEVEL_SELECT = 0;
 constexpr int BANNER_HATT_OK = 1;
 constexpr int BANNER_DELAY = 2;
+constexpr int BANNER_HATT_PEEP = 3;
+constexpr int BANNER_DELAY_LISTEN = 4;
 
 constexpr int PANEL_HUD = 0;
 constexpr int PANEL_DIALOG = 1;
@@ -271,6 +279,56 @@ private:
         title,
         count,
     };
+
+    int _lore_roll(int salt) const
+    {
+        return (_frame + _selected_level * 17 + _bridge.current_level() * 31 + salt * 13) % 100;
+    }
+
+    bool _lore_rare(int salt) const
+    {
+        return _lore_roll(salt) < 4;
+    }
+
+    int _pick_win_label() const
+    {
+        if(! _lore_rare(1))
+        {
+            return LABEL_PEEP;
+        }
+
+        return (_lore_roll(2) & 1) ? LABEL_CHUFF : LABEL_TOOT;
+    }
+
+    int _pick_fail_label() const
+    {
+        if(! _lore_rare(3))
+        {
+            return LABEL_ASHES;
+        }
+
+        switch(_lore_roll(4) % 3)
+        {
+            case 0:
+                return LABEL_OOPS;
+
+            case 1:
+                return LABEL_WAIT;
+
+            default:
+                return LABEL_AGAIN;
+        }
+    }
+
+    int _pick_win_banner() const
+    {
+        return _lore_rare(5) ? BANNER_HATT_PEEP : BANNER_HATT_OK;
+    }
+
+    int _pick_fail_banner() const
+    {
+        return _lore_rare(6) ? BANNER_DELAY_LISTEN : BANNER_DELAY;
+    }
 
     bool _dir_repeat(bool pressed, bool held, int& counter)
     {
@@ -533,14 +591,14 @@ private:
         _screen = Screen::level_complete;
         _set_splash_visible(false);
         _banner.set_visible(true);
-        _banner.set_item(bn::sprite_items::banner, BANNER_HATT_OK);
+        _banner.set_item(bn::sprite_items::banner, _pick_win_banner());
         _banner.set_position(0, -28);
         _panel.set_visible(true);
         _panel.set_item(bn::sprite_items::panel, PANEL_DIALOG);
         _panel.set_position(0, 48);
         _label.set_visible(true);
         _label.set_position(0, 50);
-        _label.set_item(bn::sprite_items::label, LABEL_PEEP);
+        _label.set_item(bn::sprite_items::label, _pick_win_label());
         _menu_arrow.set_visible(false);
         _cursor.set_visible(false);
         _train.set_visible(true);
@@ -555,14 +613,14 @@ private:
         _screen = Screen::level_failed;
         _set_splash_visible(false);
         _banner.set_visible(true);
-        _banner.set_item(bn::sprite_items::banner, BANNER_DELAY);
+        _banner.set_item(bn::sprite_items::banner, _pick_fail_banner());
         _banner.set_position(0, -28);
         _panel.set_visible(true);
         _panel.set_item(bn::sprite_items::panel, PANEL_DIALOG);
         _panel.set_position(0, 48);
         _label.set_visible(true);
         _label.set_position(0, 50);
-        _label.set_item(bn::sprite_items::label, LABEL_ASHES);
+        _label.set_item(bn::sprite_items::label, _pick_fail_label());
         _cursor.set_visible(false);
         _train.set_visible(_train.position().y() < bridge::FALL_Y_LIMIT);
         _hatt.set_visible(true);

@@ -15,9 +15,11 @@ Launch title: **Thomas's Bridge**. (Tank Bridge is too generic; Morris was the w
 | Moment | Line / beat |
 |--------|-------------|
 | Splash | Illustrated canyon + THOMAS'S BRIDGE logo |
-| Win | HATT OK! + PEEP! |
-| Snap / fall | DELAY! + ASHES! |
+| Win | HATT OK! + PEEP! (rare: CHUFF!, TOOT!, banner **PEEP PEEP**) |
+| Snap / fall | DELAY! + ASHES! (rare: OOPS!, WAIT!, banner **LISTEN**) |
 | No path | NO GO |
+
+Optional **PG lore** for friends: [Lore leak](lore-leak.md) (creepy copypasta backstory; safe on the surface for kids).
 
 ## Screens
 
