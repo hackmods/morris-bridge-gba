@@ -93,16 +93,50 @@ bn::fixed tension(bn::fixed base_weight, bn::fixed distance_from_train, bn::fixe
     return base_weight.safe_multiplication(ratio);
 }
 
-bn::fixed max_tension_for_length(bn::fixed length)
+bn::fixed base_max_tension_for_length(bn::fixed length)
 {
     if(length <= 0)
     {
         return BASE_MAX_TENSION;
     }
 
-    // Inverse-length rating: a 48px strut gets BASE_MAX_TENSION (8);
-    // a 96px strut gets 4, which equals BASE_WEIGHT at the far end.
     bn::fixed rated = BASE_MAX_TENSION.safe_multiplication(SAFE_LENGTH).safe_division(length);
+
+    if(rated < 1)
+    {
+        rated = 1;
+    }
+
+    return rated;
+}
+
+bn::fixed reinforcement_multiplier(int connections_a, int connections_b)
+{
+    int extra = 0;
+
+    if(connections_a > 1)
+    {
+        extra += connections_a - 1;
+    }
+
+    if(connections_b > 1)
+    {
+        extra += connections_b - 1;
+    }
+
+    return bn::fixed(1) + REINFORCEMENT_PER_JOINT.safe_multiplication(extra);
+}
+
+bn::fixed effective_max_tension(bn::fixed length, int connections_a, int connections_b,
+                                bool triangulated)
+{
+    bn::fixed rated = base_max_tension_for_length(length);
+    rated = rated.safe_multiplication(reinforcement_multiplier(connections_a, connections_b));
+
+    if(triangulated)
+    {
+        rated = rated.safe_multiplication(TRIANGLE_BONUS);
+    }
 
     if(rated < 1)
     {

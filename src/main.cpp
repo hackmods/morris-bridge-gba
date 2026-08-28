@@ -4,9 +4,13 @@
 #include "bn_keypad.h"
 #include "bn_math.h"
 #include "bn_optional.h"
+#include "bn_sound_items.h"
 #include "bn_sprite_builder.h"
 #include "bn_sprite_ptr.h"
 #include "bn_vector.h"
+
+#include "bn_sound_items_chuff.h"
+#include "bn_sound_items_whistle.h"
 
 #include "bn_sprite_items_anchor.h"
 #include "bn_sprite_items_banner.h"
@@ -30,6 +34,7 @@
 #include "bn_sprite_items_water.h"
 
 #include "bridge_system.h"
+#include "game_constants.h"
 #include "physics.h"
 
 namespace
@@ -40,8 +45,8 @@ constexpr bn::fixed CURSOR_FAST = 6;
 constexpr bn::fixed STRUT_SPRITE_WIDTH = 16;
 constexpr int CURSOR_REPEAT_DELAY = 10;
 constexpr int CURSOR_REPEAT_RATE = 3;
-constexpr bn::fixed GRID_STEP = 4;
 constexpr int TOAST_FRAMES = 90;
+constexpr int CHUFF_FRAMES = 10;
 
 constexpr int TOAST_DUP = 0;
 constexpr int TOAST_WEAK = 1;
@@ -94,6 +99,11 @@ bn::fixed clamp(bn::fixed value, bn::fixed lo, bn::fixed hi)
     return value;
 }
 
+void set_train_sprite_position(bn::sprite_ptr& train, bn::fixed_point track_position)
+{
+    train.set_position(game::train_display_position(track_position));
+}
+
 constexpr int LABEL_BUILD = 0;
 constexpr int LABEL_TEST = 1;
 constexpr int LABEL_DELAY = 2;
@@ -119,13 +129,6 @@ constexpr int HATT_FURIOUS = 1;
 
 constexpr int MENU_PAUSE_BASE = 3;
 
-bn::fixed snap_grid(bn::fixed value)
-{
-    const int raw = value.shift_integer();
-    const int snapped = ((raw + 2) / 4) * 4;
-    return bn::fixed(snapped);
-}
-
 bn::fixed strut_angle_deg(bn::fixed_point a, bn::fixed_point b)
 {
     const bn::fixed dx = b.x() - a.x();
@@ -144,17 +147,21 @@ bn::fixed strut_angle_deg(bn::fixed_point a, bn::fixed_point b)
 
 void position_strut_sprite(bn::sprite_ptr& sprite, bn::fixed_point a, bn::fixed_point b, int frame)
 {
-    const bn::fixed_point mid((a.x() + b.x()) / 2, (a.y() + b.y()) / 2);
-    bn::fixed scale = physics::distance(a, b).safe_division(STRUT_SPRITE_WIDTH);
+    const bn::fixed span = physics::distance(a, b);
 
-    if(scale < bn::fixed(1) / 8)
+    if(span <= 0)
     {
-        scale = bn::fixed(1) / 8;
+        sprite.set_visible(false);
+        return;
     }
+
+    const bn::fixed_point mid((a.x() + b.x()) / 2, (a.y() + b.y()) / 2);
+    const bn::fixed scale = span.safe_division(STRUT_SPRITE_WIDTH);
 
     sprite.set_position(mid);
     sprite.set_item(bn::sprite_items::strut, frame);
     sprite.set_horizontal_scale(scale);
+    sprite.set_vertical_scale(bn::fixed(1));
     sprite.set_rotation_angle_safe(strut_angle_deg(a, b));
     sprite.set_visible(true);
 }
@@ -406,7 +413,7 @@ private:
         _label.set_position(0, -28);
         _label.set_item(bn::sprite_items::label, LABEL_LV1 + _selected_level);
         _train.set_visible(true);
-        _train.set_position(-56, 44);
+        _train.set_position(-56, game::TRACK_Y + game::TRAIN_Y_OFFSET);
         _hatt.set_visible(true);
         _hatt.set_position(56, 44);
         _hatt.set_item(bn::sprite_items::hatt, HATT_STERN);
@@ -544,7 +551,8 @@ private:
         _menu_arrow.set_visible(false);
         _cursor.set_visible(false);
         _train.set_visible(true);
-        _train.set_position(_bridge.train_position());
+        set_train_sprite_position(_train, _bridge.train_position());
+        bn::sound_items::whistle.play();
         _hatt.set_visible(true);
         _hatt.set_position(-56, 8);
         _hatt.set_item(bn::sprite_items::hatt, HATT_STERN);
@@ -586,7 +594,7 @@ private:
         _menu_row.set_visible(false);
         _menu_arrow.set_visible(false);
         _train.set_visible(true);
-        _train.set_position(0, 16);
+        _train.set_position(0, game::TRACK_Y + game::TRAIN_Y_OFFSET);
         _hatt.set_visible(true);
         _hatt.set_position(56, 16);
         _hatt.set_item(bn::sprite_items::hatt, HATT_STERN);
@@ -816,7 +824,7 @@ private:
         }
         else if(!hovered)
         {
-            to = bn::fixed_point(snap_grid(_cursor_pos.x()), snap_grid(_cursor_pos.y()));
+            to = game::snap_point(_cursor_pos);
             const bn::fixed length = physics::distance(from, to);
 
             if(length > 0)
@@ -844,7 +852,7 @@ private:
 
         for(int x : ground_x)
         {
-            bn::sprite_ptr tile = bn::sprite_items::ground.create_sprite(x, 56);
+            bn::sprite_ptr tile = bn::sprite_items::ground.create_sprite(x, game::GROUND_TILE_Y);
             tile.set_z_order(20);
             _ground.push_back(tile);
         }
@@ -908,22 +916,18 @@ private:
         }
 
         _cursor_pos.set_x(clamp(_cursor_pos.x(), -112, 112));
-        _cursor_pos.set_y(clamp(_cursor_pos.y(), -72, 56));
+        _cursor_pos.set_y(clamp(_cursor_pos.y(), -72, game::TRACK_Y));
 
         const bn::optional<int> hovered = _bridge.find_node_near(_cursor_pos);
-        bn::fixed_point draw_at = _cursor_pos;
-
-        if(hovered)
-        {
-            draw_at = _bridge.nodes()[hovered.value()].position;
-        }
+        bn::fixed_point draw_at = hovered ?
+            _bridge.nodes()[hovered.value()].position : game::snap_point(_cursor_pos);
 
         _cursor.set_position(draw_at);
         _cursor.set_visible(true);
 
         if(!hovered)
         {
-            _ghost.set_position(_cursor_pos);
+            _ghost.set_position(draw_at);
             _ghost.set_visible(true);
         }
         else
@@ -1003,10 +1007,9 @@ private:
                 return;
             }
 
-            const bn::fixed snapped_x = snap_grid(place_at.x());
-            const bn::fixed snapped_y = snap_grid(place_at.y());
+            const bn::fixed_point snapped = game::snap_point(place_at);
             const bn::optional<int> created =
-                _bridge.add_node(snapped_x, snapped_y, false);
+                _bridge.add_node(snapped.x(), snapped.y(), false);
 
             if(!created)
             {
@@ -1059,7 +1062,8 @@ private:
         _train.set_visible(true);
         _train_prev_x = _bridge.train_position().x();
         (void)_bridge.begin_test();
-        _train.set_position(_bridge.train_position());
+        set_train_sprite_position(_train, _bridge.train_position());
+        _chuff_cooldown = 0;
 
         if(_bridge.status() == bridge::SimStatus::no_path)
         {
@@ -1080,7 +1084,7 @@ private:
     {
         const bn::fixed prev_x = _train.position().x();
         (void)_bridge.update();
-        _train.set_position(_bridge.train_position());
+        set_train_sprite_position(_train, _bridge.train_position());
 
         if(_train.position().x() > prev_x + bn::fixed(1) / 16)
         {
@@ -1234,8 +1238,25 @@ private:
             return;
         }
 
-        const int chuff_frame = (_frame / 10) % 2;
+        const int chuff_frame = (_frame / CHUFF_FRAMES) % 2;
         _train.set_item(bn::sprite_items::train, chuff_frame);
+
+        if(_play_mode == PlayMode::test &&
+           _bridge.status() == bridge::SimStatus::running &&
+           chuff_frame == 0 &&
+           _last_chuff_frame != 0 &&
+           _chuff_cooldown <= 0)
+        {
+            bn::sound_items::chuff.play();
+            _chuff_cooldown = CHUFF_FRAMES / 2;
+        }
+
+        _last_chuff_frame = chuff_frame;
+
+        if(_chuff_cooldown > 0)
+        {
+            --_chuff_cooldown;
+        }
     }
 
     bridge::BridgeSystem _bridge;
@@ -1250,6 +1271,8 @@ private:
     int _menu_down_counter = 0;
     bool _train_facing_right = true;
     bn::fixed _train_prev_x = 0;
+    int _chuff_cooldown = 0;
+    int _last_chuff_frame = 1;
     int _toast_timer = 0;
     ToastKind _toast_kind = ToastKind::none;
 

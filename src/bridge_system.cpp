@@ -1,5 +1,7 @@
 #include "bridge_system.h"
 
+#include "game_constants.h"
+
 namespace bridge
 {
 namespace
@@ -21,34 +23,32 @@ struct LevelSeed
     bool anchored;
 };
 
-// Sodor-inspired level layouts (original geometry, cheeky names only).
+// Banks and pier anchors sit on TRACK_Y (rail height). Level 1 hill uses higher crests.
 constexpr LevelSeed LEVEL_0[] = {
-    { -88, 16, true },  // START
-    { 88, 16, true },   // END
-    { -104, 40, true },
-    { -88, 40, true },
-    { -72, 40, true },
-    { 72, 40, true },
-    { 88, 40, true },
-    { 104, 40, true },
+    { -88, game::TRACK_Y, true },   // START — left bank
+    { 88, game::TRACK_Y, true },    // END — right bank
+    { -104, game::TRACK_Y, true },
+    { -72, game::TRACK_Y, true },
+    { 72, game::TRACK_Y, true },
+    { 104, game::TRACK_Y, true },
 };
 
 constexpr LevelSeed LEVEL_1[] = {
-    { -96, 8, true },   // START — higher banks, Gordon's Hill vibes
-    { 96, 8, true },    // END
-    { -112, 32, true },
-    { -80, 32, true },
-    { 80, 32, true },
-    { 112, 32, true },
+    { -96, 44, true },              // START — Gordon's Hill crest
+    { 96, 44, true },               // END
+    { -112, game::TRACK_Y, true },
+    { -80, game::TRACK_Y, true },
+    { 80, game::TRACK_Y, true },
+    { 112, game::TRACK_Y, true },
 };
 
 constexpr LevelSeed LEVEL_2[] = {
-    { -104, 12, true }, // START — widest gap on the island
-    { 104, 12, true },  // END
-    { -120, 36, true },
-    { -88, 36, true },
-    { 88, 36, true },
-    { 120, 36, true },
+    { -104, 48, true },             // START — wider Vicarstown gap
+    { 104, 48, true },              // END
+    { -120, game::TRACK_Y, true },
+    { -88, game::TRACK_Y, true },
+    { 88, game::TRACK_Y, true },
+    { 120, game::TRACK_Y, true },
 };
 
 constexpr const LevelSeed* const LEVELS[] = {
@@ -95,6 +95,7 @@ void BridgeSystem::reset_level()
     _status = SimStatus::idle;
     _train_t = 0;
     _path_index = 0;
+    _accel_frames = 0;
     _fall_vy = 0;
     _falling = false;
     _last_edit = LastEdit::none;
@@ -176,10 +177,62 @@ bn::optional<int> BridgeSystem::add_strut(int node_a, int node_b)
     strut.node_b = hi;
     strut.length = length;
     strut.current_tension = 0;
-    strut.max_tension = physics::max_tension_for_length(length);
+    strut.triangulated = false;
+    strut.max_tension = 0;
     _struts.push_back(strut);
+    _recompute_strut_ratings();
     _record_strut_edit(_struts.size() - 1);
     return bn::optional<int>(_struts.size() - 1);
+}
+
+int BridgeSystem::_connection_count(int node_id) const
+{
+    int count = 0;
+
+    for(int i = 0; i < _struts.size(); ++i)
+    {
+        const Strut& strut = _struts[i];
+
+        if(strut.node_a == node_id || strut.node_b == node_id)
+        {
+            ++count;
+        }
+    }
+
+    return count;
+}
+
+bool BridgeSystem::_strut_is_triangulated(int strut_index) const
+{
+    const Strut& strut = _struts[strut_index];
+
+    for(int c = 0; c < _nodes.size(); ++c)
+    {
+        if(c == strut.node_a || c == strut.node_b)
+        {
+            continue;
+        }
+
+        if(find_strut(strut.node_a, c) && find_strut(strut.node_b, c))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void BridgeSystem::_recompute_strut_ratings()
+{
+    for(int i = 0; i < _struts.size(); ++i)
+    {
+        Strut& strut = _struts[i];
+        const int connections_a = _connection_count(strut.node_a);
+        const int connections_b = _connection_count(strut.node_b);
+        strut.triangulated = _strut_is_triangulated(i);
+        strut.max_tension = physics::effective_max_tension(strut.length, connections_a,
+                                                           connections_b, strut.triangulated);
+    }
 }
 
 bn::optional<int> BridgeSystem::find_node_near(bn::fixed_point point) const
@@ -243,7 +296,28 @@ StrutPreview BridgeSystem::preview_strut(int node_a, int node_b) const
 
     preview.status = StrutPreviewStatus::ok;
     preview.length = length;
-    preview.max_tension = physics::max_tension_for_length(length);
+
+    const int connections_a = _connection_count(lo) + 1;
+    const int connections_b = _connection_count(hi) + 1;
+
+    bool triangulated = false;
+
+    for(int c = 0; c < _nodes.size(); ++c)
+    {
+        if(c == lo || c == hi)
+        {
+            continue;
+        }
+
+        if(find_strut(lo, c) && find_strut(hi, c))
+        {
+            triangulated = true;
+            break;
+        }
+    }
+
+    preview.max_tension = physics::effective_max_tension(length, connections_a, connections_b,
+                                                           triangulated);
     return preview;
 }
 
@@ -361,6 +435,7 @@ RemoveNodeResult BridgeSystem::remove_player_node(int node_id)
         }
     }
 
+    _recompute_strut_ratings();
     return RemoveNodeResult::ok;
 }
 
@@ -402,6 +477,8 @@ void BridgeSystem::_remove_strut_at(int strut_index)
             --_last_edit_index;
         }
     }
+
+    _recompute_strut_ratings();
 }
 
 bn::optional<int> BridgeSystem::find_strut(int node_a, int node_b) const
@@ -498,10 +575,12 @@ bool BridgeSystem::_bfs_path()
 SimStatus BridgeSystem::begin_test()
 {
     _saved_struts = _struts;
+    _recompute_strut_ratings();
     _falling = false;
     _fall_vy = 0;
     _train_t = 0;
     _path_index = 0;
+    _accel_frames = 0;
     _train_position = _nodes[START_NODE].position;
 
     for(int i = 0; i < _struts.size(); ++i)
@@ -533,6 +612,7 @@ void BridgeSystem::end_test()
     _fall_vy = 0;
     _train_t = 0;
     _path_index = 0;
+    _accel_frames = 0;
     _train_position = _nodes[START_NODE].position;
 
     for(int i = 0; i < _struts.size(); ++i)
@@ -544,19 +624,36 @@ void BridgeSystem::end_test()
 void BridgeSystem::_break_strut(int strut_index)
 {
     _struts.erase(_struts.begin() + strut_index);
+    _recompute_strut_ratings();
 }
 
 void BridgeSystem::_start_falling()
 {
     _falling = true;
-    _fall_vy = 0;
+    _fall_vy = FALL_INITIAL_VY;
     _status = SimStatus::failed_fall;
+}
+
+bn::fixed BridgeSystem::_current_train_load() const
+{
+    return _path_index == 0 ? physics::ENGINE_WEIGHT : physics::BASE_WEIGHT;
+}
+
+bn::fixed BridgeSystem::_current_train_speed() const
+{
+    if(_accel_frames >= ACCEL_FRAMES)
+    {
+        return TRAIN_SPEED;
+    }
+
+    const bn::fixed t = bn::fixed(_accel_frames).safe_division(ACCEL_FRAMES);
+    return ENGINE_MIN_SPEED + (TRAIN_SPEED - ENGINE_MIN_SPEED).safe_multiplication(t);
 }
 
 void BridgeSystem::_apply_tension(int strut_index, bn::fixed distance_along)
 {
     Strut& strut = _struts[strut_index];
-    strut.current_tension = physics::tension(physics::BASE_WEIGHT, distance_along, strut.length);
+    strut.current_tension = physics::tension(_current_train_load(), distance_along, strut.length);
 }
 
 SimStatus BridgeSystem::update()
@@ -565,24 +662,17 @@ SimStatus BridgeSystem::update()
     {
         _fall_vy += GRAVITY;
         _train_position.set_y(_train_position.y() + _fall_vy);
+
+        if(_train_position.y() > FALL_Y_LIMIT)
+        {
+            _train_position.set_y(FALL_Y_LIMIT);
+        }
+
         return _status;
     }
 
     if(_status != SimStatus::running)
     {
-        return _status;
-    }
-
-    if(_falling)
-    {
-        _fall_vy += GRAVITY;
-        _train_position.set_y(_train_position.y() + _fall_vy);
-
-        if(_train_position.y() > FALL_Y_LIMIT)
-        {
-            _status = SimStatus::failed_fall;
-        }
-
         return _status;
     }
 
@@ -607,9 +697,11 @@ SimStatus BridgeSystem::update()
     const Node& a = _nodes[from];
     const Node& b = _nodes[to];
     const bn::fixed length = _struts[strut_index].length;
-    const bn::fixed dt = length > 0 ? TRAIN_SPEED.safe_division(length) : bn::fixed(1);
+    const bn::fixed speed = _current_train_speed();
+    const bn::fixed dt = length > 0 ? speed.safe_division(length) : bn::fixed(1);
 
     _train_t += dt;
+    ++_accel_frames;
 
     bn::fixed along = _train_t.safe_multiplication(length);
 
@@ -624,6 +716,7 @@ SimStatus BridgeSystem::update()
                                     _struts[strut_index].max_tension))
     {
         _break_strut(strut_index);
+        _train_position = physics::lerp(a.position, b.position, _train_t);
         _start_falling();
         return _status;
     }
