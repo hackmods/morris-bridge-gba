@@ -63,6 +63,7 @@ Starter types: [`include/engine.h`](../include/engine.h), [`include/progress.h`]
 
 ```bash
 python3 tools/gen_graphics.py
+python3 tools/validate_graphics.py
 ```
 
 Produces splash (128×128 hero art), sky, panels, Hatt, train, and HUD sprites.

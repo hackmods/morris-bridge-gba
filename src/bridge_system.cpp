@@ -1,5 +1,7 @@
 #include "bridge_system.h"
 
+#include "level.h"
+
 namespace bridge
 {
 namespace
@@ -13,55 +15,6 @@ int max_id(int a, int b)
 {
     return a > b ? a : b;
 }
-
-struct LevelSeed
-{
-    bn::fixed x;
-    bn::fixed y;
-    bool anchored;
-};
-
-// Sodor-inspired level layouts (original geometry, cheeky names only).
-constexpr LevelSeed LEVEL_0[] = {
-    { -88, 16, true },  // START
-    { 88, 16, true },   // END
-    { -104, 40, true },
-    { -88, 40, true },
-    { -72, 40, true },
-    { 72, 40, true },
-    { 88, 40, true },
-    { 104, 40, true },
-};
-
-constexpr LevelSeed LEVEL_1[] = {
-    { -96, 8, true },   // START — higher banks, Gordon's Hill vibes
-    { 96, 8, true },    // END
-    { -112, 32, true },
-    { -80, 32, true },
-    { 80, 32, true },
-    { 112, 32, true },
-};
-
-constexpr LevelSeed LEVEL_2[] = {
-    { -104, 12, true }, // START — widest gap on the island
-    { 104, 12, true },  // END
-    { -120, 36, true },
-    { -88, 36, true },
-    { 88, 36, true },
-    { 120, 36, true },
-};
-
-constexpr const LevelSeed* const LEVELS[] = {
-    LEVEL_0,
-    LEVEL_1,
-    LEVEL_2,
-};
-
-constexpr int LEVEL_SIZES[] = {
-    sizeof(LEVEL_0) / sizeof(LevelSeed),
-    sizeof(LEVEL_1) / sizeof(LevelSeed),
-    sizeof(LEVEL_2) / sizeof(LevelSeed),
-};
 
 } // namespace
 
@@ -77,6 +30,21 @@ void BridgeSystem::set_engine(const engine::Id id)
     const engine::Profile& profile = engine::profile(id);
     _train_weight = profile.weight;
     _train_speed = profile.speed;
+    _coach_count = profile.coach_count;
+}
+
+bn::fixed BridgeSystem::effective_weight_at(const bn::fixed distance_along,
+                                            const bn::fixed strut_length) const
+{
+    if(strut_length <= 0)
+    {
+        return _train_weight;
+    }
+
+    const bn::fixed ratio = distance_along.safe_division(strut_length);
+    const bn::fixed coach_load =
+        bn::fixed(_coach_count).safe_multiplication(physics::COACH_WEIGHT).safe_multiplication(ratio);
+    return _train_weight + coach_load;
 }
 
 void BridgeSystem::load_level(int level_index)
@@ -92,6 +60,8 @@ void BridgeSystem::load_level(int level_index)
     }
 
     _level_index = level_index;
+    const level::Def& def = level::get(_level_index);
+    _safe_length = def.safe_length > 0 ? def.safe_length : physics::SAFE_LENGTH;
     reset_level();
 }
 
@@ -115,12 +85,12 @@ void BridgeSystem::reset_level()
 void BridgeSystem::_seed_level()
 {
     _anchored_node_count = 0;
-    const LevelSeed* seeds = LEVELS[_level_index];
-    const int count = LEVEL_SIZES[_level_index];
+    const level::Def& def = level::get(_level_index);
 
-    for(int i = 0; i < count; ++i)
+    for(int i = 0; i < def.seed_count; ++i)
     {
-        (void)add_node(seeds[i].x, seeds[i].y, seeds[i].anchored);
+        const level::Seed& seed = def.seeds[i];
+        (void)add_node(seed.x, seed.y, seed.anchored);
     }
 }
 
@@ -185,7 +155,7 @@ bn::optional<int> BridgeSystem::add_strut(int node_a, int node_b)
     strut.node_b = hi;
     strut.length = length;
     strut.current_tension = 0;
-    strut.max_tension = physics::max_tension_for_length(length);
+    strut.max_tension = physics::max_tension_for_length(length, _safe_length);
     _struts.push_back(strut);
     _record_strut_edit(_struts.size() - 1);
     return bn::optional<int>(_struts.size() - 1);
@@ -252,7 +222,7 @@ StrutPreview BridgeSystem::preview_strut(int node_a, int node_b) const
 
     preview.status = StrutPreviewStatus::ok;
     preview.length = length;
-    preview.max_tension = physics::max_tension_for_length(length);
+    preview.max_tension = physics::max_tension_for_length(length, _safe_length);
     return preview;
 }
 
@@ -565,7 +535,8 @@ void BridgeSystem::_start_falling()
 void BridgeSystem::_apply_tension(int strut_index, bn::fixed distance_along)
 {
     Strut& strut = _struts[strut_index];
-    strut.current_tension = physics::tension(_train_weight, distance_along, strut.length);
+    const bn::fixed effective = effective_weight_at(distance_along, strut.length);
+    strut.current_tension = physics::tension(effective, distance_along, strut.length);
 }
 
 SimStatus BridgeSystem::update()

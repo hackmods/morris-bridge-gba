@@ -241,9 +241,9 @@ TRAIN_16 = """
 """
 
 
-def tint_train_template(body: str, stripe: str) -> str:
+def tint_train_template(template: str, body: str, stripe: str) -> str:
     rows = []
-    for line in TRAIN_16.strip("\n").split("\n"):
+    for line in template.strip("\n").split("\n"):
         row = ""
         for ch in line:
             if ch == "6":
@@ -487,17 +487,22 @@ def make_cursor() -> None:
 
 
 def make_node() -> None:
-    w = h = 8
+    w = h = 16
     px = fill(w, h)
     blit_map(px, w, 0, 0, """
-..1111..
-.1aaaa1.
-1a5225a1
-1a5225a1
-1a5225a1
-.1aaaa1.
-..1111..
-........
+......111111......
+.....1aaaaaa1.....
+....1a522225a1....
+...1a52222225a1...
+...1a52222225a1...
+...1a52222225a1...
+...1a52222225a1...
+....1a522225a1....
+.....1aaaaaa1.....
+......111111......
+.................
+.................
+.................
 """)
     write_indexed_bmp(os.path.join(GFX, "node.bmp"), w, h, px)
 
@@ -584,16 +589,39 @@ def make_toast() -> None:
 
 
 def make_train() -> None:
-    w, fh = 16, 16
+    w, fh = 32, 32
     px = fill(w, fh * 2 * len(ENGINE_TINTS))
     for i, (body, stripe) in enumerate(ENGINE_TINTS):
-        art = tint_train_template(body, stripe)
+        art = tint_train_template(TRAIN_32, body, stripe)
         y0 = i * fh * 2
         blit_map(px, w, 0, y0, art)
         blit_map(px, w, 0, y0 + fh, art)
-        for sx, sy in ((5, y0 + fh), (6, y0 + fh), (7, y0 + fh), (4, y0 + fh + 1), (8, y0 + fh + 1)):
+        for sx, sy in ((12, y0 + fh + 2), (14, y0 + fh + 1), (16, y0 + fh + 1), (18, y0 + fh + 2)):
             put(px, w, sx, sy, 10)
     write_indexed_bmp(os.path.join(GFX, "train.bmp"), w, fh * 2 * len(ENGINE_TINTS), px)
+
+
+def make_portrait() -> None:
+    w, fh = 32, 32
+    px = fill(w, fh * len(ENGINE_TINTS))
+    for i, (body, stripe) in enumerate(ENGINE_TINTS):
+        art = tint_train_template(TRAIN_32, body, stripe)
+        y0 = i * fh
+        blit_map(px, w, 0, y0 + 4, art)
+        rect(px, w, 2, y0 + 2, 30, y0 + 31, 13)
+        rect(px, w, 4, y0 + 4, 28, y0 + 29, 7)
+    write_indexed_bmp(os.path.join(GFX, "portrait.bmp"), w, fh * len(ENGINE_TINTS), px)
+
+
+def make_scenery_far() -> None:
+    w, h = 64, 32
+    px = fill(w, h)
+    sky_gradient(px, w, h, 0, 18)
+    for x in range(w):
+        hill = 18 + abs((x - 32) // 5)
+        for y in range(hill, h):
+            put(px, w, x, y, 14 if y == hill else 11)
+    write_indexed_bmp(os.path.join(GFX, "scenery_far.bmp"), w, h, px)
 
 
 def make_ground() -> None:
@@ -739,6 +767,8 @@ def main() -> None:
     make_ring()
     make_strut()
     make_train()
+    make_portrait()
+    make_scenery_far()
     make_ground()
     make_water()
     make_digit()
@@ -760,7 +790,9 @@ def main() -> None:
         ("ghost.json", None),
         ("ring.json", None),
         ("strut.json", {"height": 16}),
-        ("train.json", {"height": 16}),
+        ("train.json", {"height": 32}),
+        ("portrait.json", {"height": 32}),
+        ("scenery_far.json", None),
         ("ground.json", None),
         ("water.json", {"height": 8}),
         ("digit.json", {"width": 8}),

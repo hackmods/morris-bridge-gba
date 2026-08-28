@@ -29,6 +29,9 @@ inline constexpr bn::fixed BASE_WEIGHT = 4;
 /// Length (pixels) at which a strut still has comfortable reserve strength.
 inline constexpr bn::fixed SAFE_LENGTH = 48;
 
+/// Weight of each coach when fully on a strut (load ramps with train progress).
+inline constexpr bn::fixed COACH_WEIGHT = 2;
+
 /// Peak tension a SAFE_LENGTH strut can take before it snaps.
 inline constexpr bn::fixed BASE_MAX_TENSION = 8;
 
@@ -102,7 +105,8 @@ inline constexpr int SQRT_ITERS = 5;
  * `max = BASE_MAX_TENSION * SAFE_LENGTH / length`, clamped to a minimum of
  * 1 so a ridiculous span still has a defined limit.
  */
-[[nodiscard]] bn::fixed max_tension_for_length(bn::fixed length);
+[[nodiscard]] bn::fixed max_tension_for_length(bn::fixed length,
+                                                bn::fixed safe_length = SAFE_LENGTH);
 
 } // namespace physics
 

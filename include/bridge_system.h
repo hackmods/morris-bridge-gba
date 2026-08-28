@@ -16,13 +16,14 @@
 
 #include "physics.h"
 #include "engine.h"
+#include "level.h"
 
 namespace bridge
 {
 
 inline constexpr int MAX_NODES = 16;
 inline constexpr int MAX_STRUTS = 32;
-inline constexpr int LEVEL_COUNT = 3;
+inline constexpr int LEVEL_COUNT = level::COUNT;
 
 /// Indices of the seeded start (left bank) and end (right bank) nodes.
 inline constexpr int START_NODE = 0;
@@ -218,6 +219,23 @@ public:
         return _train_speed;
     }
 
+    [[nodiscard]] bn::fixed safe_length() const
+    {
+        return _safe_length;
+    }
+
+    [[nodiscard]] int coach_count() const
+    {
+        return _coach_count;
+    }
+
+    [[nodiscard]] const level::Def& level_def() const
+    {
+        return level::get(_level_index);
+    }
+
+    [[nodiscard]] bn::fixed effective_weight_at(bn::fixed distance_along, bn::fixed strut_length) const;
+
 private:
     enum class LastEdit
     {
@@ -251,6 +269,8 @@ private:
     engine::Id _engine = engine::default_engine();
     bn::fixed _train_weight = physics::BASE_WEIGHT;
     bn::fixed _train_speed = TRAIN_SPEED;
+    bn::fixed _safe_length = physics::SAFE_LENGTH;
+    int _coach_count = 0;
     LastEdit _last_edit = LastEdit::none;
     int _last_edit_index = -1;
 };

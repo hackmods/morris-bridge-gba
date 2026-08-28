@@ -1,11 +1,14 @@
 #include "bn_core.h"
+#include "bn_array.h"
 #include "bn_color.h"
 #include "bn_bg_palettes.h"
+#include "bn_camera_ptr.h"
 #include "bn_keypad.h"
 #include "bn_math.h"
 #include "bn_optional.h"
 #include "bn_sprite_builder.h"
 #include "bn_sprite_ptr.h"
+#include "bn_sram.h"
 #include "bn_vector.h"
 
 #include "bn_sprite_items_anchor.h"
@@ -21,7 +24,9 @@
 #include "bn_sprite_items_menu.h"
 #include "bn_sprite_items_node.h"
 #include "bn_sprite_items_panel.h"
+#include "bn_sprite_items_portrait.h"
 #include "bn_sprite_items_ring.h"
+#include "bn_sprite_items_scenery_far.h"
 #include "bn_sprite_items_splash.h"
 #include "bn_sprite_items_sky.h"
 #include "bn_sprite_items_strut.h"
@@ -31,8 +36,10 @@
 
 #include "bridge_system.h"
 #include "engine.h"
+#include "level.h"
 #include "physics.h"
 #include "progress.h"
+#include "save_data.h"
 
 namespace
 {
@@ -44,6 +51,9 @@ constexpr int CURSOR_REPEAT_DELAY = 10;
 constexpr int CURSOR_REPEAT_RATE = 3;
 constexpr bn::fixed GRID_STEP = 4;
 constexpr int TOAST_FRAMES = 90;
+constexpr int SHAKE_FRAMES = 10;
+constexpr int DUST_LIFE = 24;
+constexpr int MAX_DUST = 6;
 
 constexpr int TOAST_DUP = 0;
 constexpr int TOAST_WEAK = 1;
@@ -71,6 +81,13 @@ enum class ToastKind
     deleted,
     full,
     undo,
+};
+
+struct DustPuff
+{
+    bn::sprite_ptr sprite;
+    bn::fixed vy = 0;
+    int life = 0;
 };
 
 bn::sprite_ptr make_sprite(const bn::sprite_item& item, bn::fixed x, bn::fixed y, int z_order)
@@ -188,9 +205,13 @@ public:
         _ghost(make_sprite(bn::sprite_items::ghost, 0, 0, Z_GHOST)),
         _ring(make_sprite(bn::sprite_items::ring, 0, 0, Z_RING)),
         _preview_strut(make_sprite(bn::sprite_items::strut, 0, 0, Z_STRUT_PREVIEW)),
-        _toast(make_sprite(bn::sprite_items::toast, 0, 52, Z_TOAST))
+        _toast(make_sprite(bn::sprite_items::toast, 0, 52, Z_TOAST)),
+        _portrait(bn::sprite_items::portrait.create_sprite(56, 44)),
+        _camera(bn::camera.create())
     {
         bn::bg_palettes::set_transparent_color(bn::color(8, 14, 20));
+
+        _camera.set_z_order(0);
 
         _cursor.set_z_order(Z_CURSOR);
         _train.set_z_order(-15);
@@ -207,6 +228,8 @@ public:
         _ring.set_visible(false);
         _preview_strut.set_visible(false);
         _toast.set_visible(false);
+        _portrait.set_z_order(-22);
+        _portrait.set_visible(false);
 
         _node_count_digits.push_back(make_sprite(bn::sprite_items::digit, -20, 66, Z_DIGIT));
         _node_count_digits.push_back(make_sprite(bn::sprite_items::digit, -12, 66, Z_DIGIT));
@@ -215,6 +238,7 @@ public:
         _weight_digits.push_back(make_sprite(bn::sprite_items::digit, -4, 66, Z_DIGIT));
         _weight_digits.push_back(make_sprite(bn::sprite_items::digit, 4, 66, Z_DIGIT));
 
+        _load_progress();
         _place_splash_tiles();
         _place_backdrop();
         _place_scenery();
@@ -225,6 +249,8 @@ public:
     {
         ++_frame;
         _animate_backdrop();
+        _update_shake();
+        _update_dust();
 
         switch(_screen)
         {
@@ -340,6 +366,127 @@ private:
     int _pick_fail_banner() const
     {
         return _lore_rare(6) ? BANNER_DELAY_LISTEN : BANNER_DELAY;
+    }
+
+    [[nodiscard]] bn::fixed _max_train_load() const
+    {
+        return _bridge.effective_weight_at(bn::fixed(256), bn::fixed(256));
+    }
+
+    void _load_progress()
+    {
+        bn::sram sram;
+        bn::array<std::uint8_t, save_data::SIZE> buffer;
+
+        if(sram.read(buffer))
+        {
+            (void)save_data::decode(_progress, buffer.data());
+        }
+    }
+
+    void _persist_progress()
+    {
+        bn::sram sram;
+        bn::array<std::uint8_t, save_data::SIZE> buffer;
+        (void)save_data::encode(_progress, buffer.data());
+        sram.write(buffer);
+    }
+
+    void _trigger_shake()
+    {
+        _shake_timer = SHAKE_FRAMES;
+    }
+
+    void _update_shake()
+    {
+        if(_shake_timer > 0)
+        {
+            --_shake_timer;
+            _camera.set_x((_shake_timer % 2 == 0) ? bn::fixed(2) : bn::fixed(-2));
+            return;
+        }
+
+        _camera.set_x(0);
+    }
+
+    void _spawn_dust(bn::fixed_point origin)
+    {
+        for(int i = 0; i < 4; ++i)
+        {
+            if(_dust.full())
+            {
+                break;
+            }
+
+            DustPuff puff;
+            puff.sprite = make_sprite(bn::sprite_items::ghost,
+                                      origin.x() + bn::fixed(i * 4 - 6), origin.y(), 3);
+            puff.vy = bn::fixed(-1) / 4;
+            puff.life = DUST_LIFE;
+            _dust.push_back(puff);
+        }
+    }
+
+    void _update_dust()
+    {
+        for(int i = _dust.size() - 1; i >= 0; --i)
+        {
+            DustPuff& puff = _dust[i];
+
+            if(puff.life <= 0)
+            {
+                _dust.erase(_dust.begin() + i);
+                continue;
+            }
+
+            --puff.life;
+            bn::fixed_point pos = puff.sprite.position();
+            pos.set_y(pos.y() + puff.vy);
+            puff.vy += bn::fixed(1) / 16;
+            puff.sprite.set_position(pos);
+            puff.sprite.set_visible(_screen == Screen::playing || _screen == Screen::level_failed);
+        }
+    }
+
+    void _update_parallax()
+    {
+        bn::fixed shift = 0;
+
+        if(_screen == Screen::playing && _play_mode == PlayMode::test)
+        {
+            const level::Def& def = _bridge.level_def();
+            shift = _bridge.train_position().x().safe_multiplication(def.parallax_front);
+        }
+
+        _parallax_shift = shift;
+    }
+
+    void _apply_parallax_to_backdrop()
+    {
+        const level::Def& def = _bridge.level_def();
+        const bn::fixed back_shift = _parallax_shift.safe_multiplication(def.parallax_back);
+        const bn::fixed front_shift = _parallax_shift;
+
+        for(int i = 0; i < _sky.size(); ++i)
+        {
+            bn::fixed x = bn::fixed(-96 + i * 64) - back_shift / 4;
+            _sky[i].set_x(x);
+        }
+
+        for(int i = 0; i < _hills.size(); ++i)
+        {
+            _hills[i].set_x(bn::fixed(-96 + i * 64) - back_shift / 2);
+        }
+
+        for(int i = 0; i < _ground.size(); ++i)
+        {
+            _ground[i].set_x(bn::fixed(-104 + i * 32) - front_shift / 3);
+        }
+
+        for(int i = 0; i < _water.size(); ++i)
+        {
+            _water[i].set_x(bn::fixed(-40 + i * 32) - front_shift / 2);
+        }
     }
 
     [[nodiscard]] engine::Id _active_engine() const
@@ -501,6 +648,8 @@ private:
 
     void _animate_backdrop()
     {
+        _update_parallax();
+
         for(int i = 0; i < _clouds.size(); ++i)
         {
             bn::sprite_ptr& cloud = _clouds[i];
@@ -512,6 +661,12 @@ private:
             }
 
             cloud.set_x(x);
+        }
+
+        if(_screen == Screen::playing || _screen == Screen::engine_select ||
+           _screen == Screen::level_select)
+        {
+            _apply_parallax_to_backdrop();
         }
     }
 
@@ -563,6 +718,7 @@ private:
         _hatt.set_visible(true);
         _hatt.set_position(56, 44);
         _hatt.set_item(bn::sprite_items::hatt, HATT_STERN);
+        _portrait.set_visible(false);
         _set_weight_digits(0, false);
         _node_count_digits[0].set_visible(false);
         _node_count_digits[1].set_visible(false);
@@ -592,6 +748,9 @@ private:
         _train.set_position(-56, 44);
         _sync_train_sprite();
         _set_weight_digits(engine::profile(_selected_engine).weight.integer(), true);
+        _portrait.set_visible(true);
+        _portrait.set_position(56, 44);
+        _portrait.set_item(bn::sprite_items::portrait, engine::portrait_frame(_selected_engine));
         _hatt.set_visible(true);
         _hatt.set_position(56, 44);
         _hatt.set_item(bn::sprite_items::hatt, HATT_STERN);
@@ -673,6 +832,11 @@ private:
             tile.set_visible(visible);
         }
 
+        for(bn::sprite_ptr& tile : _hills)
+        {
+            tile.set_visible(visible);
+        }
+
         for(bn::sprite_ptr& tile : _water)
         {
             tile.set_visible(visible);
@@ -732,6 +896,8 @@ private:
             _newly_unlocked = unlocked;
             _show_unlock_flash = true;
         }
+
+        _persist_progress();
 
         _banner.set_visible(true);
         _banner.set_item(bn::sprite_items::banner, _pick_win_banner());
@@ -1076,7 +1242,7 @@ private:
 
         if(show)
         {
-            const bn::fixed load = _bridge.train_weight();
+            const bn::fixed load = _max_train_load();
             const int frame = max_tension < load ? STRUT_PREVIEW_WEAK : STRUT_PREVIEW_OK;
             position_strut_sprite(_preview_strut, from, to, frame);
             return;
@@ -1095,6 +1261,13 @@ private:
             bn::sprite_ptr tile = bn::sprite_items::ground.create_sprite(x, 56);
             tile.set_z_order(20);
             _ground.push_back(tile);
+        }
+
+        for(int x : { -96, -32, 32, 96 })
+        {
+            bn::sprite_ptr tile = bn::sprite_items::scenery_far.create_sprite(x, 24);
+            tile.set_z_order(22);
+            _hills.push_back(tile);
         }
 
         for(int x : water_x)
@@ -1280,7 +1453,7 @@ private:
                     break;
 
                 case bridge::StrutPreviewStatus::ok:
-                    if(preview.max_tension < _bridge.train_weight())
+                    if(preview.max_tension < _max_train_load())
                     {
                         _show_toast(ToastKind::weak);
                     }
@@ -1327,8 +1500,17 @@ private:
     void _update_test()
     {
         const bn::fixed prev_x = _train.position().x();
+        const bridge::SimStatus prev_status = _bridge.status();
         (void)_bridge.update();
         _train.set_position(_bridge.train_position());
+
+        const bridge::SimStatus status = _bridge.status();
+
+        if(status == bridge::SimStatus::failed_fall && prev_status == bridge::SimStatus::running)
+        {
+            _trigger_shake();
+            _spawn_dust(_train.position());
+        }
 
         if(_train.position().x() > prev_x + bn::fixed(1) / 16)
         {
@@ -1341,8 +1523,6 @@ private:
 
         _train.set_horizontal_flip(!_train_facing_right);
         _train.set_visible(_train.position().y() < bridge::FALL_Y_LIMIT);
-
-        const bridge::SimStatus status = _bridge.status();
 
         if(status == bridge::SimStatus::success)
         {
@@ -1440,6 +1620,13 @@ private:
                 strut.current_tension * 2 > strut.max_tension;
             bn::sprite_ptr& sprite = _strut_sprites[i];
             position_strut_sprite(sprite, a, b, hot ? STRUT_HOT : STRUT_IDLE);
+
+            if(hot)
+            {
+                const bn::fixed pulse = (_frame % 16 < 8) ? bn::fixed(1) : bn::fixed(11) / 10;
+                sprite.set_horizontal_scale(sprite.horizontal_scale() * pulse);
+            }
+
             sprite.set_visible(_screen == Screen::playing);
         }
     }
@@ -1473,7 +1660,7 @@ private:
         _label.set_item(bn::sprite_items::label, frame);
         _set_counter(_node_count_digits, _bridge.player_node_count(), -20);
         _set_counter(_strut_count_digits, _bridge.struts().size(), 12);
-        _set_weight_digits(_bridge.train_weight().integer(), true);
+        _set_weight_digits(_max_train_load().integer(), true);
     }
 
     void _animate_train()
@@ -1486,6 +1673,8 @@ private:
     engine::Id _newly_unlocked = engine::none;
     int _pending_level = 0;
     bool _show_unlock_flash = false;
+    int _shake_timer = 0;
+    bn::fixed _parallax_shift = 0;
     bridge::BridgeSystem _bridge;
     Screen _screen = Screen::title;
     PlayMode _play_mode = PlayMode::build;
@@ -1514,12 +1703,16 @@ private:
     bn::sprite_ptr _ring;
     bn::sprite_ptr _preview_strut;
     bn::sprite_ptr _toast;
+    bn::sprite_ptr _portrait;
+    bn::camera_ptr _camera;
+    bn::vector<DustPuff, MAX_DUST> _dust;
     bn::vector<bn::sprite_ptr, 2> _node_count_digits;
     bn::vector<bn::sprite_ptr, 2> _strut_count_digits;
     bn::vector<bn::sprite_ptr, 2> _weight_digits;
     bn::vector<bn::sprite_ptr, bridge::MAX_NODES> _node_sprites;
     bn::vector<bn::sprite_ptr, bridge::MAX_STRUTS> _strut_sprites;
     bn::vector<bn::sprite_ptr, 4> _ground;
+    bn::vector<bn::sprite_ptr, 4> _hills;
     bn::vector<bn::sprite_ptr, 4> _water;
     bn::vector<bn::sprite_ptr, 4> _splash;
     bn::vector<bn::sprite_ptr, 4> _sky;

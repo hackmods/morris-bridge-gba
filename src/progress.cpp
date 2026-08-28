@@ -92,6 +92,14 @@ bool Progress::on_level_cleared(const int level_index, engine::Id& out_unlocked)
     return unlocked_new;
 }
 
+void Progress::apply_save(const int max_unlocked_level, const unsigned cleared_levels,
+                          const unsigned unlocked_engines)
+{
+    _max_unlocked_level = max_unlocked_level;
+    _cleared_levels = cleared_levels;
+    _unlocked_engines = unlocked_engines | (1u << unsigned(engine::default_engine()));
+}
+
 void Progress::reset()
 {
     _max_unlocked_level = 0;

@@ -10,6 +10,8 @@ vendor/
 .vscode/
 tests/test_physics
 tests/test_physics.exe
+tests/test_progress
+tests/test_progress.exe
 __pycache__/
 *.o
 web/node_modules/

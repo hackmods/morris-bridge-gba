@@ -31,8 +31,9 @@ inline constexpr int MENU_ENGINE_BASE = 7;
 
 struct Profile
 {
-    bn::fixed weight; ///< Strut load — primary difficulty knob.
-    bn::fixed speed;  ///< Pixels per frame along a strut.
+    bn::fixed weight;
+    bn::fixed speed;
+    int coach_count;
 };
 
 [[nodiscard]] constexpr int engine_count()
@@ -59,6 +60,13 @@ struct Profile
 
 /** Bonus engine when every level has been cleared at least once. */
 [[nodiscard]] Id all_tracks_bonus_engine();
+
+[[nodiscard]] constexpr int portrait_frame(const Id id)
+{
+    return int(id);
+}
+
+[[nodiscard]] int coach_count(Id id);
 
 [[nodiscard]] bool is_playable(Id id);
 

@@ -35,6 +35,18 @@ public:
 
     void reset();
 
+    void apply_save(int max_unlocked_level, unsigned cleared_levels, unsigned unlocked_engines);
+
+    [[nodiscard]] unsigned cleared_levels_mask() const
+    {
+        return _cleared_levels;
+    }
+
+    [[nodiscard]] unsigned unlocked_engines_mask() const
+    {
+        return _unlocked_engines;
+    }
+
 private:
     void _unlock_engine(engine::Id id);
 

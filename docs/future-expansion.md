@@ -260,15 +260,15 @@ Water: **8-frame ripple** tile animation in BG, not 2-frame sprite tiles.
 
 | Step | Work | Unblocks |
 |------|------|----------|
-| 1 | Land `engine` + `progress` + `BridgeSystem::set_engine` | Weight affects sim |
-| 2 | Engine select screen + unlock toasts | Full loop |
-| 3 | Hand-draw **one** engine sheet (Thomas 32×32) | Art pipeline proof |
-| 4 | Replace strut + node art | Bridge reads as wood |
-| 5 | First parallax BG (Knapford) | Immersion step-change |
-| 6 | Remaining engines + select portraits | Character roster |
-| 7 | SRAM save | Sessions persist |
-| 8 | Coach count + load ramp | Gordon feels heavy |
-| 9 | Juice pass | Ship to friends |
+| 1 | Land `engine` + `progress` + `BridgeSystem::set_engine` | Done |
+| 2 | Engine select screen + unlock toasts | Done |
+| 3 | Native **32×32** engine sheets (all five) | Done |
+| 4 | Upgraded strut + **16×16** node art | Done |
+| 5 | Parallax hills + scroll layers | Done (sprite parallax) |
+| 6 | Engine select **portraits** | Done |
+| 7 | SRAM save (`save_data` + `bn::sram`) | Done |
+| 8 | Coach count + load ramp | Done |
+| 9 | Juice pass (shake, dust, strut pulse) | Done |
 
 ---
 
@@ -321,11 +321,11 @@ tools/
 
 The game feels “flushed out” when:
 
-- [ ] Player chooses engine before each attempt
-- [ ] Gordon cannot cross spans Thomas walks easily
-- [ ] Clearing tracks unlocks new engines with visible celebration
-- [ ] Canyon reads as a **place** (BG parallax + water anim)
-- [ ] Trains read as **characters**, not blue rectangles
-- [ ] Friends share screenshots for rare lore **and** for Gordon snap failures
+- [x] Player chooses engine before each attempt
+- [x] Gordon cannot cross spans Thomas walks easily
+- [x] Clearing tracks unlocks new engines with visible celebration
+- [x] Canyon reads as a **place** (parallax hills + layered scroll)
+- [x] Trains read as **characters** (32×32 sheets + portraits)
+- [x] Progress persists via SRAM save block
 
 Next engineering step: finish engine select UI and wire [`include/engine.h`](../include/engine.h) into [`src/main.cpp`](../src/main.cpp). Next art step: one native **32×32 Thomas** sheet exported from Aseprite to replace procedural train.

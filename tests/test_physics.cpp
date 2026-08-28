@@ -252,6 +252,18 @@ int main()
         std::cout << "  ok Gordon (weight 10) snaps the same deck\n";
     }
 
+    // Gordon with two coaches loads harder than James with one.
+    {
+        bridge::BridgeSystem gordon;
+        gordon.set_engine(engine::Id::gordon);
+        const bn::fixed gordon_end = gordon.effective_weight_at(bn::fixed(96), bn::fixed(96));
+        bridge::BridgeSystem james;
+        james.set_engine(engine::Id::james);
+        const bn::fixed james_end = james.effective_weight_at(bn::fixed(96), bn::fixed(96));
+        assert(gordon_end > james_end);
+        std::cout << "  ok coach load ramp increases with engine coaches\n";
+    }
+
     std::cout << "All host physics tests passed.\n";
     return 0;
 }

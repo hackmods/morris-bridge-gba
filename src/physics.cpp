@@ -93,16 +93,15 @@ bn::fixed tension(bn::fixed base_weight, bn::fixed distance_from_train, bn::fixe
     return base_weight.safe_multiplication(ratio);
 }
 
-bn::fixed max_tension_for_length(bn::fixed length)
+bn::fixed max_tension_for_length(bn::fixed length, bn::fixed safe_length)
 {
     if(length <= 0)
     {
         return BASE_MAX_TENSION;
     }
 
-    // Inverse-length rating: a 48px strut gets BASE_MAX_TENSION (8);
-    // a 96px strut gets 4, which equals BASE_WEIGHT at the far end.
-    bn::fixed rated = BASE_MAX_TENSION.safe_multiplication(SAFE_LENGTH).safe_division(length);
+    const bn::fixed rating_base = safe_length > 0 ? safe_length : SAFE_LENGTH;
+    bn::fixed rated = BASE_MAX_TENSION.safe_multiplication(rating_base).safe_division(length);
 
     if(rated < 1)
     {

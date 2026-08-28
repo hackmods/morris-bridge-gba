@@ -8,12 +8,17 @@ namespace
 {
 
 constexpr Profile PROFILES[int(Id::count)] = {
-    { physics::BASE_WEIGHT, bn::fixed(1) }, // Thomas
-    { bn::fixed(3), bn::fixed(1) },         // Percy — light reward engine
-    { bn::fixed(5), bn::fixed(1) },         // Edward
-    { bn::fixed(6), bn::fixed(1) },         // James
-    { bn::fixed(10), bn::fixed(1) },        // Gordon — prestige hard mode
+    { physics::BASE_WEIGHT, bn::fixed(1), 0 }, // Thomas
+    { bn::fixed(3), bn::fixed(1), 0 },         // Percy
+    { bn::fixed(5), bn::fixed(1), 1 },         // Edward
+    { bn::fixed(6), bn::fixed(1), 1 },         // James
+    { bn::fixed(10), bn::fixed(1), 2 },        // Gordon
 };
+
+bool is_playable_impl(const Id id)
+{
+    return id >= Id::thomas && id < Id::count;
+}
 
 } // namespace
 
@@ -21,7 +26,7 @@ const Profile& profile(const Id id)
 {
     const int index = int(id);
 
-    if(! is_playable(id))
+    if(! is_playable_impl(id))
     {
         return PROFILES[int(default_engine())];
     }
@@ -59,7 +64,12 @@ Id all_tracks_bonus_engine()
 
 bool is_playable(const Id id)
 {
-    return id >= Id::thomas && id < Id::count;
+    return is_playable_impl(id);
+}
+
+int coach_count(const Id id)
+{
+    return profile(id).coach_count;
 }
 
 } // namespace engine
