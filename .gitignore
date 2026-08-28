@@ -1,0 +1,17 @@
+build/
+vendor/
+*.elf
+*.gba
+!rom/*.gba
+*.sav
+*.sgm
+*.bmp.bak
+.idea/
+.vscode/
+tests/test_physics
+tests/test_physics.exe
+__pycache__/
+*.o
+web/node_modules/
+web/dist/
+web/public/rom/*.gba

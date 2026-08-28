@@ -1,0 +1,84 @@
+# Game design
+
+## Modes
+
+### Build mode (`SimStatus::idle`)
+
+- Crosshair cursor moves with D-Pad (hold **R** for faster movement)
+- **A** on empty space: place a node (keeps it selected for chain-building)
+- **A** on another node while one is selected: create a strut between them
+- **A** on the same node again: deselect
+- **B** cancels selection
+- **Start** begins test simulation
+- **Select** resets the canyon
+
+Anchored **start** and **end** nodes are always present on the banks.
+
+### Test mode
+
+Triggered by **Start** in build mode (`BridgeSystem::begin_test()`):
+
+1. Snapshot current struts
+2. BFS from start node → end node
+3. If no path: status `no_path` (HUD shows "NO GO")
+4. If path exists: train moves along struts at `TRAIN_SPEED` (1 px/frame)
+5. Tension applied to the strut under the train each frame
+6. If tension exceeds max: strut breaks, train enters fall state
+7. Success when train reaches end node
+
+**B** or **Start** during test returns to build mode and restores struts.
+
+## Controls (GBA)
+
+| Button | Build mode | Test mode |
+|--------|------------|-----------|
+| D-Pad | Move crosshair | — |
+| R (hold) | Faster cursor | — |
+| A | Place node / connect | — |
+| B | Cancel selection | Return to build |
+| Start | Run simulation | Return to build |
+| Select | Reset level | Reset level |
+
+## Chain-building
+
+After placing a node with **A**, that node stays selected. The next **A** on another node creates a strut without re-selecting. This lets you walk a deck across the gap quickly.
+
+## Win / lose
+
+| Outcome | Condition | HUD label |
+|---------|-----------|-----------|
+| Success | Train reaches end node | WIN |
+| No path | Disconnected graph at test start | NO GO |
+| Failure | Strut snaps, train falls off screen | FAIL |
+| Running | Train en route | (test status text) |
+
+## Difficulty knobs (constants)
+
+Defined in [`include/physics.h`](../include/physics.h) and [`include/bridge_system.h`](../include/bridge_system.h):
+
+| Constant | Value | Effect |
+|----------|-------|--------|
+| `BASE_WEIGHT` | 4 | Train load in tension formula |
+| `SAFE_LENGTH` | 48 px | Reference span for strength rating |
+| `BASE_MAX_TENSION` | 8 | Max tension at `SAFE_LENGTH` |
+| `TRAIN_SPEED` | 1 px/frame | Crossing speed |
+| `GRAVITY` | 1/8 | Fall acceleration after snap |
+| `SNAP_RADIUS` | 6 px | Node pick radius |
+| `MAX_NODES` | 16 | Hard cap |
+| `MAX_STRUTS` | 32 | Hard cap |
+
+Longer spans get a **lower** `max_tension` (weaker). A ~176 px single span is rated below train weight and will snap mid-crossing.
+
+## Browser controls
+
+Mapped in [`web/src/keyboard.ts`](../web/src/keyboard.ts):
+
+| Key | GBA button |
+|-----|------------|
+| Arrow keys | D-Pad |
+| Z / X | A / B |
+| Enter | Start |
+| Backspace | Select |
+| R | R (fast cursor) |
+
+Command queue tokens: `up down left right a b start select r`

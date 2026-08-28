@@ -1,0 +1,133 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-rom:
+    name: Build GBA ROM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clone Butano
+        run: git clone --depth 1 https://github.com/GValiente/butano.git vendor/butano
+
+      - name: Compile leo_bridge.gba
+        run: |
+          docker run --rm -v "$PWD:/project" -w /project sunbr0/gba-butano-base:4dd4b16 \
+            bash -lc 'make -j"$(nproc)" LIBBUTANO=vendor/butano/butano PYTHON=python3'
+          cp -f leo_bridge.gba rom/leo_bridge.gba
+          file rom/leo_bridge.gba
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: leo_bridge-gba
+          path: rom/leo_bridge.gba
+          retention-days: 14
+
+  host-tests:
+    name: Host physics tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run test_physics
+        run: make -C tests
+
+  build-image:
+    name: Build and push Docker image
+    needs: [build-rom, host-tests]
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: leo_bridge-gba
+          path: rom
+
+      - name: Stage ROM for web build
+        run: |
+          mkdir -p web/public/rom
+          cp rom/leo_bridge.gba web/public/rom/leo_bridge.gba
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Export image URL
+        id: image
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          else
+            TAG="latest"
+          fi
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${TAG}"
+          echo "image=$(echo "$IMAGE" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+  deploy-caprover:
+    name: Deploy to CapRover
+    needs: build-image
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    environment: production
+    steps:
+      - name: Deploy image
+        uses: caprover/deploy-from-github@v1.1.2
+        with:
+          server: ${{ secrets.CAPROVER_SERVER }}
+          app: ${{ secrets.CAPROVER_APP_NAME }}
+          token: ${{ secrets.CAPROVER_APP_TOKEN }}
+          image: ${{ needs.build-image.outputs.image }}
