@@ -595,14 +595,26 @@ def make_water() -> None:
 
 
 def make_labels() -> None:
-    texts = ("BUILD", "TEST!", "DELAY", "USEFUL", "NO GO", "PEEP!", "ASHES!", "START", "LV 1", "LV 2", "LV 3")
-    w, fh = 32, 8
+    texts = (
+        "BUILD",
+        "TEST!",
+        "DELAY",
+        "USEFUL",
+        "NO GO",
+        "PEEP!",
+        "ASHES!",
+        "START",
+        "A NODE",
+        "START RUN",
+        "SEL PAUSE",
+    )
+    w, fh = 64, 8
     px = fill(w, fh * len(texts))
-    colors = (2, 2, 2, 3, 2, 3, 2, 3, 3, 3, 3)
+    colors = (2, 2, 2, 3, 2, 3, 2, 3, 2, 2, 2)
     for i, text in enumerate(texts):
         y0 = i * fh
-        rect(px, w, 0, y0, 32, y0 + fh, 7 if i < 8 else 13)
-        rect(px, w, 1, y0 + 1, 31, y0 + fh - 1, 6 if i < 8 else 7)
+        rect(px, w, 0, y0, w, y0 + fh, 7 if i < 8 else 13)
+        rect(px, w, 1, y0 + 1, w - 1, y0 + fh - 1, 6 if i < 8 else 7)
         center_text(px, w, text, y0 + 1, colors[i], 1)
     write_indexed_bmp(os.path.join(GFX, "label.bmp"), w, fh * len(texts), px)
 
