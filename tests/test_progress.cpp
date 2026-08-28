@@ -56,6 +56,17 @@ int main()
     assert(! progress.is_engine_unlocked(engine::Id::gordon));
     std::cout << "  ok reset restores starter state\n";
 
+    progress.record_level_result(0, 3, 8);
+    assert(progress.best_stars(0) == 3);
+    assert(progress.best_cost(0) == 8);
+    progress.record_level_result(0, 2, 5);
+    assert(progress.best_stars(0) == 3);
+    assert(progress.best_cost(0) == 8);
+    progress.record_level_result(0, 3, 5);
+    assert(progress.best_stars(0) == 3);
+    assert(progress.best_cost(0) == 5);
+    std::cout << "  ok record_level_result keeps best stars and cost\n";
+
     std::cout << "All progress tests passed.\n";
     return 0;
 }

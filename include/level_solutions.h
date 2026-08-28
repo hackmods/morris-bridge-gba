@@ -119,6 +119,54 @@ inline bool build_gordon_hill_reference(bridge::BridgeSystem& system)
     return build_gordon_hill_reference(system) && run_sim_to_completion(system, max_frames);
 }
 
+inline bool build_vicarstown_reference(bridge::BridgeSystem& system)
+{
+    system.load_level(2);
+    system.set_engine(engine::Id::james);
+
+    const bn::fixed deck = system.level_def().deck_y;
+    const bn::optional<int> n1 = system.add_node(-64, deck, false);
+    const bn::optional<int> n2 = system.add_node(-24, deck, false);
+    const bn::optional<int> n3 = system.add_node(16, deck, false);
+    const bn::optional<int> n4 = system.add_node(56, deck, false);
+    const bn::optional<int> n5 = system.add_node(96, deck, false);
+
+    if(!n1 || !n2 || !n3 || !n4 || !n5)
+    {
+        return false;
+    }
+
+    const int mids[] = { n1.value(), n2.value(), n3.value(), n4.value(), n5.value() };
+    int prev = bridge::START_NODE;
+
+    for(int mid : mids)
+    {
+        if(!system.add_strut(prev, mid, bridge::LinkRole::track))
+        {
+            return false;
+        }
+
+        prev = mid;
+    }
+
+    if(!system.add_strut(prev, bridge::END_NODE, bridge::LinkRole::track))
+    {
+        return false;
+    }
+
+    if(!system.add_strut(bridge::START_NODE, 3, bridge::LinkRole::brace))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+[[nodiscard]] inline bool run_vicarstown_playthrough(bridge::BridgeSystem& system, int max_frames = 900)
+{
+    return build_vicarstown_reference(system) && run_sim_to_completion(system, max_frames);
+}
+
 } // namespace level_solutions
 
 #endif

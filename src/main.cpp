@@ -38,6 +38,7 @@
 #include "bn_sprite_items_train.h"
 #include "bn_sprite_items_water.h"
 
+#include "audio_director.h"
 #include "bridge_system.h"
 #include "engine.h"
 #include "game_constants.h"
@@ -60,8 +61,6 @@ constexpr int SHAKE_FRAMES = 10;
 constexpr int DUST_LIFE = 24;
 constexpr int MAX_DUST = 6;
 constexpr int CHUFF_FRAMES = 10;
-constexpr bn::fixed MUSIC_VOLUME = bn::fixed(1) / 2;
-constexpr bn::fixed MUSIC_PAUSE_VOLUME = bn::fixed(1) / 5;
 
 constexpr int TOAST_DUP = 0;
 constexpr int TOAST_WEAK = 1;
@@ -128,47 +127,6 @@ void set_train_sprite_position(bn::sprite_ptr& train, bn::fixed_point track_posi
     train.set_position(game::train_display_position(track_position));
 }
 
-enum class MusicCue
-{
-    none,
-    island_line,
-    yard,
-    workshop,
-    full_steam,
-};
-
-void play_music(MusicCue cue, MusicCue& current)
-{
-    if(cue == current)
-    {
-        return;
-    }
-
-    current = cue;
-
-    switch(cue)
-    {
-        case MusicCue::none:
-            bn::music::stop();
-            break;
-
-        case MusicCue::island_line:
-            bn::music_items::island_line.play(MUSIC_VOLUME, true);
-            break;
-
-        case MusicCue::yard:
-            bn::music_items::yard.play(MUSIC_VOLUME, true);
-            break;
-
-        case MusicCue::workshop:
-            bn::music_items::workshop.play(MUSIC_VOLUME, true);
-            break;
-
-        case MusicCue::full_steam:
-            bn::music_items::full_steam.play(MUSIC_VOLUME, true);
-            break;
-    }
-}
 
 constexpr int LABEL_BUILD = 0;
 constexpr int LABEL_TEST = 1;
@@ -627,6 +585,13 @@ private:
 
         _menu_row.set_item(bn::sprite_items::menu, _selected_level);
         _sync_train_sprite();
+        _sync_level_select_stars();
+    }
+
+    void _sync_level_select_stars()
+    {
+        const uint8_t stars = _progress.best_stars(_selected_level);
+        _set_weight_digits(stars, stars > 0);
     }
 
     void _step_engine(const int delta)
@@ -784,7 +749,7 @@ private:
         _menu_arrow.set_visible(false);
         _train.set_visible(false);
         _hatt.set_visible(false);
-        play_music(MusicCue::island_line, _music_cue);
+        _audio.play(audio::MusicCue::island_line);
     }
 
     void _show_level_select()
@@ -815,7 +780,7 @@ private:
         _hatt.set_position(56, 44);
         _hatt.set_item(bn::sprite_items::hatt, HATT_STERN);
         _portrait.set_visible(false);
-        _set_weight_digits(0, false);
+        _sync_level_select_stars();
         _node_count_digits[0].set_visible(false);
         _node_count_digits[1].set_visible(false);
         _strut_count_digits[0].set_visible(false);
@@ -854,7 +819,7 @@ private:
         _node_count_digits[1].set_visible(false);
         _strut_count_digits[0].set_visible(false);
         _strut_count_digits[1].set_visible(false);
-        play_music(MusicCue::yard, _music_cue);
+        _audio.play(audio::MusicCue::yard);
     }
 
     void _start_level(int level_index)
@@ -874,7 +839,7 @@ private:
         _show_gameplay();
         _sync_node_sprites();
         _sync_strut_sprites();
-        play_music(MusicCue::workshop, _music_cue);
+        _audio.play(audio::MusicCue::workshop);
     }
 
     void _show_gameplay()
@@ -972,7 +937,7 @@ private:
 
         if(bn::music::playing())
         {
-            bn::music::set_volume(MUSIC_PAUSE_VOLUME);
+            _audio.duck_for_pause();
         }
     }
 
@@ -993,7 +958,7 @@ private:
 
         if(bn::music::playing())
         {
-            bn::music::set_volume(MUSIC_VOLUME);
+            _audio.restore_from_pause();
         }
     }
 
@@ -1012,9 +977,10 @@ private:
             _show_unlock_flash = true;
         }
 
-        _persist_progress();
-
         _last_run_score = session::compute_run_score(_bridge, _bridge.level_def());
+        _progress.record_level_result(_bridge.current_level(), _last_run_score.stars,
+                                      uint16_t(_last_run_score.total_cost));
+        _persist_progress();
 
         _banner.set_visible(true);
         _banner.set_item(bn::sprite_items::banner, _pick_win_banner());
@@ -1032,7 +998,7 @@ private:
         _cursor.set_visible(false);
         _train.set_visible(true);
         set_train_sprite_position(_train, _bridge.train_position());
-        play_music(MusicCue::none, _music_cue);
+        _audio.play(audio::MusicCue::none);
         bn::sound_items::useful.play();
         bn::sound_items::whistle.play();
         _hatt.set_visible(true);
@@ -1060,7 +1026,7 @@ private:
         _cursor.set_visible(false);
         _train.set_visible(_train.position().y() < bridge::FALL_Y_LIMIT);
         _sync_train_sprite();
-        play_music(MusicCue::none, _music_cue);
+        _audio.play(audio::MusicCue::none);
         bn::sound_items::snap.play();
         bn::sound_items::delay.play();
         bn::sound_items::splash.play();
@@ -1092,7 +1058,7 @@ private:
         _hatt.set_visible(true);
         _hatt.set_position(56, 16);
         _hatt.set_item(bn::sprite_items::hatt, HATT_STERN);
-        play_music(MusicCue::island_line, _music_cue);
+        _audio.play(audio::MusicCue::island_line);
         bn::sound_items::useful.play();
     }
 
@@ -1205,7 +1171,7 @@ private:
                     _leave_pause();
                     _sync_node_sprites();
                     _sync_strut_sprites();
-                    play_music(MusicCue::workshop, _music_cue);
+                    _audio.play(audio::MusicCue::workshop);
                     break;
 
                 case PauseOption::levels:
@@ -1750,7 +1716,7 @@ private:
 
         if(_bridge.status() == bridge::SimStatus::no_path)
         {
-            play_music(MusicCue::none, _music_cue);
+            _audio.play(audio::MusicCue::none);
             bn::sound_items::delay.play();
             _no_go_timer = 60;
             _leave_test();
@@ -1758,7 +1724,7 @@ private:
         }
         else
         {
-            play_music(MusicCue::full_steam, _music_cue);
+            _audio.play(audio::MusicCue::full_steam);
             bn::sound_items::peep.play();
         }
     }
@@ -1770,7 +1736,7 @@ private:
         _train.set_visible(false);
         _cursor.set_visible(true);
         _cursor.set_position(_cursor_pos);
-        play_music(MusicCue::workshop, _music_cue);
+        _audio.play(audio::MusicCue::workshop);
     }
 
     void _update_test()
@@ -1987,7 +1953,7 @@ private:
     bn::optional<int> _selected;
     int _selected_level = 0;
     PauseOption _pause_option = PauseOption::resume;
-    MusicCue _music_cue = MusicCue::none;
+    audio::Director _audio;
     int _frame = 0;
     int _menu_up_counter = 0;
     int _menu_down_counter = 0;

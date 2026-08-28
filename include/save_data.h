@@ -16,9 +16,11 @@ class Progress;
 namespace save_data
 {
 
-inline constexpr int SIZE = 9;
+inline constexpr int SIZE_V1 = 9;
+inline constexpr int SIZE = 16;
 inline constexpr std::uint32_t MAGIC = 0x47425254; // 'TRBG' little-endian
-inline constexpr std::uint8_t VERSION = 1;
+inline constexpr std::uint8_t VERSION_V1 = 1;
+inline constexpr std::uint8_t VERSION = 2;
 
 [[nodiscard]] bool encode(const progress::Progress& progress, std::uint8_t out[SIZE]);
 

@@ -387,6 +387,17 @@ int main()
                   << " par=" << system.level_def().par_cost << ")\n";
     }
 
+    {
+        bridge::BridgeSystem system;
+        assert(level_solutions::run_vicarstown_playthrough(system));
+        const session::RunScore score =
+            session::compute_run_score(system, system.level_def());
+        assert(score.stars == 3);
+        assert(score.total_cost <= system.level_def().par_cost);
+        std::cout << "  ok Vicarstown reference scores 3 stars (cost=" << score.total_cost
+                  << " par=" << system.level_def().par_cost << ")\n";
+    }
+
     std::cout << "All host physics tests passed.\n";
     return 0;
 }
