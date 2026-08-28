@@ -548,13 +548,13 @@ def make_digit() -> None:
 
 
 def make_toast() -> None:
-    w, fh = 48, 8
+    w, fh = 32, 8
     texts = ("DUP!", "WEAK", "DEL")
     px = fill(w, fh * len(texts))
     colors = (9, 3, 10)
     for i, text in enumerate(texts):
         y0 = i * fh
-        panel_box(px, w, 1, y0 + 1, 47, y0 + 7)
+        panel_box(px, w, 1, y0 + 1, 31, y0 + 7)
         center_text(px, w, text, y0 + 1, colors[i], 1)
     write_indexed_bmp(os.path.join(GFX, "toast.bmp"), w, fh * len(texts), px)
 
@@ -694,7 +694,7 @@ def main() -> None:
         ("ground.json", None),
         ("water.json", {"height": 8}),
         ("digit.json", {"width": 8}),
-        ("toast.json", {"height": 8, "width": 48}),
+        ("toast.json", {"height": 8}),
         ("label.json", {"height": 8}),
         ("banner.json", {"height": 32}),
         ("menu.json", {"height": 32}),

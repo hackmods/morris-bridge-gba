@@ -1,6 +1,5 @@
 {
     "type": "sprite",
     "bpp_mode": "bpp_4",
-    "height": 8,
-    "width": 48
+    "height": 8
 }
