@@ -2,6 +2,13 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Source layout: core / session / content (Phase 2)
+
+- `src/core/` — `physics.cpp`, `bridge_system.cpp` (simulation)
+- `src/session/` — `run_score.cpp` (scoring)
+- `src/content/` — `level.cpp`, `engine.cpp` (data tables)
+- GBA platform code remains under `src/` + `src/screens/`
+
 ## 2026-08-29 — Sky regular BG layer (Phase 4 start)
 
 - Move sky parallax from 8 OAM sprites to a **256×256 regular BG** (`bg_sky.bmp`)
