@@ -87,7 +87,8 @@ jobs:
         run: |
           mkdir -p web/public/rom
           cp rom/thomas_bridge.gba web/public/rom/thomas_bridge.gba
-          ls -la web/public/rom/
+          python3 tools/gen_playtest_save.py
+          ls -la web/public/rom/ web/public/saves/
 
       - uses: actions/setup-node@v4
         with:

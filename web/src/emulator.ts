@@ -128,6 +128,23 @@ export class GbaEmulator {
     return this.frameCount;
   }
 
+  /** Write GBA SRAM save bytes and soft-reset so the game reloads progress. */
+  injectSave(saveBytes: Uint8Array): void {
+    const module = this.requireModule();
+    const saveName = module.saveName;
+
+    if (!saveName) {
+      throw new Error('No active save path — load a ROM first');
+    }
+
+    const padded = new Uint8Array(32768);
+    padded.set(saveBytes.subarray(0, Math.min(saveBytes.length, padded.length)));
+
+    const fs = (module as mGBAEmulator & { FS: { writeFile: (path: string, data: Uint8Array) => void } }).FS;
+    fs.writeFile(saveName, padded);
+    this.softReset();
+  }
+
   private requireModule(): mGBAEmulator {
     if (!this.module) {
       throw new Error('Emulator not initialized');

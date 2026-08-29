@@ -3,6 +3,7 @@
  */
 
 #include <cassert>
+#include <fstream>
 #include <iostream>
 
 #include "progress.h"
@@ -98,6 +99,22 @@ int main()
     assert(! loaded.is_intro_seen(1));
     assert(loaded.is_intro_seen(2));
     std::cout << "  ok v3 round-trip intro seen flags\n";
+
+    {
+        std::ifstream file("../web/public/saves/gordon_hill_walkthrough.sav", std::ios::binary);
+        assert(file.good());
+        std::uint8_t sav[save_data::SIZE] = {};
+        file.read(reinterpret_cast<char*>(sav), save_data::SIZE);
+        assert(file.gcount() == save_data::SIZE);
+        loaded.reset();
+        assert(save_data::decode(loaded, sav));
+        assert(loaded.is_level_unlocked(1));
+        assert(loaded.is_intro_seen(0));
+        assert(loaded.is_intro_seen(1));
+        assert(loaded.is_engine_unlocked(engine::Id::thomas));
+        assert(loaded.is_engine_unlocked(engine::Id::percy));
+        std::cout << "  ok gordon_hill_walkthrough.sav decodes for playtest\n";
+    }
 
     std::cout << "All save_data tests passed.\n";
     return 0;
