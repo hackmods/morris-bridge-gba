@@ -1090,6 +1090,25 @@ def make_banner() -> None:
     write_indexed_bmp(os.path.join(GFX, "banner.bmp"), w, fh * len(entries), px)
 
 
+def make_track_card() -> None:
+    """Level-select cards: full track name + subtitle, 64×32 (replaces tiny menu row)."""
+    w, fh = 64, 32
+    entries = (
+        ("1", "KNAPFORD", "FLAT!", 11),
+        ("2", "GORDON", "HILL!", 3),
+        ("3", "VICARSTOWN", "LONG!", 9),
+    )
+    px = fill(w, fh * len(entries))
+    for i, (num, title, sub, accent) in enumerate(entries):
+        y0 = i * fh
+        panel_box(px, w, 2, y0 + 2, 62, y0 + 30)
+        rect(px, w, 4, y0 + 4, 60, y0 + 10, accent)
+        center_text(px, w, num, y0 + 5, 7, 13)
+        center_text(px, w, title, y0 + 12, 1, 13)
+        center_text(px, w, sub, y0 + 22, 3, 1)
+    write_indexed_bmp(os.path.join(GFX, "track_card.bmp"), w, fh * len(entries), px)
+
+
 def make_menu() -> None:
     w, fh = 32, 32
     names = (
@@ -1168,6 +1187,7 @@ def main() -> None:
     make_labels()
     make_banner()
     make_menu()
+    make_track_card()
 
     for name, extra in (
         ("splash.json", {"height": 64}),
@@ -1196,6 +1216,7 @@ def main() -> None:
         ("label.json", {"height": 8}),
         ("banner.json", {"height": 32}),
         ("menu.json", {"height": 32}),
+        ("track_card.json", {"height": 32}),
     ):
         write_json(name, extra)
 

@@ -43,14 +43,13 @@ void Game::_show_level_select()
     _banner.set_visible(true);
     _banner.set_item(bn::sprite_items::banner, game_ui::BANNER_LEVEL_SELECT);
     _banner.set_position(0, -52);
-    _panel.set_visible(true);
-    _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_SELECT);
-    _panel.set_position(0, 16);
-    _menu_row.set_visible(true);
-    _menu_row.set_item(bn::sprite_items::menu, _selected_level);
-    _menu_row.set_position(0, 4);
+    _panel.set_visible(false);
+    _track_card.set_visible(true);
+    _track_card.set_position(0, 16);
+    _sync_level_select_card();
+    _menu_row.set_visible(false);
     _menu_arrow.set_visible(true);
-    _menu_arrow.set_position(-38, 12);
+    _menu_arrow.set_position(-40, 16);
     _label.set_visible(false);
     _hint_label.set_visible(false);
     _hint_secondary.set_visible(false);
@@ -76,6 +75,7 @@ void Game::_show_engine_select()
     _hide_gameplay();
     _set_splash_visible(false);
     _backdrop.set_backdrop_visible(true);
+    _track_card.set_visible(false);
     _banner.set_visible(true);
     _banner.set_item(bn::sprite_items::banner, game_ui::BANNER_ENGINE_SELECT);
     _banner.set_position(0, -48);
@@ -112,6 +112,7 @@ void Game::_show_level_intro(const int level_index)
     _hide_gameplay();
     _set_splash_visible(false);
     _backdrop.set_backdrop_visible(true);
+    _track_card.set_visible(false);
     _banner.set_visible(true);
     _banner.set_item(bn::sprite_items::banner, game_ui::BANNER_LEVEL_SELECT);
     _banner.set_position(0, -40);
@@ -223,6 +224,8 @@ void Game::_update_level_intro()
 
 void Game::_sync_level_select_flavor()
 {
+    const level::Def& def = level::get(_selected_level);
+
     if(_lore_rare(6 + _selected_level))
     {
         int label = game_ui::LABEL_PEEP;
@@ -251,11 +254,9 @@ void Game::_sync_level_select_flavor()
         return;
     }
 
-    const level::Def& def = level::get(_selected_level);
-
     if(def.intro_dialog_id > 0)
     {
-        const int label = game_ui::LABEL_INTRO_BASE + int(def.intro_dialog_id - 1) * 2;
+        const int label = game_ui::LABEL_INTRO_BASE + int(def.intro_dialog_id - 1) * 2 + 1;
         _hint_label.set_visible(true);
         _hint_label.set_position(0, 52);
         _hint_label.set_item(bn::sprite_items::label, label);
