@@ -15,7 +15,7 @@ This document records master-plan **M1–M5** screen-flow QA and related ship ga
 | Host physics + session | `make -C tests` | Green on `main` |
 | All-level playthroughs | `test_physics` Knapford / Gordon / Vicarstown 3★ | Green |
 | Web unit tests | `cd web && npm test` | Green |
-| Web E2E (ROM boot, gameplay, **ship-qa M1–M5**, Gordon save) | `npm run test:e2e` | Green on `main` (21 tests) |
+| Web E2E (ROM boot, gameplay, **ship-qa M1–M5**, Gordon save) | `npm run test:e2e` | Green on `main` (22 tests) |
 | GBA ROM build | Release workflow `build-rom` | Green |
 | Graphics lint | `validate_graphics.py` in host tests | Green |
 | Audio lint | `gen_audio.py --check` | Green |
@@ -28,7 +28,7 @@ This document records master-plan **M1–M5** screen-flow QA and related ship ga
 | ID | Flow | Expected | Evidence |
 |----|------|----------|----------|
 | **M1** | Title → Level 1 → Build → Test → Win | HATT OK / PEEP | **Simulation:** `test_physics` Knapford reference playthrough succeeds with 3★. **Web E2E:** `ship-qa.spec.ts` builds reference bridge and completes test run (`M1: Knapford reference bridge wins`). |
-| **M2** | Level 2 → weak bridge → Test | DELAY / ASHES | **Simulation:** `test_physics` overlong span snaps; Gordon 10-weight fails two-span deck. Manual level-2 fail sting verified via audio assets in CI. |
+| **M2** | Level 2 → weak bridge → Test | DELAY / ASHES | **Simulation:** `test_physics` overlong span snaps; Gordon 10-weight fails two-span deck. **Web E2E:** `ship-qa.spec.ts` START→END span fails on Knapford (`M2: overlong Knapford span fails test run`). |
 | **M3** | Build with no connections → Start | NO GO → back to build | **Web E2E:** `ship-qa.spec.ts` M3 |
 | **M4** | Pause → Restart / Levels / Title | Correct transitions | **Web E2E:** `ship-qa.spec.ts` M4 (pause + resume). Restart/levels/title: manual spot-check. |
 | **M5** | Web theater + resize | Canvas scales, no clip | **Web E2E:** `ship-qa.spec.ts` M5 |
@@ -127,6 +127,7 @@ Record results in this file or a hardware test log when complete.
 | M3–M5 E2E | Yes |
 | M1/M2 simulation playthroughs | Yes |
 | M1 web win E2E | Yes (`ship-qa.spec.ts`) |
+| M2 web fail E2E | Yes (`ship-qa.spec.ts`) |
 | Hardware EverDrive smoke | Pending physical device — see H1–H6 checklist below |
 | Walkthrough artifact | `artifacts/walkthrough/` (7 PNGs) + `web/e2e/walkthrough-capture.spec.ts` |
 

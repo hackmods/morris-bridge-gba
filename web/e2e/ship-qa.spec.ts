@@ -3,6 +3,7 @@ import {
   assertCanvasChanged,
   assertCanvasIsRendering,
   buildKnapfordReferenceBridge,
+  buildOverlongKnapfordSpan,
   navigateToBuildMode,
   waitForRenderSettle,
 } from './helpers';
@@ -47,7 +48,7 @@ test.describe('Ship QA screen flows (M3–M5)', () => {
   });
 });
 
-test.describe('Ship QA navigation smoke (M1 partial)', () => {
+test.describe('Ship QA navigation smoke (M1–M2)', () => {
   test('M1 partial: reaches build mode from title', async ({ page }) => {
     await navigateToBuildMode(page);
     const metrics = await assertCanvasIsRendering(page);
@@ -72,6 +73,21 @@ test.describe('Ship QA navigation smoke (M1 partial)', () => {
     const beforeTest = await page.locator('#game-canvas').screenshot();
     await page.evaluate(() => window.__TEST__!.tapButton('Start'));
     await page.waitForTimeout(18_000);
+
+    const afterTest = await page.locator('#game-canvas').screenshot();
+    expect(beforeTest.equals(afterTest)).toBe(false);
+    await assertCanvasIsRendering(page, 500);
+  });
+
+  test('M2: overlong Knapford span fails test run', async ({ page }) => {
+    test.setTimeout(120_000);
+
+    await navigateToBuildMode(page);
+    await buildOverlongKnapfordSpan(page);
+
+    const beforeTest = await page.locator('#game-canvas').screenshot();
+    await page.evaluate(() => window.__TEST__!.tapButton('Start'));
+    await page.waitForTimeout(12_000);
 
     const afterTest = await page.locator('#game-canvas').screenshot();
     expect(beforeTest.equals(afterTest)).toBe(false);

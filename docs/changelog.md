@@ -8,6 +8,11 @@ Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prot
 - Added missing **F** glyph to procedural font (KNAPFORD was rendering as KNAP ORD)
 - Release ROM refreshed to **338,236 bytes** (includes track_card assets)
 
+## 2026-08-29 — M2 web fail E2E (Phase 7)
+
+- `buildOverlongKnapfordSpan()` helper — single START→END span (matches host snap test)
+- `ship-qa.spec.ts` M2 fail test; 22 Playwright tests total
+
 ## 2026-08-29 — M1 web win E2E (Phase 7)
 
 - `holdButton` / `holdButtons` test hooks for build macros in mGBA-WASM playtest
