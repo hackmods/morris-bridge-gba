@@ -24,6 +24,7 @@ test_session: test_session.cpp $(CORE) $(CONTENT) $(SESSION)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $@ test_session.cpp $(CORE) $(CONTENT) $(SESSION)
 
 test: test_physics test_progress test_save_data test_session
+	python3 ../tools/gen_playtest_save.py
 	./test_physics
 	./test_progress
 	./test_save_data
@@ -31,7 +32,6 @@ test: test_physics test_progress test_save_data test_session
 	python3 ../tools/gen_audio.py --check
 	python3 ../tools/validate_graphics.py
 	python3 ../tools/validate_level.py --check
-	python3 ../tools/gen_playtest_save.py
 	python3 ../tools/gen_playtest_save.py --check
 
 clean:
