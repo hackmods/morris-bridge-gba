@@ -2,6 +2,11 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Release ROM + walkthrough refresh after BG art
+
+- ROM **340,892 bytes** (BG parallax art pass baked in)
+- Regenerated walkthrough PNGs 02–09 with new sky/hills/water themes
+
 ## 2026-08-29 — BG parallax art pass (Phase 4)
 
 - Sky: horizon haze band per theme (gold meadow, storm hill, industrial viaduct)
