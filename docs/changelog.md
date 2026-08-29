@@ -2,6 +2,11 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Release ROM refresh (Phase 7)
+
+- Committed `rom/thomas_bridge.gba` (~276 KB) synced from CI after hills BG merge
+- Web public ROM updated via `scripts/sync_rom_to_web.sh`
+
 ## 2026-08-29 — Hills regular BG layer (Phase 4)
 
 - Far hills moved from 4 OAM sprites to `bg_hills.bmp` regular BG (priority 2)
