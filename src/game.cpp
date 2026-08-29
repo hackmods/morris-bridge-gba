@@ -403,6 +403,12 @@ void Game::_step_engine(const int delta)
     _menu_row.set_item(bn::sprite_items::menu, engine::menu_frame(_selected_engine));
     _set_weight_digits(profile.weight.integer(), true);
     _sync_train_sprite();
+    _portrait.set_item(bn::sprite_items::portrait, engine::portrait_frame(_selected_engine));
+
+    if(_screen == Screen::engine_select)
+    {
+        _audio.play_yard_engine_motif(_selected_engine);
+    }
 }
 
 bool Game::_dir_repeat(bool pressed, bool held, int& counter)

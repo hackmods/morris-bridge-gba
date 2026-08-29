@@ -421,6 +421,11 @@ def steam_beats(pattern: list[bytes], rows: tuple[int, ...] = (0, 16, 32, 48)) -
             put_note(pattern, row, 2, "C-2", INS_STEAM)
 
 
+def loop_pattern(pattern: list[bytes], loop_to: int) -> None:
+    """ProTracker Bxx — jump back to @p loop_to at end of pattern."""
+    put_fx(pattern, 63, 3, 0xB, loop_to & 0xFF)
+
+
 # Original scores -----------------------------------------------------------
 # Island Line March — bright C-major steam march (NOT the TV theme).
 ISLAND_A = ["E-2", "G-2", "C-3", "G-2", "A-2", "G-2", "F-2", "E-2",
@@ -440,6 +445,30 @@ YARD_UNLOCK_A = ["G-2", "-", "B-2", "-", "C-3", "-", "E-3", "-",
                    "G-3", "-", "E-3", "-", "C-3", "-", "G-2", "-"]
 YARD_UNLOCK_B = ["E-3", "-", "G-3", "-", "C-4", "-", "G-3", "-",
                  "E-3", "-", "C-3", "-", "G-2", "-", "C-2", "-"]
+
+# Per-engine idle motifs — engine select (patterns 4–13, pairs loop via Bxx).
+ENGINE_MOTIFS: list[tuple[list[str], list[str]]] = [
+    (["C-3", "-", "E-3", "-", "G-3", "-", "C-4", "-",
+      "E-3", "-", "G-3", "-", "C-3", "-", "G-2", "-"],
+     ["G-3", "-", "C-4", "-", "E-4", "-", "C-4", "-",
+      "G-3", "-", "E-3", "-", "C-3", "-", "G-2", "-"]),  # Thomas
+    (["E-3", "-", "G-3", "-", "B-3", "-", "E-4", "-",
+      "G-3", "-", "B-3", "-", "E-3", "-", "G-2", "-"],
+     ["B-3", "-", "E-4", "-", "G-4", "-", "E-4", "-",
+      "B-3", "-", "G-3", "-", "E-3", "-", "B-2", "-"]),  # Percy
+    (["G-2", "-", "B-2", "-", "D-3", "-", "G-3", "-",
+      "A-2", "-", "G-2", "-", "E-2", "-", "G-2", "-"],
+     ["B-2", "-", "D-3", "-", "G-3", "-", "D-3", "-",
+      "B-2", "-", "A-2", "-", "G-2", "-", "D-2", "-"]),  # Edward
+    (["D-3", "-", "F-3", "-", "A-3", "-", "D-4", "-",
+      "F-3", "-", "A-3", "-", "D-3", "-", "F-2", "-"],
+     ["A-3", "-", "D-4", "-", "F-4", "-", "D-4", "-",
+      "A-3", "-", "F-3", "-", "D-3", "-", "A-2", "-"]),  # James
+    (["C-2", "-", "E-2", "-", "G-2", "-", "C-3", "-",
+      "G-2", "-", "E-2", "-", "C-2", "-", "G-1", "-"],
+     ["G-2", "-", "C-3", "-", "E-3", "-", "C-3", "-",
+      "G-2", "-", "E-2", "-", "C-2", "-", "G-1", "-"]),  # Gordon
+]
 
 # Workshop Shed — slower thinking music for build mode.
 WORK_A = ["C-2", "E-2", "G-2", "E-2", "F-2", "A-2", "G-2", "E-2",
@@ -485,9 +514,22 @@ def yard_track() -> list[list[bytes]]:
     patterns = two_pattern_track(
         YARD_A, YARD_B, YARD_BASS, melody_sample=INS_BELL, melody_vol=36,
     )
-    patterns.extend(two_pattern_track(
+    loop_pattern(patterns[1], 0)
+
+    unlock = two_pattern_track(
         YARD_UNLOCK_A, YARD_UNLOCK_B, YARD_BASS, melody_sample=INS_BELL, melody_vol=40,
-    ))
+    )
+    loop_pattern(unlock[1], 2)
+    patterns.extend(unlock)
+
+    base = len(patterns)
+    for index, (melody_a, melody_b) in enumerate(ENGINE_MOTIFS):
+        pair = two_pattern_track(
+            melody_a, melody_b, YARD_BASS, melody_sample=INS_BELL, melody_vol=38,
+        )
+        loop_pattern(pair[1], base + index * 2)
+        patterns.extend(pair)
+
     return patterns
 
 
@@ -500,11 +542,12 @@ def generate_modules() -> None:
         speed=6,
         bpm=125,
     )
+    yard_patterns = yard_track()
     write_mod(
         AUDIO_DIR / "yard.mod",
         "Knapford Yard",
-        yard_track(),
-        [0, 1, 2, 3],
+        yard_patterns,
+        list(range(len(yard_patterns))),
         speed=7,
         bpm=118,
     )

@@ -67,6 +67,7 @@ void Game::_show_level_select()
     _node_count_digits[1].set_visible(false);
     _strut_count_digits[0].set_visible(false);
     _strut_count_digits[1].set_visible(false);
+    _audio.play_yard_menu();
 }
 
 void Game::_show_engine_select()
@@ -101,7 +102,7 @@ void Game::_show_engine_select()
     _node_count_digits[1].set_visible(false);
     _strut_count_digits[0].set_visible(false);
     _strut_count_digits[1].set_visible(false);
-    _audio.play(audio::MusicCue::yard);
+    _audio.play_yard_engine_motif(_selected_engine);
 }
 
 void Game::_show_level_intro(const int level_index)
@@ -141,7 +142,7 @@ void Game::_show_level_intro(const int level_index)
     _hint_label.set_position(0, 54);
     _hint_label.set_item(bn::sprite_items::label, label_index + 1);
     _hint_secondary.set_visible(false);
-    _audio.play(audio::MusicCue::yard);
+    _audio.play_yard_menu();
 }
 
 void Game::_update_level_select()
