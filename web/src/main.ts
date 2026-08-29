@@ -221,6 +221,11 @@ async function main(): Promise<void> {
   });
 
   try {
+    const walkthrough = new URLSearchParams(window.location.search).get('walkthrough');
+    if (walkthrough === 'gordon') {
+      await emulator.prepareWalkthroughSave('/saves/gordon_hill_walkthrough.sav');
+    }
+
     await emulator.init();
     setupKeyboard(emulator);
     installTestHooks(emulator, inputQueue, statusBar);
