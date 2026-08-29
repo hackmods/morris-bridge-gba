@@ -21,7 +21,6 @@
 #include "bn_sprite_items_ring.h"
 #include "bn_sprite_items_splash.h"
 #include "bn_sprite_items_strut.h"
-#include "bn_sprite_palette_items_strut.h"
 #include "bn_sprite_items_toast.h"
 #include "bn_sprite_items_train.h"
 

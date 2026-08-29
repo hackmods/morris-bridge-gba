@@ -3,10 +3,9 @@
 #include "bn_math.h"
 #include "bn_optional.h"
 #include "bn_sprite_builder.h"
-#include "bn_sprite_palette_items_strut.h"
+#include "bn_sprite_items_strut.h"
 #include "bn_sprite_items_anchor.h"
 #include "bn_sprite_items_node.h"
-#include "bn_sprite_items_strut.h"
 
 #include "physics.h"
 
