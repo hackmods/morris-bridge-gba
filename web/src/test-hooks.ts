@@ -18,6 +18,7 @@ export interface PlaytestTestHooks {
   tapButton(button: string): void;
   loadWalkthroughSave(): Promise<void>;
   readWalkthroughSaveLevel(): number;
+  debugSaveState?(): Record<string, unknown>;
   sampleCanvas(): CanvasSample;
   waitForFrames(minFrames: number, timeoutMs?: number): Promise<number>;
 }
@@ -58,20 +59,44 @@ export function installTestHooks(
       }
 
       const bytes = new Uint8Array(await response.arrayBuffer());
-      emulator.injectSave(bytes);
-
-      const save = emulator.readSave();
-      if (!save || save[5] !== 1) {
-        throw new Error(`Walkthrough save file mismatch (byte5=${save?.[5] ?? 'null'})`);
-      }
+      await emulator.injectSave(bytes);
 
       await new Promise<void>((resolve) => {
-        window.setTimeout(resolve, 4_000);
+        window.setTimeout(resolve, 2_000);
       });
     },
     readWalkthroughSaveLevel: () => {
       const save = emulator.readSave();
       return save ? save[5]! : -1;
+    },
+    debugSaveState: () => {
+      const module = emulator.getModule();
+      if (!module) {
+        return { error: 'no module' };
+      }
+
+      const saveName = module.saveName ?? null;
+      let fsBytes: number[] | null = null;
+      let fsError: string | null = null;
+
+      if (saveName) {
+        try {
+          const raw = module.FS.readFile(saveName) as Uint8Array;
+          fsBytes = Array.from(raw.subarray(0, 20));
+        } catch (error) {
+          fsError = error instanceof Error ? error.message : String(error);
+        }
+      }
+
+      const viaGetSave = emulator.readSave();
+
+      return {
+        saveName,
+        listSaves: module.listSaves(),
+        fsBytes,
+        fsError,
+        getSaveBytes: viaGetSave ? Array.from(viaGetSave.subarray(0, 20)) : null,
+      };
     },
     sampleCanvas: () => sampleCanvas(document.getElementById('game-canvas') as HTMLCanvasElement),
     waitForFrames: (minFrames, timeoutMs = 30_000) =>

@@ -6,6 +6,7 @@ export type StatusListener = (message: string, status: EmulatorStatus) => void;
 
 const DEFAULT_ROM_URL = '/rom/thomas_bridge.gba';
 const DEFAULT_ROM_NAME = 'thomas_bridge.gba';
+const SRAM_SIZE = 32768;
 
 export class GbaEmulator {
   private module: mGBAEmulator | null = null;
@@ -14,7 +15,6 @@ export class GbaEmulator {
   private statusListener: StatusListener | null = null;
   private frameCount = 0;
   private pendingSaveSeed: Uint8Array | null = null;
-  private seededSavePath: string | null = null;
 
   constructor(private readonly canvas: HTMLCanvasElement) {}
 
@@ -49,31 +49,18 @@ export class GbaEmulator {
       const module = await mGBA({ canvas: this.canvas });
       await module.FSInit();
 
-      if (this.pendingSaveSeed) {
-        const savePath = `${module.filePaths().savePath}/${DEFAULT_ROM_NAME.replace(/\.gba$/i, '.sav')}`;
-        const padded = new Uint8Array(32768);
-        padded.set(
-          this.pendingSaveSeed.subarray(0, Math.min(this.pendingSaveSeed.length, padded.length)),
-        );
-        module.FS.writeFile(savePath, padded);
-        this.seededSavePath = savePath;
-        this.pendingSaveSeed = null;
-      }
-
       module.addCoreCallbacks({
         videoFrameEndedCallback: () => {
           this.frameCount += 1;
         },
       });
 
-      module.setCoreSettings({
-        showFpsCounter: false,
-        videoSync: true,
-        audioSync: true,
-        ...(this.pendingSaveSeed || this.seededSavePath
-          ? { autoSaveStateEnable: false, restoreAutoSaveStateOnLoad: false }
-          : {}),
-      });
+      if (this.pendingSaveSeed) {
+        module.setCoreSettings({
+          autoSaveStateEnable: false,
+          restoreAutoSaveStateOnLoad: false,
+        });
+      }
 
       this.module = module;
       const version = `${module.version.projectName} ${module.version.projectVersion}`;
@@ -105,45 +92,43 @@ export class GbaEmulator {
     const module = this.requireModule();
     this.setStatus(`Uploading ${file.name}…`, 'initializing');
 
-    await new Promise<void>((resolve, reject) => {
-      module.uploadRom(file, () => {
-        try {
-          const romPath = `${module.filePaths().gamePath}/${file.name}`;
+    const saveSeed = this.pendingSaveSeed;
+    this.pendingSaveSeed = null;
 
-          const finishLoad = (savePathOverride?: string): void => {
-            const loaded = module.loadGame(romPath, savePathOverride);
+    await this.uploadRom(module, file);
 
-            if (!loaded) {
-              reject(new Error(`Failed to load ${file.name}`));
-              return;
-            }
+    const romPath = `${module.filePaths().gamePath}/${file.name}`;
 
-            this.loadedRomPath = romPath;
-            this.loadedRomName = file.name;
-            module.resumeGame();
-            this.setStatus(`Running ${file.name}`, 'ready');
-            resolve();
-          };
+    if (saveSeed) {
+      this.clearAutoSaveState(module, file.name);
+      await this.uploadSave(module, file.name, saveSeed);
+    }
 
-          if (this.seededSavePath) {
-            const savePath = this.seededSavePath;
-            this.seededSavePath = null;
+    if (!module.loadGame(romPath)) {
+      throw new Error(`Failed to load ${file.name}`);
+    }
 
-            const autoSavePath = `${module.filePaths().autosave}/${file.name.replace(/\.gba$/i, '')}_auto.ss`;
-            try {
-              module.FS.unlink(autoSavePath);
-            } catch {
-              // No prior auto save state for this ROM.
-            }
+    this.loadedRomPath = romPath;
+    this.loadedRomName = file.name;
+    module.resumeGame();
+    this.setStatus(`Running ${file.name}`, 'ready');
+  }
 
-            finishLoad(savePath);
-            return;
-          }
+  private uploadRom(module: mGBAEmulator, file: File): Promise<void> {
+    return new Promise((resolve) => {
+      module.uploadRom(file, () => resolve());
+    });
+  }
 
-          finishLoad();
-        } catch (error) {
-          reject(error);
-        }
+  private uploadSave(module: mGBAEmulator, romFileName: string, saveSeed: Uint8Array): Promise<void> {
+    const saveFileName = romFileName.replace(/\.gba$/i, '.sav');
+    const saveFile = new File([this.padSave(saveSeed)], saveFileName, {
+      type: 'application/octet-stream',
+    });
+
+    return new Promise((resolve, reject) => {
+      module.uploadSaveOrSaveState(saveFile, () => {
+        void module.FSSync().then(resolve).catch(reject);
       });
     });
   }
@@ -176,24 +161,22 @@ export class GbaEmulator {
   }
 
   /** Write GBA SRAM save bytes and reload so the game picks up progress. */
-  injectSave(saveBytes: Uint8Array): void {
+  async injectSave(saveBytes: Uint8Array): Promise<void> {
     const module = this.requireModule();
 
     if (!this.loadedRomPath) {
       throw new Error('Load a ROM before injecting save data');
     }
 
-    const saveName = module.saveName;
+    await this.uploadSave(module, this.loadedRomName, saveBytes);
 
-    if (!saveName) {
-      throw new Error('No active save path — load a ROM first');
+    // Remount the ROM so mGBA reloads the uploaded .sav into emulated SRAM.
+    module.quitGame();
+
+    if (!module.loadGame(this.loadedRomPath)) {
+      throw new Error('Failed to reload game with injected save');
     }
 
-    const padded = new Uint8Array(32768);
-    padded.set(saveBytes.subarray(0, Math.min(saveBytes.length, padded.length)));
-
-    module.FS.writeFile(saveName, padded);
-    module.loadGame(this.loadedRomPath, saveName);
     module.resumeGame();
     this.setStatus(`Loaded save ${this.loadedRomName}`, 'ready');
   }
@@ -201,6 +184,24 @@ export class GbaEmulator {
   /** Read back emulated SRAM (32 KiB) for test verification. */
   readSave(): Uint8Array | null {
     return this.requireModule().getSave();
+  }
+
+  private padSave(saveBytes: Uint8Array): ArrayBuffer {
+    const buffer = new ArrayBuffer(SRAM_SIZE);
+    new Uint8Array(buffer).set(
+      saveBytes.subarray(0, Math.min(saveBytes.length, SRAM_SIZE)),
+    );
+    return buffer;
+  }
+
+  private clearAutoSaveState(module: mGBAEmulator, romFileName: string): void {
+    const autoSavePath = `${module.filePaths().autosave}/${romFileName.replace(/\.gba$/i, '')}_auto.ss`;
+
+    try {
+      module.FS.unlink(autoSavePath);
+    } catch {
+      // No prior auto save state for this ROM.
+    }
   }
 
   private requireModule(): mGBAEmulator {

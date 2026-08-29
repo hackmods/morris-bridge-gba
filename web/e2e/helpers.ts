@@ -1,7 +1,11 @@
 import { expect, type Page } from '@playwright/test';
 
-export async function waitForPlaytestReady(page: Page): Promise<void> {
-  await page.goto('/');
+export async function waitForPlaytestReady(page: Page, url?: string): Promise<void> {
+  if (url !== undefined) {
+    await page.goto(url);
+  } else if (new URL(page.url()).search === '') {
+    await page.goto('/');
+  }
 
   await expect(page.locator('#error-banner')).toHaveClass(/hidden/);
   await expect(page.locator('#status-bar')).toHaveClass(/ready/, { timeout: 60_000 });
@@ -10,8 +14,8 @@ export async function waitForPlaytestReady(page: Page): Promise<void> {
   await page.waitForFunction(() => Boolean(window.__TEST__?.isReady()));
 }
 
-export async function waitForRenderSettle(page: Page, ms = 2_500): Promise<void> {
-  await waitForPlaytestReady(page);
+export async function waitForRenderSettle(page: Page, ms = 2_500, url?: string): Promise<void> {
+  await waitForPlaytestReady(page, url);
   await page.waitForTimeout(ms);
 }
 
@@ -75,6 +79,13 @@ export async function assertCanvasChanged(page: Page, waitMs = 2_500): Promise<v
 
 export async function screenshotCanvas(page: Page, name: string): Promise<void> {
   await page.locator('#game-canvas').screenshot({ path: `test-results/${name}.png` });
+}
+
+/** Title → level select → engine select → (intro) → build mode. */
+export async function navigateToLevelSelect(page: Page, url?: string): Promise<void> {
+  await waitForRenderSettle(page, 3_000, url);
+  await page.evaluate(() => window.__TEST__!.tapButton('Start'));
+  await page.waitForTimeout(1_500);
 }
 
 /** Title → level select → engine select → (intro) → build mode. */

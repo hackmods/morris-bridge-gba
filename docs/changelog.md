@@ -8,6 +8,12 @@ Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prot
 - Added missing **F** glyph to procedural font (KNAPFORD was rendering as KNAP ORD)
 - Release ROM refreshed to **338,236 bytes** (includes track_card assets)
 
+## 2026-08-29 — mGBA walkthrough save load fix (Phase 7)
+
+- Web emulator seeds Gordon's Hill unlock via `uploadSaveOrSaveState` before first `loadGame` (`?walkthrough=gordon`)
+- E2E helpers preserve query strings (no longer strip `?walkthrough=gordon` on ready wait)
+- `gordon-save.spec.ts` asserts save byte5=1 and Gordon track card after Down on level select
+
 ## 2026-08-29 — Gordon's Hill walkthrough save + capture (Phase 7)
 
 - `tools/gen_playtest_save.py` writes mGBA SRAM saves for web playtest walkthroughs
