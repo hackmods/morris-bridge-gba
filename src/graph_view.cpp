@@ -178,7 +178,7 @@ void GraphView::sync_struts(const bridge::BridgeSystem& bridge, const bool visib
         }
         else
         {
-            sprite.set_palette(bn::sprite_items::strut.palette_item());
+            sprite.set_palette(normal_strut_palette());
         }
 
         sprite.set_visible(visible);
