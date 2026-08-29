@@ -850,6 +850,48 @@ def make_bg_hills() -> None:
     write_indexed_bmp(os.path.join(GFX, "bg_hills.bmp"), w, h, px)
 
 
+def draw_ground_strip(px: list[int], w: int, x0: int, x1: int, y0: int) -> None:
+    """16 px bank ground band for regular BG (transparent index 0 elsewhere)."""
+    rect(px, w, x0, y0, x1, y0 + 4, 11)
+    rect(px, w, x0, y0 + 3, x1, y0 + 5, 14)
+    rect(px, w, x0, y0 + 5, x1, y0 + 16, 13)
+    rect(px, w, x0, y0 + 5, x1, y0 + 7, 12)
+    for x in range(x0, x1, 4):
+        shade = 12 if x % 8 else 13
+        put(px, w, x, y0 + 8, shade)
+        put(px, w, x, y0 + 10, shade)
+    hline(px, w, x0, x1, y0 + 15, 1)
+
+
+def make_bg_ground() -> None:
+    """Bank ground on regular BG — side strips, transparent center gap for water."""
+    w = h = 256
+    px = fill(w, h, 0)
+    y0 = 240
+    draw_ground_strip(px, w, 0, 104, y0)
+    draw_ground_strip(px, w, 152, w, y0)
+    write_indexed_bmp(os.path.join(GFX, "bg_ground.bmp"), w, h, px)
+
+
+def make_bg_water() -> None:
+    """Animated water band on regular BG — two 256 px maps stacked vertically."""
+    w = frame_h = 256
+    px = fill(w, frame_h * 2, 0)
+    for frame in range(2):
+        y_base = frame * frame_h
+        y0 = 232
+        for y in range(y0, y0 + 16):
+            base = 7 if (y + frame) % 2 == 0 else 8
+            for x in range(w):
+                c = base
+                if (x + y + frame * 3) % 7 == 0:
+                    c = 8
+                if (x + y + frame * 5) % 11 == 0:
+                    c = 2
+                put(px, w, x, y_base + y, c)
+    write_indexed_bmp(os.path.join(GFX, "bg_water.bmp"), w, frame_h * 2, px)
+
+
 def make_ground() -> None:
     w, h = 32, 16
     px = fill(w, h)
@@ -1006,6 +1048,8 @@ def main() -> None:
     make_portrait()
     make_scenery_far()
     make_bg_hills()
+    make_bg_ground()
+    make_bg_water()
     make_ground()
     make_water()
     make_digit()
@@ -1020,6 +1064,8 @@ def main() -> None:
         ("sky.json", None),
         ("bg_sky.json", {"type": "regular_bg"}),
         ("bg_hills.json", {"type": "regular_bg"}),
+        ("bg_ground.json", {"type": "regular_bg"}),
+        ("bg_water.json", {"type": "regular_bg", "height": 256}),
         ("cloud.json", None),
         ("panel.json", {"height": 32}),
         ("hatt.json", {"height": 16}),
