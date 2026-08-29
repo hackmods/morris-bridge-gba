@@ -17,11 +17,9 @@
 
 #include "bn_sprite_items_anchor.h"
 #include "bn_sprite_items_banner.h"
-#include "bn_sprite_items_cloud.h"
 #include "bn_sprite_items_cursor.h"
 #include "bn_sprite_items_digit.h"
 #include "bn_sprite_items_ghost.h"
-#include "bn_sprite_items_ground.h"
 #include "bn_sprite_items_hatt.h"
 #include "bn_sprite_items_label.h"
 #include "bn_sprite_items_logo.h"
@@ -30,15 +28,13 @@
 #include "bn_sprite_items_panel.h"
 #include "bn_sprite_items_portrait.h"
 #include "bn_sprite_items_ring.h"
-#include "bn_sprite_items_scenery_far.h"
 #include "bn_sprite_items_splash.h"
-#include "bn_sprite_items_sky.h"
 #include "bn_sprite_items_strut.h"
 #include "bn_sprite_items_toast.h"
 #include "bn_sprite_items_train.h"
-#include "bn_sprite_items_water.h"
 
 #include "audio_director.h"
+#include "bg_view.h"
 #include "bridge_system.h"
 #include "engine.h"
 #include "game_constants.h"
@@ -261,8 +257,7 @@ public:
 
         _load_progress();
         _place_splash_tiles();
-        _place_backdrop();
-        _place_scenery();
+        _backdrop.init();
         _show_title();
     }
 
@@ -490,47 +485,16 @@ private:
         _parallax_shift = shift;
     }
 
-    void _apply_parallax_to_backdrop()
+    void _animate_backdrop()
     {
-        const level::Def& def = _bridge.level_def();
-        const bn::fixed back_shift = _parallax_shift.safe_multiplication(def.parallax_back);
-        const bn::fixed front_shift = _parallax_shift;
+        _update_parallax();
+        _backdrop.animate_clouds();
 
-        for(int i = 0; i < _sky.size(); ++i)
+        if(_screen == Screen::playing || _screen == Screen::engine_select ||
+           _screen == Screen::level_select || _screen == Screen::level_complete ||
+           _screen == Screen::level_failed)
         {
-            _sky[i].set_x(_sky_base_x[i] - back_shift / 4);
-            _sky[i].set_y(_sky_base_y[i]);
-        }
-
-        for(int i = 0; i < _clouds.size(); ++i)
-        {
-            bn::sprite_ptr& cloud = _clouds[i];
-            bn::fixed x = cloud.position().x() + bn::fixed(1) / 8;
-
-            if(x > 130)
-            {
-                x = -130;
-            }
-
-            cloud.set_x(x);
-        }
-
-        for(int i = 0; i < _hills.size(); ++i)
-        {
-            _hills[i].set_x(_hill_base_x[i] - back_shift / 2);
-            _hills[i].set_y(_hill_base_y[i]);
-        }
-
-        for(int i = 0; i < _ground.size(); ++i)
-        {
-            _ground[i].set_x(_ground_base_x[i] - front_shift / 3);
-            _ground[i].set_y(_ground_base_y[i]);
-        }
-
-        for(int i = 0; i < _water.size(); ++i)
-        {
-            _water[i].set_x(_water_base_x[i] - front_shift / 2);
-            _water[i].set_y(_water_base_y[i]);
+            _backdrop.apply_parallax(_parallax_shift, _bridge.level_def());
         }
     }
 
@@ -559,7 +523,20 @@ private:
         }
 
         const engine::Id id = _active_engine();
-        const int chuff = (_frame / 10) % engine::FRAMES_PER_ENGINE;
+        int chuff = (_frame / 10) % engine::FRAMES_PER_ENGINE;
+
+        if(_screen == Screen::playing && _play_mode == PlayMode::test &&
+           _bridge.status() == bridge::SimStatus::running)
+        {
+            const bn::fixed speed = _bridge.current_train_speed();
+            const int speed_i = speed.shift_integer();
+            const int speed_scale = speed_i >= 5 ? 1 : (5 - speed_i);
+            const int motion = _bridge.train_path_index() * 64 +
+                               _bridge.train_link_t().shift_integer() * 8 +
+                               _frame / speed_scale;
+            chuff = motion % engine::FRAMES_PER_ENGINE;
+        }
+
         _train.set_item(bn::sprite_items::train, engine::train_frame_base(id) + chuff);
     }
 
@@ -676,65 +653,14 @@ private:
         }
     }
 
-    void _place_backdrop()
-    {
-        const int sky_x[] = { -96, -32, 32, 96 };
-        const int sky_y[] = { -56, 8 };
-
-        for(int y : sky_y)
-        {
-            for(int x : sky_x)
-            {
-                bn::sprite_ptr tile = bn::sprite_items::sky.create_sprite(x, y);
-                tile.set_z_order(30);
-                _sky.push_back(tile);
-                _sky_base_x.push_back(x);
-                _sky_base_y.push_back(y);
-            }
-        }
-
-        _clouds.push_back(bn::sprite_items::cloud.create_sprite(-80, -64));
-        _clouds.push_back(bn::sprite_items::cloud.create_sprite(24, -72));
-        _clouds.back().set_horizontal_scale(bn::fixed(3) / 2);
-
-        for(bn::sprite_ptr& cloud : _clouds)
-        {
-            cloud.set_z_order(25);
-        }
-    }
-
-    void _animate_backdrop()
-    {
-        _update_parallax();
-
-        for(int i = 0; i < _clouds.size(); ++i)
-        {
-            bn::sprite_ptr& cloud = _clouds[i];
-            bn::fixed x = cloud.position().x() + bn::fixed(1) / 8;
-
-            if(x > 130)
-            {
-                x = -130;
-            }
-
-            cloud.set_x(x);
-        }
-
-        if(_screen == Screen::playing || _screen == Screen::engine_select ||
-           _screen == Screen::level_select || _screen == Screen::level_complete ||
-           _screen == Screen::level_failed)
-        {
-            _apply_parallax_to_backdrop();
-        }
-    }
-
     void _show_title()
     {
         _screen = Screen::title;
         _play_mode = PlayMode::build;
         _hide_gameplay();
-        _reset_scenery_layout();
-        _set_backdrop_visible(false);
+        _backdrop.reset_scenery_layout();
+        _backdrop.apply_parallax(_parallax_shift, _bridge.level_def());
+        _backdrop.set_backdrop_visible(false);
         _set_splash_visible(true);
         _logo.set_visible(true);
         _logo.set_position(0, -52);
@@ -762,9 +688,10 @@ private:
     {
         _screen = Screen::level_select;
         _hide_gameplay();
-        _reset_scenery_layout();
+        _backdrop.reset_scenery_layout();
+        _backdrop.apply_parallax(_parallax_shift, _bridge.level_def());
         _set_splash_visible(false);
-        _set_backdrop_visible(true);
+        _backdrop.set_backdrop_visible(true);
         _banner.set_visible(true);
         _banner.set_item(bn::sprite_items::banner, BANNER_LEVEL_SELECT);
         _banner.set_position(0, -52);
@@ -798,7 +725,7 @@ private:
         _screen = Screen::engine_select;
         _hide_gameplay();
         _set_splash_visible(false);
-        _set_backdrop_visible(true);
+        _backdrop.set_backdrop_visible(true);
         _banner.set_visible(true);
         _banner.set_item(bn::sprite_items::banner, BANNER_ENGINE_SELECT);
         _banner.set_position(0, -48);
@@ -847,7 +774,7 @@ private:
         _screen = Screen::level_intro;
         _hide_gameplay();
         _set_splash_visible(false);
-        _set_backdrop_visible(true);
+        _backdrop.set_backdrop_visible(true);
         _banner.set_visible(true);
         _banner.set_item(bn::sprite_items::banner, BANNER_LEVEL_SELECT);
         _banner.set_position(0, -40);
@@ -894,7 +821,8 @@ private:
         _build_hint_timer = 0;
         _cursor_pos = _bridge.nodes()[bridge::START_NODE].position;
         _cursor_pos.set_x(_cursor_pos.x() + 16);
-        _layout_scenery_for_level();
+        _backdrop.layout_for_level(_bridge.level_def());
+        _backdrop.apply_parallax(_parallax_shift, _bridge.level_def());
         _show_gameplay();
         _sync_node_sprites();
         _sync_strut_sprites();
@@ -918,15 +846,15 @@ private:
         _update_build_hints();
         _cursor.set_visible(true);
         _train.set_visible(false);
-        _set_backdrop_visible(true);
-        _set_scenery_visible(true);
+        _backdrop.set_backdrop_visible(true);
+        _backdrop.set_scenery_visible(true);
     }
 
     void _hide_gameplay()
     {
         _cursor.set_visible(false);
         _train.set_visible(false);
-        _set_scenery_visible(false);
+        _backdrop.set_scenery_visible(false);
 
         for(bn::sprite_ptr& sprite : _node_sprites)
         {
@@ -936,37 +864,6 @@ private:
         for(bn::sprite_ptr& sprite : _strut_sprites)
         {
             sprite.set_visible(false);
-        }
-    }
-
-    void _set_backdrop_visible(bool visible)
-    {
-        for(bn::sprite_ptr& tile : _sky)
-        {
-            tile.set_visible(visible);
-        }
-
-        for(bn::sprite_ptr& cloud : _clouds)
-        {
-            cloud.set_visible(visible);
-        }
-    }
-
-    void _set_scenery_visible(bool visible)
-    {
-        for(bn::sprite_ptr& tile : _ground)
-        {
-            tile.set_visible(visible);
-        }
-
-        for(bn::sprite_ptr& tile : _hills)
-        {
-            tile.set_visible(visible);
-        }
-
-        for(bn::sprite_ptr& tile : _water)
-        {
-            tile.set_visible(visible);
         }
     }
 
@@ -1324,7 +1221,7 @@ private:
         _update_preview();
         _update_hud();
         _update_toast();
-        _animate_water();
+        _backdrop.animate_water(_frame);
     }
 
     void _set_counter(bn::vector<bn::sprite_ptr, 2>& digits, int value, bn::fixed x_base)
@@ -1436,90 +1333,6 @@ private:
         }
 
         _preview_strut.set_visible(false);
-    }
-
-    void _place_scenery()
-    {
-        const int ground_x[] = { -120, -88, -56, -24, 8, 40, 72, 104 };
-        const int water_x[] = { -56, -24, 8, 40, 72, 104, -88, 120 };
-
-        for(int x : ground_x)
-        {
-            bn::sprite_ptr tile = bn::sprite_items::ground.create_sprite(x, game::GROUND_TILE_Y);
-            tile.set_z_order(20);
-            _ground.push_back(tile);
-            _ground_base_x.push_back(x);
-            _ground_base_y.push_back(game::GROUND_TILE_Y);
-        }
-
-        for(int x : { -96, -32, 32, 96 })
-        {
-            bn::sprite_ptr tile = bn::sprite_items::scenery_far.create_sprite(x, 24);
-            tile.set_z_order(22);
-            _hills.push_back(tile);
-            _hill_base_x.push_back(x);
-            _hill_base_y.push_back(24);
-        }
-
-        for(int x : water_x)
-        {
-            bn::sprite_ptr tile = bn::sprite_items::water.create_sprite(x, 62);
-            tile.set_z_order(21);
-            _water.push_back(tile);
-            _water_base_x.push_back(x);
-            _water_base_y.push_back(62);
-        }
-    }
-
-    void _reset_scenery_layout()
-    {
-        for(int i = 0; i < _ground.size(); ++i)
-        {
-            _ground_base_y[i] = game::GROUND_TILE_Y;
-            _ground[i].set_y(game::GROUND_TILE_Y);
-        }
-
-        for(int i = 0; i < _water.size(); ++i)
-        {
-            _water_base_y[i] = 62;
-            _water[i].set_y(62);
-        }
-
-        _apply_parallax_to_backdrop();
-    }
-
-    void _layout_scenery_for_level()
-    {
-        const level::Def& def = _bridge.level_def();
-        const bn::fixed bank_ground_y = def.deck_y + (game::GROUND_TILE_Y - game::TRACK_Y);
-        const bn::fixed water_y = bank_ground_y + 6;
-
-        for(int i = 0; i < _ground.size(); ++i)
-        {
-            const bn::fixed x = _ground_base_x[i];
-            const bool bank_tile = x < -48 || x > 48;
-            const bn::fixed y = bank_tile ? bank_ground_y : game::GROUND_TILE_Y;
-            _ground_base_y[i] = y;
-            _ground[i].set_y(y);
-        }
-
-        for(int i = 0; i < _water.size(); ++i)
-        {
-            _water_base_y[i] = water_y;
-            _water[i].set_y(water_y);
-        }
-
-        _apply_parallax_to_backdrop();
-    }
-
-    void _animate_water()
-    {
-        const int frame = (_frame / 16) % 2;
-
-        for(bn::sprite_ptr& tile : _water)
-        {
-            tile.set_item(bn::sprite_items::water, frame);
-        }
     }
 
     void _update_build_hints()
@@ -2060,20 +1873,8 @@ private:
     bn::vector<bn::sprite_ptr, 2> _weight_digits;
     bn::vector<bn::sprite_ptr, bridge::MAX_NODES> _node_sprites;
     bn::vector<bn::sprite_ptr, bridge::MAX_STRUTS> _strut_sprites;
-    bn::vector<bn::sprite_ptr, 8> _ground;
-    bn::vector<bn::sprite_ptr, 4> _hills;
-    bn::vector<bn::sprite_ptr, 8> _water;
+    view::BackdropView _backdrop;
     bn::vector<bn::sprite_ptr, 4> _splash;
-    bn::vector<bn::sprite_ptr, 8> _sky;
-    bn::vector<bn::sprite_ptr, 2> _clouds;
-    bn::vector<bn::fixed, 8> _sky_base_x;
-    bn::vector<bn::fixed, 8> _sky_base_y;
-    bn::vector<bn::fixed, 4> _hill_base_x;
-    bn::vector<bn::fixed, 4> _hill_base_y;
-    bn::vector<bn::fixed, 8> _ground_base_x;
-    bn::vector<bn::fixed, 8> _ground_base_y;
-    bn::vector<bn::fixed, 8> _water_base_x;
-    bn::vector<bn::fixed, 8> _water_base_y;
 };
 
 } // namespace

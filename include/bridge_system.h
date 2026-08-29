@@ -239,6 +239,18 @@ public:
         return _train_weight;
     }
 
+    [[nodiscard]] bn::fixed train_link_t() const
+    {
+        return _train_t;
+    }
+
+    [[nodiscard]] int train_path_index() const
+    {
+        return _path_index;
+    }
+
+    [[nodiscard]] bn::fixed current_train_speed() const;
+
     [[nodiscard]] bn::fixed train_speed() const
     {
         return _train_speed;
