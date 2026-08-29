@@ -100,8 +100,8 @@ export async function navigateToBuildMode(page: Page): Promise<void> {
   await page.waitForTimeout(1_500);
 }
 
-/** Build the Knapford reference bridge (3 deck spans) via held D-pad input. */
-export async function buildKnapfordReferenceBridge(page: Page): Promise<void> {
+/** Shared held-input helpers for build macros. */
+function createInputHelpers(page: Page) {
   const hold = async (buttons: string | string[], ms: number) => {
     if (Array.isArray(buttons)) {
       await page.evaluate(
@@ -122,7 +122,32 @@ export async function buildKnapfordReferenceBridge(page: Page): Promise<void> {
 
   const fast = (direction: string, ms: number) => hold(['R', direction], ms);
 
-  // Cursor boots near START (-72, 52).
+  return { hold, tap, fast };
+}
+
+/** Gordon's Hill build with ?walkthrough=gordon save (intro skipped). */
+export async function navigateToGordonBuildMode(page: Page): Promise<void> {
+  await page.goto('/?walkthrough=gordon');
+  await waitForRenderSettle(page, 3_000);
+
+  const { tap } = createInputHelpers(page);
+
+  await tap('Start');
+  await page.waitForTimeout(1_200);
+  await tap('Down');
+  await page.waitForTimeout(800);
+  await tap('Start');
+  await page.waitForTimeout(1_200);
+  await tap('Down');
+  await tap('Down');
+  await page.waitForTimeout(400);
+  await tap('Start');
+  await page.waitForTimeout(1_500);
+}
+
+/** Build the Knapford reference bridge (3 deck spans) via held D-pad input. */
+export async function buildKnapfordReferenceBridge(page: Page): Promise<void> {
+  const { tap, fast } = createInputHelpers(page);
   await fast('Left', 220);
   await tap('A');
   await fast('Right', 420);
@@ -143,29 +168,54 @@ export async function buildKnapfordReferenceBridge(page: Page): Promise<void> {
 
 /** Single START→END span — snaps under Thomas (host M2 simulation). */
 export async function buildOverlongKnapfordSpan(page: Page): Promise<void> {
-  const hold = async (buttons: string | string[], ms: number) => {
-    if (Array.isArray(buttons)) {
-      await page.evaluate(
-        ({ list, duration }) => window.__TEST__!.holdButtons(list, duration),
-        { list: buttons, duration: ms },
-      );
-    } else {
-      await page.evaluate(
-        ({ button, duration }) => window.__TEST__!.holdButton(button, duration),
-        { button: buttons, duration: ms },
-      );
-    }
-  };
-
-  const tap = async (button: string) => {
-    await page.evaluate((b) => window.__TEST__!.tapButton(b), button);
-  };
-
-  const fast = (direction: string, ms: number) => hold(['R', direction], ms);
-
+  const { tap, fast } = createInputHelpers(page);
   await fast('Left', 220);
   await tap('A');
   await fast('Right', 1_200);
   await tap('A');
+  await page.waitForTimeout(500);
+}
+
+/** Build Gordon's Hill reference track + braces (host playthrough layout). */
+export async function buildGordonHillReferenceBridge(page: Page): Promise<void> {
+  const { tap, fast, hold } = createInputHelpers(page);
+
+  // Cursor boots near START (-80, 44) on raised deck.
+  await fast('Left', 220);
+  await tap('A');
+  await fast('Right', 420);
+  await tap('A');
+  await fast('Left', 420);
+  await tap('A');
+  await fast('Right', 420);
+  await tap('A');
+  await fast('Left', 420);
+  await tap('A');
+  await fast('Right', 420);
+  await tap('A');
+  await fast('Left', 420);
+  await tap('A');
+  await fast('Right', 420);
+  await tap('A');
+  await fast('Left', 420);
+  await tap('A');
+  await fast('Right', 420);
+  await tap('A');
+  await fast('Right', 420);
+  await tap('A');
+
+  await tap('R');
+  await fast('Left', 220);
+  await tap('A');
+  await hold(['R', 'Down'], 280);
+  await hold(['R', 'Right'], 220);
+  await tap('A');
+
+  await fast('Right', 1_400);
+  await tap('A');
+  await hold(['R', 'Down'], 280);
+  await hold(['R', 'Left'], 220);
+  await tap('A');
+
   await page.waitForTimeout(500);
 }

@@ -61,7 +61,7 @@ def gordon_hill_walkthrough_save() -> bytes:
     return encode_v3(
         max_unlocked_level=1,
         cleared_levels=0b001,
-        unlocked_engines=0b0011,  # Thomas + Percy
+        unlocked_engines=0b0111,  # Thomas + Percy + Edward (reference playthrough engine)
         intro_seen_mask=0b011,
     )
 
