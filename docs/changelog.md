@@ -2,6 +2,13 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Phase 7 ship QA (M1–M5)
+
+- Added `docs/ship-qa.md` — CI gates, M1–M5 evidence matrix, hardware sign-off
+- New Playwright spec `web/e2e/ship-qa.spec.ts` (M3 NO GO, M4 pause, M5 theater, M1 partial)
+- Updated `docs/hardware.md` ROM metadata; linked ship QA from `docs/testing.md`
+- Web walkthrough recording: title → level select → build → theater mode
+
 ## 2026-08-29 — Release ROM refresh (Phase 7)
 
 - Committed `rom/thomas_bridge.gba` (~276 KB) synced from CI after hills BG merge

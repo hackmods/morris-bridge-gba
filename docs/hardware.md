@@ -38,7 +38,9 @@ Recommended before hardware testing:
 
 ## ROM details
 
-- Size: ~95 KB
-- Title: `RYANS BRIDGE`
-- Code: `RYAN`
+- Size: ~276 KB (282,636 bytes on 2026-08-29 release)
+- Title: `THOMASBRIDGE`
+- Code: `THOM01`
 - Resolution: 240×160 @ 60 Hz target
+
+Ship verification: [ship-qa.md](ship-qa.md)

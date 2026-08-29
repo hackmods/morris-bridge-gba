@@ -84,6 +84,8 @@ The **Release** workflow runs:
 
 See [CI/CD](ci-cd.md).
 
+**Phase 7 ship QA:** [ship-qa.md](ship-qa.md) — M1–M5 flows, CI gates, hardware sign-off.
+
 ## Manual QA checklist
 
 ### GBA / emulator
