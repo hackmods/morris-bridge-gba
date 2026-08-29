@@ -186,10 +186,12 @@ export class GbaEmulator {
     return this.requireModule().getSave();
   }
 
-  private padSave(saveBytes: Uint8Array): Uint8Array {
-    const padded = new Uint8Array(SRAM_SIZE);
-    padded.set(saveBytes.subarray(0, Math.min(saveBytes.length, padded.length)));
-    return padded;
+  private padSave(saveBytes: Uint8Array): ArrayBuffer {
+    const buffer = new ArrayBuffer(SRAM_SIZE);
+    new Uint8Array(buffer).set(
+      saveBytes.subarray(0, Math.min(saveBytes.length, SRAM_SIZE)),
+    );
+    return buffer;
   }
 
   private clearAutoSaveState(module: mGBAEmulator, romFileName: string): void {

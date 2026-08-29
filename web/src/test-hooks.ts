@@ -18,6 +18,7 @@ export interface PlaytestTestHooks {
   tapButton(button: string): void;
   loadWalkthroughSave(): Promise<void>;
   readWalkthroughSaveLevel(): number;
+  debugSaveState?(): Record<string, unknown>;
   sampleCanvas(): CanvasSample;
   waitForFrames(minFrames: number, timeoutMs?: number): Promise<number>;
 }
