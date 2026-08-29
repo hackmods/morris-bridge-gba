@@ -8,6 +8,11 @@ Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prot
 - Added missing **F** glyph to procedural font (KNAPFORD was rendering as KNAP ORD)
 - Release ROM refreshed to **338,236 bytes** (includes track_card assets)
 
+## 2026-08-29 — Vicarstown web win E2E (Phase 7)
+
+- `?walkthrough=vicarstown` loads `all_unlocked.sav` for level 3 + James
+- `buildVicarstownReferenceBridge()` + ship-qa win test; 24 Playwright tests
+
 ## 2026-08-29 — Gordon Hill web win E2E (Phase 7)
 
 - Gordon walkthrough save unlocks Edward (reference playthrough engine)
