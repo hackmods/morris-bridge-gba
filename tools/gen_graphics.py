@@ -472,6 +472,8 @@ ENGINE_ART = (
     ("Gordon", GORDON_32, "a", "2", "1", 12, 10),
 )
 
+ENGINE_WEIGHTS = (4, 3, 5, 6, 10)
+
 for _name, _tpl, *_rest in ENGINE_ART:
     validate_template(_name, _tpl)
 
@@ -935,6 +937,10 @@ def make_portrait() -> None:
         art = tint_train_template(crop_template(template, drop_bottom=2, drop_top=2), body, stripe, shadow)
         blit_map(px, w, 0, y0 + 4, art)
         center_text(px, w, name[:5].upper(), y0 + 24, 1, 2)
+        weight = str(ENGINE_WEIGHTS[i])
+        rect(px, w, 22, y0 + 22, 30, y0 + 30, 1)
+        rect(px, w, 23, y0 + 23, 29, y0 + 29, 3)
+        blit_text(px, w, weight, 24, y0 + 24, 1, 7)
     write_indexed_bmp(os.path.join(GFX, "portrait.bmp"), w, fh * len(ENGINE_ART), px)
 
 

@@ -2,6 +2,12 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — SRAM persist E2E + engine portrait badges (Phase 4/7)
+
+- `readSaveProgress()` test hook decodes save_data v3 header
+- `sram-persist.spec.ts` — H6 proxy: intro_seen survives soft reset (28 Playwright tests)
+- Engine select portraits show weight badge (4/3/5/6/10)
+
 ## 2026-08-29 — Hatt bust + train wheel art (Phase 4)
 
 - Hatt: wider top hat, coat shoulders, stern/furious expressions (16×16 frames)
