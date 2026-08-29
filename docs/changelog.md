@@ -2,6 +2,11 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Hardware QA web proxy E2E (H1–H5)
+
+- `hardware-qa-proxy.spec.ts` maps H1–H5 to mGBA-WASM checks (34 E2E total)
+- H6 power-cycle remains hardware-only; soft-reset proxy in `sram-persist.spec.ts`
+
 ## 2026-08-29 — Master plan sync + hardware QA reference builds
 
 - Mark Phases 1–6 complete in `docs/master-plan.md` (Phase 7 hardware pending)
