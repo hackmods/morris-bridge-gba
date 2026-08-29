@@ -92,7 +92,7 @@ cd web && WALKTHROUGH_DIR=../artifacts/walkthrough npm run test:e2e -- e2e/walkt
 | `06_gordons_hill_build_track` | BUILD on hill theme (track tool) |
 | `07_gordons_hill_build_rod` | ROD/brace tool toggled (R button) |
 
-- Web playtest seeds save via `?walkthrough=gordon` before ROM load (sync FS write, auto-save-state disabled). **mGBA-WASM may still boot fresh in-game progress** — `05_gordons_hill_select` may show Knapford until emulator SRAM mapping is fixed; use hardware or desktop mGBA with injected `.sav` for Gordon screenshots. Host `run_level_playthrough(1)` is the Gordon's Hill win source of truth.
+- Web playtest seeds Gordon's Hill unlock via `?walkthrough=gordon` (`uploadSaveOrSaveState` before first `loadGame`; E2E `gordon-save.spec.ts`).
 
 Gordon's Hill / Vicarstown themed BG and brace tools require SRAM unlock (clear prior track). Host `run_level_playthrough(1|2)` proves 3★ reference wins on those levels.
 
