@@ -70,7 +70,14 @@ void Game::_show_level_complete()
     game_ui::set_train_sprite_position(_train, _bridge.train_position());
     _audio.play(audio::MusicCue::none);
     bn::sound_items::useful.play();
-    bn::sound_items::whistle.play();
+    if(_show_unlock_flash)
+    {
+        bn::sound_items::unlock.play();
+    }
+    else
+    {
+        bn::sound_items::whistle.play();
+    }
     _hatt.set_visible(true);
     _hatt.set_position(-56, 8);
     _hatt.set_item(bn::sprite_items::hatt, game_ui::HATT_STERN);

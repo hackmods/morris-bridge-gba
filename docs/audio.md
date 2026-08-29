@@ -24,6 +24,9 @@ The music is **original**. It aims for cheerful steam-railway / 1980s British ch
 | **Delay** | `audio/delay.wav` | Fail / no-path | one-shot |
 | **Splash** | `audio/splash.wav` | Fall into the gap | one-shot |
 | **UI tick** | `audio/ui.wav` | Menu move | one-shot |
+| **Unlock leitmotif** | `audio/unlock.wav` | Engine / level unlock on win | one-shot |
+
+**Knapford Yard** (`yard.mod`) loops four patterns: the station idler plus an unlock leitmotif figure on patterns 2–3.
 
 Pause ducks music volume to 20% and restores it on resume.
 
