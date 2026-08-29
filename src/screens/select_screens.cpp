@@ -62,7 +62,7 @@ void Game::_show_level_select()
     _hatt.set_item(bn::sprite_items::hatt, game_ui::HATT_STERN);
     _portrait.set_visible(false);
     _sync_level_select_stars();
-    _sync_level_select_whisper();
+    _sync_level_select_flavor();
     _node_count_digits[0].set_visible(false);
     _node_count_digits[1].set_visible(false);
     _strut_count_digits[0].set_visible(false);
@@ -220,32 +220,44 @@ void Game::_update_level_intro()
     }
 }
 
-void Game::_sync_level_select_whisper()
+void Game::_sync_level_select_flavor()
 {
-    if(! _lore_rare(6 + _selected_level))
+    if(_lore_rare(6 + _selected_level))
     {
+        int label = game_ui::LABEL_PEEP;
+
+        switch(_selected_level)
+        {
+            case 1:
+                label = game_ui::LABEL_WAIT;
+                break;
+
+            case 2:
+                label = game_ui::LABEL_TOOT;
+                break;
+
+            default:
+                break;
+        }
+
+        _hint_label.set_visible(true);
+        _hint_label.set_position(0, 52);
+        _hint_label.set_item(bn::sprite_items::label, label);
         return;
     }
 
-    int label = game_ui::LABEL_PEEP;
+    const level::Def& def = level::get(_selected_level);
 
-    switch(_selected_level)
+    if(def.intro_dialog_id > 0)
     {
-        case 1:
-            label = game_ui::LABEL_WAIT;
-            break;
-
-        case 2:
-            label = game_ui::LABEL_TOOT;
-            break;
-
-        default:
-            break;
+        const int label = game_ui::LABEL_INTRO_BASE + int(def.intro_dialog_id - 1) * 2;
+        _hint_label.set_visible(true);
+        _hint_label.set_position(0, 52);
+        _hint_label.set_item(bn::sprite_items::label, label);
+        return;
     }
 
-    _hint_label.set_visible(true);
-    _hint_label.set_position(0, 52);
-    _hint_label.set_item(bn::sprite_items::label, label);
+    _hint_label.set_visible(false);
 }
 
 void Game::_sync_level_select_stars()

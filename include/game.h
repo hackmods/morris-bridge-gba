@@ -56,7 +56,7 @@ private:
     void _sync_train_sprite();
     void _set_weight_digits(int value, bool visible);
     void _step_level(int delta);
-    void _sync_level_select_whisper();
+    void _sync_level_select_flavor();
     void _sync_level_select_stars();
     void _step_engine(int delta);
     bool _dir_repeat(bool pressed, bool held, int& counter);

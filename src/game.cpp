@@ -361,7 +361,7 @@ void Game::_step_level(const int delta)
     _menu_row.set_item(bn::sprite_items::menu, _selected_level);
     _sync_train_sprite();
     _sync_level_select_stars();
-    _sync_level_select_whisper();
+    _sync_level_select_flavor();
 }
 
 void Game::_step_engine(const int delta)
@@ -546,6 +546,16 @@ void Game::_animate_train()
     {
         bn::sound_items::chuff.play();
         _chuff_cooldown = game_ui::CHUFF_FRAMES / 2;
+    }
+    else if(_screen == Screen::engine_select &&
+            _train.visible() &&
+            chuff_frame == 0 &&
+            _last_chuff_frame != 0 &&
+            _chuff_cooldown <= 0 &&
+            (_frame % (game_ui::CHUFF_FRAMES * 3) == 0))
+    {
+        bn::sound_items::chuff.play();
+        _chuff_cooldown = game_ui::CHUFF_FRAMES;
     }
 
     _last_chuff_frame = chuff_frame;
