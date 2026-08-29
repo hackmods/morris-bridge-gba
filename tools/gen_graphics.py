@@ -618,6 +618,14 @@ def make_sky() -> None:
     write_indexed_bmp(os.path.join(GFX, "sky.bmp"), w, h, px)
 
 
+def make_bg_sky() -> None:
+    """Full-screen sky layer for regular BG parallax (256×256, Butano regular_bg)."""
+    w = h = 256
+    px = fill(w, h)
+    sky_gradient(px, w, h, 0, h)
+    write_indexed_bmp(os.path.join(GFX, "bg_sky.bmp"), w, h, px)
+
+
 def make_cloud() -> None:
     w = h = 16
     px = fill(w, h)
@@ -973,6 +981,7 @@ def main() -> None:
     make_splash()
     make_logo()
     make_sky()
+    make_bg_sky()
     make_cloud()
     make_panel()
     make_hatt()
@@ -997,6 +1006,7 @@ def main() -> None:
         ("splash.json", {"height": 64}),
         ("logo.json", None),
         ("sky.json", None),
+        ("bg_sky.json", None),
         ("cloud.json", None),
         ("panel.json", {"height": 32}),
         ("hatt.json", {"height": 16}),

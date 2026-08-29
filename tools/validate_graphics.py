@@ -11,6 +11,7 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
 GFX = os.path.join(ROOT, "graphics")
 
 EXPECTED = {
+    "bg_sky.bmp": {"width": 256, "height": 256, "max_colors": 16},
     "train.bmp": {"width": 32, "height": 320, "max_colors": 16},
     "portrait.bmp": {"width": 32, "height": 160, "max_colors": 16},
     "node.bmp": {"width": 16, "height": 16, "max_colors": 16},

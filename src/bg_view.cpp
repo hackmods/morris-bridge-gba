@@ -1,9 +1,9 @@
 #include "bg_view.h"
 
+#include "bn_regular_bg_items_bg_sky.h"
 #include "bn_sprite_items_cloud.h"
 #include "bn_sprite_items_ground.h"
 #include "bn_sprite_items_scenery_far.h"
-#include "bn_sprite_items_sky.h"
 #include "bn_sprite_items_water.h"
 
 #include "game_constants.h"
@@ -47,20 +47,8 @@ namespace
 
 void BackdropView::init()
 {
-    const int sky_x[] = { -96, -32, 32, 96 };
-    const int sky_y[] = { -56, 8 };
-
-    for(int y : sky_y)
-    {
-        for(int x : sky_x)
-        {
-            bn::sprite_ptr tile = bn::sprite_items::sky.create_sprite(x, y);
-            tile.set_z_order(30);
-            _sky.push_back(tile);
-            _sky_base_x.push_back(x);
-            _sky_base_y.push_back(y);
-        }
-    }
+    _sky_bg = bn::regular_bg_items::bg_sky.create_bg(_sky_base_x, _sky_base_y);
+    _sky_bg->set_priority(3);
 
     _clouds.push_back(bn::sprite_items::cloud.create_sprite(-80, -64));
     _clouds.push_back(bn::sprite_items::cloud.create_sprite(24, -72));
@@ -104,9 +92,9 @@ void BackdropView::init()
 
 void BackdropView::set_backdrop_visible(const bool visible)
 {
-    for(bn::sprite_ptr& tile : _sky)
+    if(_sky_bg)
     {
-        tile.set_visible(visible);
+        _sky_bg->set_visible(visible);
     }
 
     for(bn::sprite_ptr& cloud : _clouds)
@@ -217,10 +205,10 @@ void BackdropView::apply_parallax(const bn::fixed parallax_shift, const level::D
     const bn::fixed back_shift = parallax_shift.safe_multiplication(def.parallax_back);
     const bn::fixed front_shift = parallax_shift;
 
-    for(int i = 0; i < _sky.size(); ++i)
+    if(_sky_bg)
     {
-        _sky[i].set_x(_sky_base_x[i] - back_shift / 4);
-        _sky[i].set_y(_sky_base_y[i]);
+        _sky_bg->set_x(_sky_base_x - back_shift / 4);
+        _sky_bg->set_y(_sky_base_y);
     }
 
     for(int i = 0; i < _hills.size(); ++i)

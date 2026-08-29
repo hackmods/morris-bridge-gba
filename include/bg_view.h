@@ -3,10 +3,12 @@
 
 /**
  * @file
- * Sky, clouds, hills, ground, and water backdrop sprites with parallax.
+ * Sky (regular BG), clouds, hills, ground, and water with parallax.
  */
 
 #include "bn_fixed.h"
+#include "bn_optional.h"
+#include "bn_regular_bg_ptr.h"
 #include "bn_sprite_ptr.h"
 #include "bn_vector.h"
 
@@ -31,14 +33,15 @@ public:
     void apply_parallax(bn::fixed parallax_shift, const level::Def& def);
 
 private:
+    bn::optional<bn::regular_bg_ptr> _sky_bg;
+    bn::fixed _sky_base_x = 0;
+    bn::fixed _sky_base_y = -48;
+
     bn::vector<bn::sprite_ptr, 8> _ground;
     bn::vector<bn::sprite_ptr, 4> _hills;
     bn::vector<bn::sprite_ptr, 8> _water;
-    bn::vector<bn::sprite_ptr, 8> _sky;
     bn::vector<bn::sprite_ptr, 2> _clouds;
 
-    bn::vector<bn::fixed, 8> _sky_base_x;
-    bn::vector<bn::fixed, 8> _sky_base_y;
     bn::vector<bn::fixed, 4> _hill_base_x;
     bn::vector<bn::fixed, 4> _hill_base_y;
     bn::vector<bn::fixed, 8> _ground_base_x;
