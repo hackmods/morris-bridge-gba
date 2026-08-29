@@ -13,8 +13,20 @@ export class GbaEmulator {
   private loadedRomName = DEFAULT_ROM_NAME;
   private statusListener: StatusListener | null = null;
   private frameCount = 0;
+  private pendingSaveSeed: Uint8Array | null = null;
 
   constructor(private readonly canvas: HTMLCanvasElement) {}
+
+  /** Fetch SRAM bytes to seed before the next ROM load (used by walkthrough E2E). */
+  async prepareWalkthroughSave(url: string): Promise<void> {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Missing walkthrough save at ${url}`);
+    }
+
+    this.pendingSaveSeed = new Uint8Array(await response.arrayBuffer());
+  }
 
   onStatus(listener: StatusListener): void {
     this.statusListener = listener;
@@ -82,18 +94,39 @@ export class GbaEmulator {
       module.uploadRom(file, () => {
         try {
           const romPath = `${module.filePaths().gamePath}/${file.name}`;
-          const loaded = module.loadGame(romPath);
 
-          if (!loaded) {
-            reject(new Error(`Failed to load ${file.name}`));
+          const finishLoad = (savePathOverride?: string): void => {
+            const loaded = module.loadGame(romPath, savePathOverride);
+
+            if (!loaded) {
+              reject(new Error(`Failed to load ${file.name}`));
+              return;
+            }
+
+            this.loadedRomPath = romPath;
+            this.loadedRomName = file.name;
+            module.resumeGame();
+            this.setStatus(`Running ${file.name}`, 'ready');
+            resolve();
+          };
+
+          if (this.pendingSaveSeed) {
+            const saveFileName = file.name.replace(/\.gba$/i, '.sav');
+            const padded = new Uint8Array(32768);
+            padded.set(
+              this.pendingSaveSeed.subarray(0, Math.min(this.pendingSaveSeed.length, padded.length)),
+            );
+            const saveFile = new File([padded], saveFileName, { type: 'application/octet-stream' });
+            this.pendingSaveSeed = null;
+
+            module.uploadSaveOrSaveState(saveFile, () => {
+              const savePath = `${module.filePaths().savePath}/${saveFileName}`;
+              finishLoad(savePath);
+            });
             return;
           }
 
-          this.loadedRomPath = romPath;
-          this.loadedRomName = file.name;
-          module.resumeGame();
-          this.setStatus(`Running ${file.name}`, 'ready');
-          resolve();
+          finishLoad();
         } catch (error) {
           reject(error);
         }
@@ -128,9 +161,14 @@ export class GbaEmulator {
     return this.frameCount;
   }
 
-  /** Write GBA SRAM save bytes and soft-reset so the game reloads progress. */
+  /** Write GBA SRAM save bytes and reload so the game picks up progress. */
   injectSave(saveBytes: Uint8Array): void {
     const module = this.requireModule();
+
+    if (!this.loadedRomPath) {
+      throw new Error('Load a ROM before injecting save data');
+    }
+
     const saveName = module.saveName;
 
     if (!saveName) {
@@ -140,17 +178,15 @@ export class GbaEmulator {
     const padded = new Uint8Array(32768);
     padded.set(saveBytes.subarray(0, Math.min(saveBytes.length, padded.length)));
 
-    const fs = (module as mGBAEmulator & { FS: { writeFile: (path: string, data: Uint8Array) => void } }).FS;
-    fs.writeFile(saveName, padded);
+    module.FS.writeFile(saveName, padded);
+    module.loadGame(this.loadedRomPath, saveName);
+    module.resumeGame();
+    this.setStatus(`Loaded save ${this.loadedRomName}`, 'ready');
+  }
 
-    if (this.loadedRomPath) {
-      module.loadGame(this.loadedRomPath, saveName);
-      module.resumeGame();
-      this.setStatus(`Loaded save ${this.loadedRomName}`, 'ready');
-      return;
-    }
-
-    this.softReset();
+  /** Read back emulated SRAM (32 KiB) for test verification. */
+  readSave(): Uint8Array | null {
+    return this.requireModule().getSave();
   }
 
   private requireModule(): mGBAEmulator {

@@ -32,13 +32,9 @@ test('capture Knapford walkthrough screenshots', async ({ page }) => {
 
 /** Session goal: Gordon's Hill build with brace tool + hill BG theme (save unlock injected). */
 test('capture Gordon Hill walkthrough screenshots', async ({ page }) => {
+  await page.goto('/?walkthrough=gordon');
   await waitForRenderSettle(page, 3_000);
   await page.locator('#btn-theater').click();
-  await page.waitForTimeout(500);
-
-  await page.evaluate(async () => {
-    await window.__TEST__!.loadWalkthroughSave();
-  });
   await page.waitForTimeout(500);
 
   await tap(page, 'Start');

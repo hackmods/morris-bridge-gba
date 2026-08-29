@@ -17,6 +17,7 @@ export interface PlaytestTestHooks {
   enqueue(command: string): void;
   tapButton(button: string): void;
   loadWalkthroughSave(): Promise<void>;
+  readWalkthroughSaveLevel(): number;
   sampleCanvas(): CanvasSample;
   waitForFrames(minFrames: number, timeoutMs?: number): Promise<number>;
 }
@@ -58,9 +59,19 @@ export function installTestHooks(
 
       const bytes = new Uint8Array(await response.arrayBuffer());
       emulator.injectSave(bytes);
+
+      const save = emulator.readSave();
+      if (!save || save[5] !== 1) {
+        throw new Error(`Walkthrough save file mismatch (byte5=${save?.[5] ?? 'null'})`);
+      }
+
       await new Promise<void>((resolve) => {
         window.setTimeout(resolve, 4_000);
       });
+    },
+    readWalkthroughSaveLevel: () => {
+      const save = emulator.readSave();
+      return save ? save[5]! : -1;
     },
     sampleCanvas: () => sampleCanvas(document.getElementById('game-canvas') as HTMLCanvasElement),
     waitForFrames: (minFrames, timeoutMs = 30_000) =>
