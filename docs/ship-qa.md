@@ -91,6 +91,8 @@ cd web && WALKTHROUGH_DIR=../artifacts/walkthrough npm run test:e2e -- e2e/walkt
 | `05_gordons_hill_select` | PICK TRACK on Gordon's Hill (save unlock) |
 | `06_gordons_hill_build_track` | BUILD on hill theme (track tool) |
 | `07_gordons_hill_build_rod` | ROD/brace tool toggled (R button) |
+| `08_vicarstown_select` | PICK TRACK on Vicarstown (all_unlocked save) |
+| `09_vicarstown_build` | BUILD on viaduct theme (James) |
 
 - Web playtest seeds Gordon's Hill unlock via `?walkthrough=gordon` (`uploadSaveOrSaveState` before first `loadGame`; E2E `gordon-save.spec.ts`). Vicarstown uses `?walkthrough=vicarstown` with `all_unlocked.sav`.
 
@@ -131,6 +133,6 @@ Record results in this file or a hardware test log when complete.
 | Gordon Hill web win E2E | Yes (`ship-qa.spec.ts` + `?walkthrough=gordon`) |
 | Vicarstown web win E2E | Yes (`ship-qa.spec.ts` + `?walkthrough=vicarstown`) |
 | Hardware EverDrive smoke | Pending physical device — see H1–H6 checklist below |
-| Walkthrough artifact | `artifacts/walkthrough/` (7 PNGs) + `web/e2e/walkthrough-capture.spec.ts` |
+| Walkthrough artifact | `artifacts/walkthrough/` (9 PNGs) + `web/e2e/walkthrough-capture.spec.ts` |
 
 Post-ship optional: ghost replay, challenge flags (master-plan §13).

@@ -51,3 +51,22 @@ test('capture Gordon Hill walkthrough screenshots', async ({ page }) => {
   await page.waitForTimeout(800);
   await page.locator('#game-canvas').screenshot({ path: `${OUT_DIR}/07_gordons_hill_build_rod.png` });
 });
+
+/** Vicarstown viaduct theme + James engine (all_unlocked walkthrough save). */
+test('capture Vicarstown walkthrough screenshots', async ({ page }) => {
+  await page.goto('/?walkthrough=vicarstown');
+  await waitForRenderSettle(page, 3_000);
+  await page.locator('#btn-theater').click();
+  await page.waitForTimeout(500);
+
+  await tap(page, 'Start');
+  await tap(page, 'Down');
+  await tap(page, 'Down');
+  await page.waitForTimeout(800);
+  await page.locator('#game-canvas').screenshot({ path: `${OUT_DIR}/08_vicarstown_select.png` });
+
+  await tap(page, 'Start');
+  await tap(page, 'Start');
+  await page.waitForTimeout(1_500);
+  await page.locator('#game-canvas').screenshot({ path: `${OUT_DIR}/09_vicarstown_build.png` });
+});
