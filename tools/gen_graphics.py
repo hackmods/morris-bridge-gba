@@ -919,6 +919,7 @@ def make_water() -> None:
 def make_labels() -> None:
     # Indices 0-7: core HUD. 8-10: onboarding hints. 11-16: rare PG lore alternates.
     # 17-18: build tool indicators. 19-24: level intro dialog pairs.
+    # 25-28: extra rare strings from docs/lore-leak.md phrase book.
     texts = (
         "BUILD",
         "TEST!",
@@ -945,10 +946,17 @@ def make_labels() -> None:
         "BRACE",
         "LONG!",
         "RODS!",
+        "LISTEN",
+        "CONFUS",
+        "LOOP!",
+        "THIN!",
     )
     w, fh = 32, 8
     px = fill(w, fh * len(texts))
-    colors = (2, 2, 2, 3, 2, 3, 2, 3, 2, 2, 2, 3, 3, 2, 3, 3, 3, 2, 2, 2, 2, 3, 3, 2, 3)
+    colors = (
+        2, 2, 2, 3, 2, 3, 2, 3, 2, 2, 2, 3, 3, 2, 3, 3, 3, 2, 2, 2, 2, 3, 3, 2, 3,
+        3, 9, 3, 3,
+    )
     for i, text in enumerate(texts):
         y0 = i * fh
         rect(px, w, 0, y0, 32, y0 + fh, 7 if i < 8 else 13)

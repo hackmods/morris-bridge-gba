@@ -228,12 +228,16 @@ void Game::_sync_level_select_flavor()
 
         switch(_selected_level)
         {
+            case 0:
+                label = (_lore_roll(9) & 1) ? game_ui::LABEL_CHUFF : game_ui::LABEL_PEEP;
+                break;
+
             case 1:
-                label = game_ui::LABEL_WAIT;
+                label = (_lore_roll(10) & 1) ? game_ui::LABEL_LISTEN : game_ui::LABEL_WAIT;
                 break;
 
             case 2:
-                label = game_ui::LABEL_TOOT;
+                label = (_lore_roll(11) & 1) ? game_ui::LABEL_THIN : game_ui::LABEL_TOOT;
                 break;
 
             default:
