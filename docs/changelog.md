@@ -2,6 +2,11 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Level select flavor + engine idle chuff (Phases 5–6)
+
+- Level select shows track subtitle (`FLAT!`, `HILL!`, `LONG!`) from intro data; rare whispers still override (~4%)
+- Engine select plays periodic idle chuff synced to train sprite frames
+
 ## 2026-08-29 — Source layout: core / session / content (Phase 2)
 
 - `src/core/` — `physics.cpp`, `bridge_system.cpp` (simulation)
