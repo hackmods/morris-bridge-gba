@@ -119,6 +119,18 @@ Web E2E proxy for H6: `web/e2e/sram-persist.spec.ts` verifies `intro_seen_mask`,
 
 Record results in this file or a hardware test log when complete.
 
+### Reference builds for H2 (Delta / EverDrive)
+
+Source of truth: `include/level_solutions.h`. Minimum win path for **H2 (Knapford)**:
+
+1. Title → **START** → Level select → **A** on Knapford → Engine select → **A** on Thomas
+2. Build mode: place **two mid-deck nodes** on the flat track line, then connect **START → mid-left → mid-right → END** with the track tool (**A** on each pair). Three spans total.
+3. **START** to test → wait for train to reach END → expect **HATT OK** / **PEEP!**
+
+For **H3**, complete H2 first (SRAM records clear). On next visit, Gordon's Hill unlocks on level select. Use **R** to toggle **ROD** and add bank anchors to START/END per `build_gordon_hill_reference()` in `level_solutions.h`. Hill BG theme should appear in build mode.
+
+Web E2E builds the same layouts via `web/e2e/helpers.ts` (`buildKnapfordReferenceBridge`, etc.) — use the web playtest command queue if you want to rehearse before hardware.
+
 ---
 
 ## Sign-off criteria (Phase 7)
