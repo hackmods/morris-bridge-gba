@@ -14,6 +14,7 @@ export class GbaEmulator {
   private statusListener: StatusListener | null = null;
   private frameCount = 0;
   private pendingSaveSeed: Uint8Array | null = null;
+  private seededSavePath: string | null = null;
 
   constructor(private readonly canvas: HTMLCanvasElement) {}
 
@@ -48,6 +49,17 @@ export class GbaEmulator {
       const module = await mGBA({ canvas: this.canvas });
       await module.FSInit();
 
+      if (this.pendingSaveSeed) {
+        const savePath = `${module.filePaths().savePath}/${DEFAULT_ROM_NAME.replace(/\.gba$/i, '.sav')}`;
+        const padded = new Uint8Array(32768);
+        padded.set(
+          this.pendingSaveSeed.subarray(0, Math.min(this.pendingSaveSeed.length, padded.length)),
+        );
+        module.FS.writeFile(savePath, padded);
+        this.seededSavePath = savePath;
+        this.pendingSaveSeed = null;
+      }
+
       module.addCoreCallbacks({
         videoFrameEndedCallback: () => {
           this.frameCount += 1;
@@ -58,6 +70,9 @@ export class GbaEmulator {
         showFpsCounter: false,
         videoSync: true,
         audioSync: true,
+        ...(this.pendingSaveSeed || this.seededSavePath
+          ? { autoSaveStateEnable: false, restoreAutoSaveStateOnLoad: false }
+          : {}),
       });
 
       this.module = module;
@@ -110,19 +125,18 @@ export class GbaEmulator {
             resolve();
           };
 
-          if (this.pendingSaveSeed) {
-            const saveFileName = file.name.replace(/\.gba$/i, '.sav');
-            const padded = new Uint8Array(32768);
-            padded.set(
-              this.pendingSaveSeed.subarray(0, Math.min(this.pendingSaveSeed.length, padded.length)),
-            );
-            const saveFile = new File([padded], saveFileName, { type: 'application/octet-stream' });
-            this.pendingSaveSeed = null;
+          if (this.seededSavePath) {
+            const savePath = this.seededSavePath;
+            this.seededSavePath = null;
 
-            module.uploadSaveOrSaveState(saveFile, () => {
-              const savePath = `${module.filePaths().savePath}/${saveFileName}`;
-              finishLoad(savePath);
-            });
+            const autoSavePath = `${module.filePaths().autosave}/${file.name.replace(/\.gba$/i, '')}_auto.ss`;
+            try {
+              module.FS.unlink(autoSavePath);
+            } catch {
+              // No prior auto save state for this ROM.
+            }
+
+            finishLoad(savePath);
             return;
           }
 
