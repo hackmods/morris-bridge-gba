@@ -12,11 +12,19 @@ if [[ ! -f vendor/butano/butano/butano.mak ]]; then
   git clone --depth 1 https://github.com/GValiente/butano.git vendor/butano
 fi
 
-echo "Regenerating Thomas's Bridge sprites ..."
-python3 tools/gen_graphics.py
+if [[ "${REGEN_ASSETS:-}" == "1" ]]; then
+  echo "Regenerating Thomas's Bridge sprites (REGEN_ASSETS=1) ..."
+  python3 tools/gen_graphics.py
 
-echo "Regenerating audio (MOD + WAV) ..."
-python3 tools/gen_audio.py
+  echo "Regenerating audio (MOD + WAV) ..."
+  python3 tools/gen_audio.py
+else
+  echo "Validating Thomas's Bridge sprites (committed BMPs) ..."
+  python3 tools/gen_graphics.py --check
+
+  echo "Validating audio (MOD + WAV) ..."
+  python3 tools/gen_audio.py --check
+fi
 
 echo "Building ROM with ${IMAGE} ..."
 if command -v docker >/dev/null 2>&1; then

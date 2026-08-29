@@ -31,8 +31,8 @@ jobs:
 
       - name: Generate assets and compile thomas_bridge.gba
         run: |
-          python3 tools/gen_graphics.py
-          python3 tools/gen_audio.py
+          python3 tools/gen_graphics.py --check
+          python3 tools/gen_audio.py --check
           docker run --rm -v "$PWD:/project" -w /project sunbr0/gba-butano-base:4dd4b16 \
             bash -lc 'make -j"$(nproc)" LIBBUTANO=vendor/butano/butano PYTHON=python3'
           cp -f thomas_bridge.gba rom/thomas_bridge.gba
