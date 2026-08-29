@@ -31,6 +31,15 @@
 #include "physics.h"
 #include "save_data.h"
 
+void screen_trampoline_title(void* context);
+void screen_trampoline_level_select(void* context);
+void screen_trampoline_engine_select(void* context);
+void screen_trampoline_level_intro(void* context);
+void screen_trampoline_playing(void* context);
+void screen_trampoline_pause(void* context);
+void screen_trampoline_level_complete(void* context);
+void screen_trampoline_level_failed(void* context);
+void screen_trampoline_all_complete(void* context);
 
 Game::Game() :
     _cursor(bn::sprite_items::cursor.create_sprite(0, 0)),
@@ -232,7 +241,7 @@ void Game::_update_dust()
 {
     for(int i = _dust.size() - 1; i >= 0; --i)
     {
-        DustPuff& puff = _dust[i];
+        game_ui::DustPuff& puff = _dust[i];
 
         if(puff.life <= 0)
         {
