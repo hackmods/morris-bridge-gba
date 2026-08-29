@@ -2,6 +2,13 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — BG parallax art pass (Phase 4)
+
+- Sky: horizon haze band per theme (gold meadow, storm hill, industrial viaduct)
+- Hills: tree silhouettes (Knapford), rock outcrops (Gordon's Hill), factory chimneys (Vicarstown)
+- Ground: meadow grass tufts on Knapford banks
+- Water: wider ripple bands with spark highlights
+
 ## 2026-08-29 — SRAM stars/clear persist E2E (H6 proxy)
 
 - `sram-persist.spec.ts`: all_unlocked walkthrough save keeps stars + clear flags across soft reset (29 E2E)

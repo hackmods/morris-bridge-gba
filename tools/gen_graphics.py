@@ -126,6 +126,42 @@ def sky_gradient(px: list[int], w: int, h: int, y0: int, y1: int,
             put(px, w, x, y, base if (x + y) % 3 else alt)
 
 
+def horizon_haze(px: list[int], w: int, y0: int, y1: int, color: int, strength: int = 2) -> None:
+    """Soft horizon band — 2–3 px fade into hills/water."""
+    for y in range(y0, y1):
+        t = (y - y0) / max(1, y1 - y0 - 1)
+        for x in range(w):
+            if (x + y) % strength == 0:
+                put(px, w, x, y, color)
+
+
+def blit_tree_silhouette(px: list[int], w: int, ox: int, base_y: int, trunk: int, canopy: int) -> None:
+    """Simple 5×8 tree for meadow hills."""
+    vline(px, w, ox + 2, base_y - 6, base_y, trunk)
+    for dy, span in enumerate((1, 3, 5, 3, 1)):
+        y = base_y - 7 - dy
+        x0 = ox + 2 - span // 2
+        hline(px, w, x0, x0 + span, y, canopy)
+
+
+def blit_rock_outcrop(px: list[int], w: int, ox: int, base_y: int, light: int, shadow: int) -> None:
+    """Jagged cliff nub for Gordon's Hill."""
+    for dy in range(6):
+        span = 2 + (dy % 3)
+        y = base_y - dy
+        x0 = ox + 1 - span // 2
+        c = light if dy < 3 else shadow
+        hline(px, w, x0, x0 + span, y, c)
+    put(px, w, ox, base_y - 6, shadow)
+
+
+def grass_tuft(px: list[int], w: int, x: int, y: int, light: int, shadow: int) -> None:
+    """2–3 px meadow grass along bank top."""
+    put(px, w, x, y, light)
+    put(px, w, x - 1, y + 1, shadow)
+    put(px, w, x + 1, y + 1, shadow)
+
+
 # Per-level BG themes — knapford (0), hill (1), viaduct (2).
 BG_THEMES: list[dict] = [
     {
@@ -681,6 +717,9 @@ def make_bg_sky_theme(theme_id: int) -> None:
     w = h = 256
     px = fill(w, h)
     sky_gradient(px, w, h, 0, h, theme["sky"])
+    haze_y = 150 if theme_id == 0 else (148 if theme_id == 1 else 146)
+    haze_color = theme["sky"][1] if theme_id != 2 else 10
+    horizon_haze(px, w, haze_y, haze_y + 8, haze_color)
     name = f"bg_sky_{theme_id}.bmp"
     write_indexed_bmp(os.path.join(GFX, name), w, h, px)
     if theme_id == 0:
@@ -962,14 +1001,28 @@ def make_bg_hills_theme(theme_id: int) -> None:
     px = fill(w, h, 0)
     hill_base = 168 if theme_id == 0 else (172 if theme_id == 1 else 176)
     for x in range(w):
-        hill = hill_base + abs((x - 128) // (6 if theme_id != 2 else 5)) % 28
+        wave = abs((x - 128) // (6 if theme_id != 2 else 5)) % 28
+        hill = hill_base + wave
         for y in range(hill, h):
-            put(px, w, x, y, theme["hill_shadow"] if y == hill else theme["hill_light"])
+            edge = y == hill
+            put(px, w, x, y, theme["hill_shadow"] if edge else theme["hill_light"])
+            if edge and theme_id == 1 and x % 17 == 0:
+                put(px, w, x, y, 1)
+    if theme_id == 0:
+        for x in range(24, w, 40):
+            crest = hill_base + abs((x - 128) // 6) % 28
+            blit_tree_silhouette(px, w, x, crest, 13, 14)
+    elif theme_id == 1:
+        for x in range(32, w - 16, 56):
+            crest = hill_base + abs((x - 128) // 6) % 28
+            blit_rock_outcrop(px, w, x, crest, theme["hill_light"], theme["hill_shadow"])
     if theme_id == 2:
         for x in range(40, 220, 48):
             factory_h = hill_base - 24 - (x % 96) // 16
             rect(px, w, x, factory_h, x + 20, hill_base, 10)
             rect(px, w, x + 4, factory_h - 8, x + 10, factory_h, 1)
+            vline(px, w, x + 16, factory_h - 14, factory_h - 8, 1)
+            hline(px, w, x + 14, x + 18, factory_h - 14, 4)
     name = f"bg_hills_{theme_id}.bmp"
     write_indexed_bmp(os.path.join(GFX, name), w, h, px)
     if theme_id == 0:
@@ -981,7 +1034,8 @@ def make_bg_hills() -> None:
         make_bg_hills_theme(theme_id)
 
 
-def draw_ground_strip_themed(px: list[int], w: int, x0: int, x1: int, y0: int, theme: dict) -> None:
+def draw_ground_strip_themed(px: list[int], w: int, x0: int, x1: int, y0: int, theme: dict,
+                             meadow: bool = False) -> None:
     """16 px bank ground band for regular BG (transparent index 0 elsewhere)."""
     rect(px, w, x0, y0, x1, y0 + 4, theme["ground_top"])
     rect(px, w, x0, y0 + 3, x1, y0 + 5, theme["ground_mid"])
@@ -991,6 +1045,9 @@ def draw_ground_strip_themed(px: list[int], w: int, x0: int, x1: int, y0: int, t
         shade = theme["ground_hi"] if x % 8 else theme["ground_fill"]
         put(px, w, x, y0 + 8, shade)
         put(px, w, x, y0 + 10, shade)
+    if meadow:
+        for x in range(x0 + 6, x1 - 2, 12):
+            grass_tuft(px, w, x, y0 + 2, theme["ground_top"], theme["ground_mid"])
     hline(px, w, x0, x1, y0 + 15, 1)
 
 
@@ -1000,8 +1057,9 @@ def make_bg_ground_theme(theme_id: int) -> None:
     w = h = 256
     px = fill(w, h, 0)
     y0 = 240
-    draw_ground_strip_themed(px, w, 0, 104, y0, theme)
-    draw_ground_strip_themed(px, w, 152, w, y0, theme)
+    meadow = theme_id == 0
+    draw_ground_strip_themed(px, w, 0, 104, y0, theme, meadow=meadow)
+    draw_ground_strip_themed(px, w, 152, w, y0, theme, meadow=meadow)
     name = f"bg_ground_{theme_id}.bmp"
     write_indexed_bmp(os.path.join(GFX, name), w, h, px)
     if theme_id == 0:
@@ -1025,9 +1083,10 @@ def make_bg_water_theme(theme_id: int) -> None:
             base = theme["water_dark"] if (y + frame) % 2 == 0 else theme["water_light"]
             for x in range(w):
                 c = base
-                if (x + y + frame * 3) % 7 == 0:
+                ripple = (x // 4 + y // 2 + frame * 2) % 5
+                if ripple == 0:
                     c = theme["water_light"]
-                if (x + y + frame * 5) % 11 == 0:
+                elif ripple == 1 and (x + y + frame) % 9 == 0:
                     c = theme["water_spark"]
                 put(px, w, x, y_base + y, c)
     name = f"bg_water_{theme_id}.bmp"
