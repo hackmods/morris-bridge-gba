@@ -515,7 +515,8 @@ void Game::_update_test()
             if(const bridge::SnapFlash* flash = _bridge.snap_flash())
             {
                 view::position_strut_sprite(_preview_strut, flash->a, flash->b, view::STRUT_SNAP);
-                _preview_strut.set_palette(bn::sprite_palette_items::strut);
+                _preview_strut.set_palette(
+                    bn::sprite_items::strut.palette_item().create_palette());
                 _preview_strut.set_visible(true);
             }
             else
