@@ -119,6 +119,21 @@ Web E2E proxy for H6: `web/e2e/sram-persist.spec.ts` verifies `intro_seen_mask`,
 
 Record results in this file or a hardware test log when complete.
 
+### Delta emulator (iOS)
+
+1. **Import ROM:** AirDrop or Files → import `rom/thomas_bridge.gba` into Delta.
+2. **Fresh SRAM (H1/H2):** Long-press the game → delete save data, or remove any existing `thomas_bridge.sav` before first boot.
+3. **H3 shortcut (optional):** Skip manual Knapford clear by seeding a walkthrough save:
+   ```bash
+   python3 tools/gen_playtest_save.py
+   ```
+   Import `web/public/saves/gordon_hill_walkthrough.sav` into Delta and rename it to **`thomas_bridge.sav`** (same basename as the ROM). Boot → Gordon's Hill should appear on level select with Knapford already cleared.
+
+   Or run `./scripts/export_delta_saves.sh` — copies pre-named saves to `rom/delta_saves/` for import.
+4. **H6 power-cycle:** After a win, **force-quit Delta** (app switcher) — do not use Delta's in-app reset alone. Relaunch and confirm stars / unlocks / intro flags persisted.
+
+mGBA desktop uses the same **`<rom_basename>.sav`** naming (`thomas_bridge.sav`).
+
 ### Reference builds for H2 (Delta / EverDrive)
 
 Source of truth: `include/level_solutions.h`. Minimum win path for **H2 (Knapford)**:
