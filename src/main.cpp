@@ -15,7 +15,6 @@
 #include "bn_sprite_ptr.h"
 #include "bn_vector.h"
 
-#include "bn_sprite_items_anchor.h"
 #include "bn_sprite_items_banner.h"
 #include "bn_sprite_items_cursor.h"
 #include "bn_sprite_items_digit.h"
@@ -24,7 +23,6 @@
 #include "bn_sprite_items_label.h"
 #include "bn_sprite_items_logo.h"
 #include "bn_sprite_items_menu.h"
-#include "bn_sprite_items_node.h"
 #include "bn_sprite_items_panel.h"
 #include "bn_sprite_items_portrait.h"
 #include "bn_sprite_items_ring.h"
@@ -38,18 +36,23 @@
 #include "bridge_system.h"
 #include "engine.h"
 #include "game_constants.h"
+#include "graph_view.h"
 #include "level.h"
 #include "physics.h"
 #include "progress.h"
 #include "run_score.h"
 #include "save_data.h"
+#include "screen_types.h"
 
 namespace
 {
 
+using Screen = screen::Id;
+using PlayMode = screen::PlayMode;
+using PauseOption = screen::PauseOption;
+
 constexpr bn::fixed CURSOR_SPEED = 3;
 constexpr bn::fixed CURSOR_FAST = 6;
-constexpr bn::fixed STRUT_SPRITE_WIDTH = 16;
 constexpr int CURSOR_REPEAT_DELAY = 10;
 constexpr int CURSOR_REPEAT_RATE = 3;
 constexpr int TOAST_FRAMES = 90;
@@ -62,21 +65,12 @@ constexpr int TOAST_DUP = 0;
 constexpr int TOAST_WEAK = 1;
 constexpr int TOAST_DEL = 2;
 
-constexpr int STRUT_IDLE = 0;
-constexpr int STRUT_HOT = 1;
-constexpr int STRUT_PREVIEW_OK = 2;
-constexpr int STRUT_PREVIEW_WEAK = 3;
-constexpr int STRUT_BRACE_IDLE = 4;
-constexpr int STRUT_BRACE_HOT = 5;
-
 constexpr int Z_CURSOR = -32767;
 constexpr int Z_TOAST = -17;
 constexpr int Z_DIGIT = -19;
 constexpr int Z_RING = 4;
-constexpr int Z_NODE = 5;
 constexpr int Z_GHOST = 6;
 constexpr int Z_STRUT_PREVIEW = 9;
-constexpr int Z_STRUT = 10;
 
 enum class ToastKind
 {
@@ -164,43 +158,6 @@ constexpr int HATT_FURIOUS = 1;
 
 constexpr int MENU_PAUSE_BASE = 3;
 constexpr int MENU_ENGINE_BASE = 7;
-
-bn::fixed strut_angle_deg(bn::fixed_point a, bn::fixed_point b)
-{
-    const bn::fixed dx = b.x() - a.x();
-    const bn::fixed dy = b.y() - a.y();
-    const int yi = (dy * 16).integer();
-    const int xi = (dx * 16).integer();
-    bn::fixed angle = bn::degrees_diamond_angle(yi, xi);
-
-    if(angle < 0)
-    {
-        angle += 360;
-    }
-
-    return angle;
-}
-
-void position_strut_sprite(bn::sprite_ptr& sprite, bn::fixed_point a, bn::fixed_point b, int frame)
-{
-    const bn::fixed span = physics::distance(a, b);
-
-    if(span <= 0)
-    {
-        sprite.set_visible(false);
-        return;
-    }
-
-    const bn::fixed_point mid((a.x() + b.x()) / 2, (a.y() + b.y()) / 2);
-    const bn::fixed scale = span.safe_division(STRUT_SPRITE_WIDTH);
-
-    sprite.set_position(mid);
-    sprite.set_item(bn::sprite_items::strut, frame);
-    sprite.set_horizontal_scale(scale);
-    sprite.set_vertical_scale(frame >= STRUT_BRACE_IDLE ? bn::fixed(1) : bn::fixed(1));
-    sprite.set_rotation_angle_safe(strut_angle_deg(a, b));
-    sprite.set_visible(true);
-}
 
 class Game
 {
@@ -311,33 +268,15 @@ public:
     }
 
 private:
-    enum class Screen
+    void _sync_graph_sprites()
     {
-        title,
-        level_select,
-        engine_select,
-        level_intro,
-        playing,
-        pause,
-        level_complete,
-        level_failed,
-        all_complete,
-    };
+        const bool visible = _screen == Screen::playing;
+        const bn::optional<int> selected =
+            visible && _play_mode == PlayMode::build ? _selected : bn::optional<int>();
 
-    enum class PlayMode
-    {
-        build,
-        test,
-    };
-
-    enum class PauseOption
-    {
-        resume = 0,
-        restart,
-        levels,
-        title,
-        count,
-    };
+        _graph.sync_nodes(_bridge, visible, _frame, selected, _ring);
+        _graph.sync_struts(_bridge, visible, _play_mode == PlayMode::test, _frame);
+    }
 
     int _lore_roll(int salt) const
     {
@@ -569,6 +508,35 @@ private:
         _menu_row.set_item(bn::sprite_items::menu, _selected_level);
         _sync_train_sprite();
         _sync_level_select_stars();
+        _sync_level_select_whisper();
+    }
+
+    void _sync_level_select_whisper()
+    {
+        if(! _lore_rare(6 + _selected_level))
+        {
+            return;
+        }
+
+        int label = LABEL_PEEP;
+
+        switch(_selected_level)
+        {
+            case 1:
+                label = LABEL_WAIT;
+                break;
+
+            case 2:
+                label = LABEL_TOOT;
+                break;
+
+            default:
+                break;
+        }
+
+        _hint_label.set_visible(true);
+        _hint_label.set_position(0, 52);
+        _hint_label.set_item(bn::sprite_items::label, label);
     }
 
     void _sync_level_select_stars()
@@ -714,6 +682,7 @@ private:
         _hatt.set_item(bn::sprite_items::hatt, HATT_STERN);
         _portrait.set_visible(false);
         _sync_level_select_stars();
+        _sync_level_select_whisper();
         _node_count_digits[0].set_visible(false);
         _node_count_digits[1].set_visible(false);
         _strut_count_digits[0].set_visible(false);
@@ -824,8 +793,7 @@ private:
         _backdrop.layout_for_level(_bridge.level_def());
         _backdrop.apply_parallax(_parallax_shift, _bridge.level_def());
         _show_gameplay();
-        _sync_node_sprites();
-        _sync_strut_sprites();
+        _sync_graph_sprites();
         _audio.play(audio::MusicCue::workshop);
     }
 
@@ -855,16 +823,8 @@ private:
         _cursor.set_visible(false);
         _train.set_visible(false);
         _backdrop.set_scenery_visible(false);
-
-        for(bn::sprite_ptr& sprite : _node_sprites)
-        {
-            sprite.set_visible(false);
-        }
-
-        for(bn::sprite_ptr& sprite : _strut_sprites)
-        {
-            sprite.set_visible(false);
-        }
+        _graph.sync_nodes(_bridge, false, _frame, bn::nullopt, _ring);
+        _graph.sync_struts(_bridge, false, false, _frame);
     }
 
     void _enter_pause()
@@ -997,14 +957,25 @@ private:
         _screen = Screen::all_complete;
         _set_splash_visible(false);
         _banner.set_visible(true);
-        _banner.set_item(bn::sprite_items::banner, BANNER_HATT_OK);
+        const bool epilogue_peep = _lore_rare(5);
+
+        if(epilogue_peep)
+        {
+            _banner.set_item(bn::sprite_items::banner, BANNER_HATT_PEEP);
+            _label.set_item(bn::sprite_items::label, LABEL_PEEP);
+        }
+        else
+        {
+            _banner.set_item(bn::sprite_items::banner, BANNER_HATT_OK);
+            _label.set_item(bn::sprite_items::label, LABEL_USEFUL);
+        }
+
         _banner.set_position(0, -36);
         _panel.set_visible(true);
         _panel.set_item(bn::sprite_items::panel, PANEL_DIALOG);
         _panel.set_position(0, 40);
         _label.set_visible(true);
         _label.set_position(0, 42);
-        _label.set_item(bn::sprite_items::label, LABEL_USEFUL);
         _hint_label.set_visible(false);
         _hint_secondary.set_visible(false);
         _menu_row.set_visible(false);
@@ -1016,6 +987,11 @@ private:
         _hatt.set_item(bn::sprite_items::hatt, HATT_STERN);
         _audio.play(audio::MusicCue::island_line);
         bn::sound_items::useful.play();
+
+        if(epilogue_peep)
+        {
+            bn::sound_items::whistle.play();
+        }
     }
 
     void _update_title()
@@ -1135,8 +1111,7 @@ private:
                     _cursor_pos = _bridge.nodes()[bridge::START_NODE].position;
                     _cursor_pos.set_x(_cursor_pos.x() + 16);
                     _leave_pause();
-                    _sync_node_sprites();
-                    _sync_strut_sprites();
+                    _sync_graph_sprites();
                     _audio.play(audio::MusicCue::workshop);
                     break;
 
@@ -1216,8 +1191,7 @@ private:
             _update_test();
         }
 
-        _sync_node_sprites();
-        _sync_strut_sprites();
+        _sync_graph_sprites();
         _update_preview();
         _update_hud();
         _update_toast();
@@ -1317,18 +1291,18 @@ private:
         {
             const bn::fixed load = _max_train_load();
             const bool weak = max_tension < load;
-            int frame = STRUT_PREVIEW_OK;
+            int frame = view::STRUT_PREVIEW_OK;
 
             if(_connect_role == bridge::LinkRole::brace)
             {
-                frame = weak ? STRUT_BRACE_HOT : STRUT_BRACE_IDLE;
+                frame = weak ? view::STRUT_BRACE_HOT : view::STRUT_BRACE_IDLE;
             }
             else
             {
-                frame = weak ? STRUT_PREVIEW_WEAK : STRUT_PREVIEW_OK;
+                frame = weak ? view::STRUT_PREVIEW_WEAK : view::STRUT_PREVIEW_OK;
             }
 
-            position_strut_sprite(_preview_strut, from, to, frame);
+            view::position_strut_sprite(_preview_strut, from, to, frame);
             return;
         }
 
@@ -1666,96 +1640,6 @@ private:
         }
     }
 
-    void _sync_node_sprites()
-    {
-        const auto& nodes = _bridge.nodes();
-
-        while(_node_sprites.size() > nodes.size())
-        {
-            _node_sprites.pop_back();
-        }
-
-        while(_node_sprites.size() < nodes.size())
-        {
-            _node_sprites.push_back(make_sprite(bn::sprite_items::node, 0, 0, Z_NODE));
-        }
-
-        for(int i = 0; i < nodes.size(); ++i)
-        {
-            bn::sprite_ptr& sprite = _node_sprites[i];
-            sprite.set_position(nodes[i].position);
-
-            if(nodes[i].is_anchored)
-            {
-                sprite.set_item(bn::sprite_items::anchor);
-            }
-            else
-            {
-                sprite.set_item(bn::sprite_items::node);
-            }
-
-            sprite.set_visible(_screen == Screen::playing);
-        }
-
-        if(_screen == Screen::playing && _play_mode == PlayMode::build && _selected)
-        {
-            _ring.set_position(nodes[_selected.value()].position);
-            _ring.set_visible(true);
-            const bn::fixed pulse = (_frame % 24 < 12) ? bn::fixed(1) : bn::fixed(9) / 8;
-            _ring.set_scale(pulse);
-        }
-        else
-        {
-            _ring.set_visible(false);
-        }
-    }
-
-    void _sync_strut_sprites()
-    {
-        const auto& nodes = _bridge.nodes();
-        const auto& struts = _bridge.struts();
-
-        while(_strut_sprites.size() > struts.size())
-        {
-            _strut_sprites.pop_back();
-        }
-
-        while(_strut_sprites.size() < struts.size())
-        {
-            _strut_sprites.push_back(make_sprite(bn::sprite_items::strut, 0, 0, Z_STRUT));
-        }
-
-        for(int i = 0; i < struts.size(); ++i)
-        {
-            const bridge::Strut& strut = struts[i];
-            const bn::fixed_point a = nodes[strut.node_a].position;
-            const bn::fixed_point b = nodes[strut.node_b].position;
-            const bool hot = _play_mode == PlayMode::test &&
-                strut.current_tension * 2 > strut.max_tension;
-            bn::sprite_ptr& sprite = _strut_sprites[i];
-            int frame = STRUT_IDLE;
-
-            if(strut.role == bridge::LinkRole::brace)
-            {
-                frame = hot ? STRUT_BRACE_HOT : STRUT_BRACE_IDLE;
-            }
-            else
-            {
-                frame = hot ? STRUT_HOT : STRUT_IDLE;
-            }
-
-            position_strut_sprite(sprite, a, b, frame);
-
-            if(hot)
-            {
-                const bn::fixed pulse = (_frame % 16 < 8) ? bn::fixed(1) : bn::fixed(11) / 10;
-                sprite.set_horizontal_scale(sprite.horizontal_scale() * pulse);
-            }
-
-            sprite.set_visible(_screen == Screen::playing);
-        }
-    }
-
     void _update_hud()
     {
         int frame = LABEL_BUILD;
@@ -1871,9 +1755,8 @@ private:
     bn::vector<bn::sprite_ptr, 2> _node_count_digits;
     bn::vector<bn::sprite_ptr, 2> _strut_count_digits;
     bn::vector<bn::sprite_ptr, 2> _weight_digits;
-    bn::vector<bn::sprite_ptr, bridge::MAX_NODES> _node_sprites;
-    bn::vector<bn::sprite_ptr, bridge::MAX_STRUTS> _strut_sprites;
     view::BackdropView _backdrop;
+    view::GraphView _graph;
     bn::vector<bn::sprite_ptr, 4> _splash;
 };
 
