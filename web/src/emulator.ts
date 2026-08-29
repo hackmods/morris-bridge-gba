@@ -142,6 +142,14 @@ export class GbaEmulator {
 
     const fs = (module as mGBAEmulator & { FS: { writeFile: (path: string, data: Uint8Array) => void } }).FS;
     fs.writeFile(saveName, padded);
+
+    if (this.loadedRomPath) {
+      module.loadGame(this.loadedRomPath, saveName);
+      module.resumeGame();
+      this.setStatus(`Loaded save ${this.loadedRomName}`, 'ready');
+      return;
+    }
+
     this.softReset();
   }
 

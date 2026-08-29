@@ -39,9 +39,11 @@ test('capture Gordon Hill walkthrough screenshots', async ({ page }) => {
   await page.evaluate(async () => {
     await window.__TEST__!.loadWalkthroughSave();
   });
+  await page.waitForTimeout(500);
 
   await tap(page, 'Start');
   await tap(page, 'Down');
+  await page.waitForTimeout(800);
   await page.locator('#game-canvas').screenshot({ path: `${OUT_DIR}/05_gordons_hill_select.png` });
 
   await tap(page, 'Start');
