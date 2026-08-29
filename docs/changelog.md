@@ -2,6 +2,12 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Stress palette + snap crack frame (Phase 4)
+
+- Hot struts swap to a red stress palette while pulsing under load
+- New strut frame 6 shows a cracked beam for 12 frames before the fail screen
+- `validate_graphics.py` expects `strut.bmp` at 16×112
+
 ## 2026-08-29 — Yard unlock leitmotif (Phase 5)
 
 - `yard.mod` loops four patterns including unlock bell figures (patterns 2–3)

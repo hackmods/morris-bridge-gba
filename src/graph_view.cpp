@@ -1,7 +1,9 @@
 #include "graph_view.h"
 
 #include "bn_math.h"
+#include "bn_optional.h"
 #include "bn_sprite_builder.h"
+#include "bn_sprite_palette_items_strut.h"
 #include "bn_sprite_items_anchor.h"
 #include "bn_sprite_items_node.h"
 #include "bn_sprite_items_strut.h"
@@ -23,6 +25,22 @@ bn::sprite_ptr make_sprite(const bn::sprite_item& item, bn::fixed x, bn::fixed y
     builder.set_position(x, y);
     builder.set_z_order(z_order);
     return builder.release_build();
+}
+
+const bn::sprite_palette_ptr& stress_strut_palette()
+{
+    static bn::optional<bn::sprite_palette_ptr> palette;
+
+    if(! palette.has_value())
+    {
+        palette = bn::sprite_palette_items::strut.create_new();
+        bn::sprite_palette_ptr& pal = palette.value();
+        pal.set_color(5, bn::color(176, 48, 40));
+        pal.set_color(6, bn::color(208, 56, 48));
+        pal.set_color(12, bn::color(220, 88, 56));
+    }
+
+    return palette.value();
 }
 
 bn::fixed strut_angle_deg(bn::fixed_point a, bn::fixed_point b)
@@ -148,8 +166,13 @@ void GraphView::sync_struts(const bridge::BridgeSystem& bridge, const bool visib
 
         if(hot)
         {
+            sprite.set_palette(stress_strut_palette());
             const bn::fixed pulse = (frame % 16 < 8) ? bn::fixed(1) : bn::fixed(11) / 10;
             sprite.set_horizontal_scale(sprite.horizontal_scale() * pulse);
+        }
+        else
+        {
+            sprite.set_palette(bn::sprite_palette_items::strut);
         }
 
         sprite.set_visible(visible);

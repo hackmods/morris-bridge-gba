@@ -72,6 +72,13 @@ enum class StrutPreviewStatus
     zero_length,
 };
 
+struct SnapFlash
+{
+    bn::fixed_point a;
+    bn::fixed_point b;
+    int frames = 0;
+};
+
 struct StrutPreview
 {
     StrutPreviewStatus status = StrutPreviewStatus::invalid_node;
@@ -273,6 +280,8 @@ public:
 
     [[nodiscard]] bn::fixed effective_weight_at(bn::fixed distance_along, bn::fixed strut_length) const;
 
+    [[nodiscard]] const SnapFlash* snap_flash() const;
+
 private:
     enum class LastEdit
     {
@@ -316,6 +325,7 @@ private:
     int _coach_count = 0;
     LastEdit _last_edit = LastEdit::none;
     int _last_edit_index = -1;
+    bn::optional<SnapFlash> _snap_flash;
 };
 
 } // namespace bridge

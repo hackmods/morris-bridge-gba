@@ -18,7 +18,7 @@ EXPECTED = {
     "train.bmp": {"width": 32, "height": 320, "max_colors": 16},
     "portrait.bmp": {"width": 32, "height": 160, "max_colors": 16},
     "node.bmp": {"width": 16, "height": 16, "max_colors": 16},
-    "strut.bmp": {"width": 16, "height": 96, "max_colors": 16},
+    "strut.bmp": {"width": 16, "height": 112, "max_colors": 16},
     "scenery_far.bmp": {"width": 64, "height": 32, "max_colors": 16},
 }
 
