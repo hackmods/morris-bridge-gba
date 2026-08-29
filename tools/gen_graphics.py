@@ -839,6 +839,17 @@ def make_scenery_far() -> None:
     write_indexed_bmp(os.path.join(GFX, "scenery_far.bmp"), w, h, px)
 
 
+def make_bg_hills() -> None:
+    """Far hills on regular BG — transparent sky, rolling hills at bottom."""
+    w = h = 256
+    px = fill(w, h, 0)
+    for x in range(w):
+        hill = 168 + abs((x - 128) // 6) % 28
+        for y in range(hill, h):
+            put(px, w, x, y, 14 if y == hill else 11)
+    write_indexed_bmp(os.path.join(GFX, "bg_hills.bmp"), w, h, px)
+
+
 def make_ground() -> None:
     w, h = 32, 16
     px = fill(w, h)
@@ -994,6 +1005,7 @@ def main() -> None:
     make_train()
     make_portrait()
     make_scenery_far()
+    make_bg_hills()
     make_ground()
     make_water()
     make_digit()
@@ -1007,6 +1019,7 @@ def main() -> None:
         ("logo.json", None),
         ("sky.json", None),
         ("bg_sky.json", {"type": "regular_bg"}),
+        ("bg_hills.json", {"type": "regular_bg"}),
         ("cloud.json", None),
         ("panel.json", {"height": 32}),
         ("hatt.json", {"height": 16}),

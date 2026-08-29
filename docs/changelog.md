@@ -2,6 +2,11 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Hills regular BG layer (Phase 4)
+
+- Far hills moved from 4 OAM sprites to `bg_hills.bmp` regular BG (priority 2)
+- Per-level hill Y offset preserved; ground/water remain OAM (water anim)
+
 ## 2026-08-29 — Level select flavor + engine idle chuff (Phases 5–6)
 
 - Level select shows track subtitle (`FLAT!`, `HILL!`, `LONG!`) from intro data; rare whispers still override (~4%)

@@ -3,7 +3,7 @@
 
 /**
  * @file
- * Sky (regular BG), clouds, hills, ground, and water with parallax.
+ * Sky + hills (regular BG), clouds, ground, and water with parallax.
  */
 
 #include "bn_fixed.h"
@@ -37,13 +37,14 @@ private:
     bn::fixed _sky_base_x = 0;
     bn::fixed _sky_base_y = -48;
 
+    bn::optional<bn::regular_bg_ptr> _hills_bg;
+    bn::fixed _hills_base_x = 0;
+    bn::fixed _hills_base_y = 24;
+
     bn::vector<bn::sprite_ptr, 8> _ground;
-    bn::vector<bn::sprite_ptr, 4> _hills;
     bn::vector<bn::sprite_ptr, 8> _water;
     bn::vector<bn::sprite_ptr, 2> _clouds;
 
-    bn::vector<bn::fixed, 4> _hill_base_x;
-    bn::vector<bn::fixed, 4> _hill_base_y;
     bn::vector<bn::fixed, 8> _ground_base_x;
     bn::vector<bn::fixed, 8> _ground_base_y;
     bn::vector<bn::fixed, 8> _water_base_x;
