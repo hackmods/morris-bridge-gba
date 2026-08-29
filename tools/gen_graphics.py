@@ -727,7 +727,7 @@ def make_anchor() -> None:
 
 
 def make_strut() -> None:
-    w, h = 16, 96
+    w, h = 16, 112
     px = fill(w, h)
     track_frames = (
         (5, 12, 1),
@@ -749,6 +749,21 @@ def make_strut() -> None:
         rect(px, w, 6, y0 + 7, 10, y0 + 9, body)
         hline(px, w, 6, 10, y0 + 7, 12)
         hline(px, w, 6, 10, y0 + 9, 1)
+    # Frame 6 — snap crack (jagged break at center).
+    y0 = 6 * 16
+    rect(px, w, 0, y0 + 6, 7, y0 + 10, 5)
+    rect(px, w, 9, y0 + 6, 16, y0 + 10, 5)
+    hline(px, w, 0, 7, y0 + 7, 12)
+    hline(px, w, 9, 16, y0 + 7, 12)
+    hline(px, w, 0, 7, y0 + 9, 1)
+    hline(px, w, 9, 16, y0 + 9, 1)
+    put(px, w, 0, y0 + 6, 1)
+    put(px, w, 15, y0 + 6, 1)
+    put(px, w, 7, y0 + 5, 4)
+    put(px, w, 8, y0 + 6, 9)
+    put(px, w, 7, y0 + 7, 4)
+    put(px, w, 8, y0 + 8, 1)
+    put(px, w, 7, y0 + 9, 4)
     write_indexed_bmp(os.path.join(GFX, "strut.bmp"), w, h, px)
 
 

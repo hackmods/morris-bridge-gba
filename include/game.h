@@ -131,6 +131,7 @@ private:
     bool _build_hints_seen = false;
     int _build_hint_timer = 0;
     int _no_go_timer = 0;
+    int _fail_reveal_timer = 0;
     session::RunScore _last_run_score;
 
     bn::sprite_ptr _cursor;

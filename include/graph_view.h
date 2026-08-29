@@ -23,6 +23,7 @@ inline constexpr int STRUT_PREVIEW_OK = 2;
 inline constexpr int STRUT_PREVIEW_WEAK = 3;
 inline constexpr int STRUT_BRACE_IDLE = 4;
 inline constexpr int STRUT_BRACE_HOT = 5;
+inline constexpr int STRUT_SNAP = 6;
 
 void position_strut_sprite(bn::sprite_ptr& sprite, bn::fixed_point a, bn::fixed_point b, int frame);
 

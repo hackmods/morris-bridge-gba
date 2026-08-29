@@ -433,6 +433,7 @@ int Game::_build_tool_label() const
 
 void Game::_enter_test()
 {
+    _fail_reveal_timer = 0;
     _play_mode = PlayMode::test;
     _selected.reset();
     _cursor.set_visible(false);
@@ -462,6 +463,7 @@ void Game::_enter_test()
 
 void Game::_leave_test()
 {
+    _fail_reveal_timer = 0;
     _bridge.end_test();
     _play_mode = PlayMode::build;
     _train.set_visible(false);
@@ -481,6 +483,7 @@ void Game::_update_test()
 
     if(status == bridge::SimStatus::failed_fall && prev_status == bridge::SimStatus::running)
     {
+        _fail_reveal_timer = 12;
         _trigger_shake();
         _spawn_dust(_train.position());
     }
@@ -505,6 +508,25 @@ void Game::_update_test()
 
     if(status == bridge::SimStatus::failed_fall)
     {
+        if(_fail_reveal_timer > 0)
+        {
+            --_fail_reveal_timer;
+
+            if(const bridge::SnapFlash* flash = _bridge.snap_flash())
+            {
+                view::position_strut_sprite(_preview_strut, flash->a, flash->b, view::STRUT_SNAP);
+                _preview_strut.set_palette(
+                    bn::sprite_items::strut.palette_item().create_palette());
+                _preview_strut.set_visible(true);
+            }
+            else
+            {
+                _preview_strut.set_visible(false);
+            }
+
+            return;
+        }
+
         _show_level_failed();
         return;
     }

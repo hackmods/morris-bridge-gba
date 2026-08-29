@@ -627,8 +627,19 @@ void BridgeSystem::end_test()
 
 void BridgeSystem::_break_strut(int strut_index)
 {
+    const Strut& broken = _struts[strut_index];
+    _snap_flash = SnapFlash{
+        _nodes[broken.node_a].position,
+        _nodes[broken.node_b].position,
+        12,
+    };
     _struts.erase(_struts.begin() + strut_index);
     _recompute_strut_ratings();
+}
+
+const SnapFlash* BridgeSystem::snap_flash() const
+{
+    return _snap_flash.has_value() ? &_snap_flash.value() : nullptr;
 }
 
 void BridgeSystem::_start_falling()
@@ -668,6 +679,17 @@ void BridgeSystem::_apply_tension(int strut_index, bn::fixed distance_along)
 
 SimStatus BridgeSystem::update()
 {
+    if(_snap_flash.has_value())
+    {
+        SnapFlash& flash = _snap_flash.value();
+        --flash.frames;
+
+        if(flash.frames <= 0)
+        {
+            _snap_flash.reset();
+        }
+    }
+
     if(_status == SimStatus::failed_fall)
     {
         _fall_vy += GRAVITY;
