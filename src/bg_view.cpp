@@ -1,10 +1,10 @@
 #include "bg_view.h"
 
+#include "bn_regular_bg_items_bg_ground.h"
 #include "bn_regular_bg_items_bg_hills.h"
 #include "bn_regular_bg_items_bg_sky.h"
+#include "bn_regular_bg_items_bg_water.h"
 #include "bn_sprite_items_cloud.h"
-#include "bn_sprite_items_ground.h"
-#include "bn_sprite_items_water.h"
 
 #include "game_constants.h"
 
@@ -12,6 +12,12 @@ namespace view
 {
 namespace
 {
+
+/// BG center Y so @p bmp_y lands on @p screen_y.
+[[nodiscard]] bn::fixed bg_center_for_screen_y(const bn::fixed screen_y, const int bmp_y)
+{
+    return screen_y - bn::fixed(bmp_y - 128);
+}
 
 [[nodiscard]] bn::fixed hill_y_for_theme(const int bg_theme_id)
 {
@@ -28,6 +34,9 @@ namespace
     }
 }
 
+constexpr int GROUND_STRIP_CENTER_Y = 248;
+constexpr int WATER_STRIP_CENTER_Y = 240;
+
 } // namespace
 
 void BackdropView::init()
@@ -38,6 +47,12 @@ void BackdropView::init()
     _hills_bg = bn::regular_bg_items::bg_hills.create_bg(_hills_base_x, _hills_base_y);
     _hills_bg->set_priority(2);
 
+    _ground_bg = bn::regular_bg_items::bg_ground.create_bg(_ground_base_x, _ground_base_y);
+    _ground_bg->set_priority(1);
+
+    _water_bg = bn::regular_bg_items::bg_water.create_bg(_water_base_x, _water_base_y);
+    _water_bg->set_priority(1);
+
     _clouds.push_back(bn::sprite_items::cloud.create_sprite(-80, -64));
     _clouds.push_back(bn::sprite_items::cloud.create_sprite(24, -72));
     _clouds.back().set_horizontal_scale(bn::fixed(3) / 2);
@@ -45,27 +60,6 @@ void BackdropView::init()
     for(bn::sprite_ptr& cloud : _clouds)
     {
         cloud.set_z_order(25);
-    }
-
-    const int ground_x[] = { -120, -88, -56, -24, 8, 40, 72, 104 };
-    const int water_x[] = { -56, -24, 8, 40, 72, 104, -88, 120 };
-
-    for(int x : ground_x)
-    {
-        bn::sprite_ptr tile = bn::sprite_items::ground.create_sprite(x, game::GROUND_TILE_Y);
-        tile.set_z_order(20);
-        _ground.push_back(tile);
-        _ground_base_x.push_back(x);
-        _ground_base_y.push_back(game::GROUND_TILE_Y);
-    }
-
-    for(int x : water_x)
-    {
-        bn::sprite_ptr tile = bn::sprite_items::water.create_sprite(x, 62);
-        tile.set_z_order(21);
-        _water.push_back(tile);
-        _water_base_x.push_back(x);
-        _water_base_y.push_back(62);
     }
 }
 
@@ -89,14 +83,14 @@ void BackdropView::set_scenery_visible(const bool visible)
         _hills_bg->set_visible(visible);
     }
 
-    for(bn::sprite_ptr& tile : _ground)
+    if(_ground_bg)
     {
-        tile.set_visible(visible);
+        _ground_bg->set_visible(visible);
     }
 
-    for(bn::sprite_ptr& tile : _water)
+    if(_water_bg)
     {
-        tile.set_visible(visible);
+        _water_bg->set_visible(visible);
     }
 }
 
@@ -109,16 +103,19 @@ void BackdropView::reset_scenery_layout()
         _hills_bg->set_y(_hills_base_y);
     }
 
-    for(int i = 0; i < _ground.size(); ++i)
+    const bn::fixed bank_ground_y = game::GROUND_TILE_Y;
+    const bn::fixed water_y = bank_ground_y + 6;
+    _ground_base_y = bg_center_for_screen_y(bank_ground_y, GROUND_STRIP_CENTER_Y);
+    _water_base_y = bg_center_for_screen_y(water_y, WATER_STRIP_CENTER_Y);
+
+    if(_ground_bg)
     {
-        _ground_base_y[i] = game::GROUND_TILE_Y;
-        _ground[i].set_y(game::GROUND_TILE_Y);
+        _ground_bg->set_y(_ground_base_y);
     }
 
-    for(int i = 0; i < _water.size(); ++i)
+    if(_water_bg)
     {
-        _water_base_y[i] = 62;
-        _water[i].set_y(62);
+        _water_bg->set_y(_water_base_y);
     }
 }
 
@@ -133,19 +130,18 @@ void BackdropView::layout_for_level(const level::Def& def)
         _hills_bg->set_y(_hills_base_y);
     }
 
-    for(int i = 0; i < _ground.size(); ++i)
+    _ground_base_y = bg_center_for_screen_y(bank_ground_y, GROUND_STRIP_CENTER_Y);
+
+    if(_ground_bg)
     {
-        const bn::fixed x = _ground_base_x[i];
-        const bool bank_tile = x < -48 || x > 48;
-        const bn::fixed y = bank_tile ? bank_ground_y : game::GROUND_TILE_Y;
-        _ground_base_y[i] = y;
-        _ground[i].set_y(y);
+        _ground_bg->set_y(_ground_base_y);
     }
 
-    for(int i = 0; i < _water.size(); ++i)
+    _water_base_y = bg_center_for_screen_y(water_y, WATER_STRIP_CENTER_Y);
+
+    if(_water_bg)
     {
-        _water_base_y[i] = water_y;
-        _water[i].set_y(water_y);
+        _water_bg->set_y(_water_base_y);
     }
 }
 
@@ -166,11 +162,17 @@ void BackdropView::animate_clouds()
 
 void BackdropView::animate_water(const int frame)
 {
+    if(! _water_bg)
+    {
+        return;
+    }
+
     const int water_frame = (frame / 16) % 2;
 
-    for(bn::sprite_ptr& tile : _water)
+    if(water_frame != _water_frame)
     {
-        tile.set_item(bn::sprite_items::water, water_frame);
+        _water_frame = water_frame;
+        _water_bg->set_map(bn::regular_bg_items::bg_water.map_item(), _water_frame);
     }
 }
 
@@ -191,16 +193,16 @@ void BackdropView::apply_parallax(const bn::fixed parallax_shift, const level::D
         _hills_bg->set_y(_hills_base_y);
     }
 
-    for(int i = 0; i < _ground.size(); ++i)
+    if(_ground_bg)
     {
-        _ground[i].set_x(_ground_base_x[i] - front_shift / 3);
-        _ground[i].set_y(_ground_base_y[i]);
+        _ground_bg->set_x(_ground_base_x - front_shift / 3);
+        _ground_bg->set_y(_ground_base_y);
     }
 
-    for(int i = 0; i < _water.size(); ++i)
+    if(_water_bg)
     {
-        _water[i].set_x(_water_base_x[i] - front_shift / 2);
-        _water[i].set_y(_water_base_y[i]);
+        _water_bg->set_x(_water_base_x - front_shift / 2);
+        _water_bg->set_y(_water_base_y);
     }
 }
 
