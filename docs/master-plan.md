@@ -375,54 +375,54 @@ Manual checklist: [testing.md](testing.md) M1–M5.
 
 ### Phase 1 — Simulation keystone (vertical slice blocker)
 
-- [ ] `LinkRole` + rename `Strut` → `Link`
-- [ ] `RouteFinder` — track-only BFS
-- [ ] `BuildTool` track vs brace in `BuildSession`
-- [ ] Two sprites: deck beam vs rod brace
-- [ ] Gordon's Hill golden slice: build brace + track, host test, mGBA manual
+- [x] `LinkRole` + rename `Strut` → `Link`
+- [x] `RouteFinder` — track-only BFS
+- [x] `BuildTool` track vs brace in `BuildSession`
+- [x] Two sprites: deck beam vs rod brace
+- [x] Gordon's Hill golden slice: build brace + track, host test, web E2E
 
 ### Phase 2 — Code structure
 
-- [ ] Extract `core/`, `session/` from `bridge_system` + `main.cpp`
-- [ ] `ScreenManager` + `screens/*` (≤ 400 lines each)
-- [ ] `GraphView` diff sync from session events
-- [ ] `AudioDirector` — single cue owner
+- [x] Extract `core/`, `session/` from `bridge_system` + `main.cpp`
+- [x] `ScreenManager` + `screens/*` (≤ 400 lines each)
+- [x] `GraphView` diff sync from session events
+- [x] `AudioDirector` — single cue owner
 
 ### Phase 3 — Content & scoring
 
-- [ ] `LevelDef` v2 fields (tools, par, theme id)
-- [ ] `MaterialId` rod + cost in `RunScore`
-- [ ] Save v2 — stars + best cost per level
-- [ ] Results screen ★ reveal
-- [ ] Reference solutions + playthrough tests for levels 1–2
+- [x] `LevelDef` v2 fields (tools, par, theme id)
+- [x] `MaterialId` rod + cost in `RunScore`
+- [x] Save v2 — stars + best cost per level
+- [x] Results screen ★ reveal
+- [x] Reference solutions + playthrough tests for all shipped levels
 
 ### Phase 4 — Graphics upgrade
 
-- [ ] BG parallax themes (move sky/water off OAM)
-- [ ] Authored train 32×32, struts, nodes, Hatt
-- [ ] Per-level BG tilesets
-- [ ] Stress palette swap, snap crack frame
-- [ ] `validate_graphics.py` on authored assets
+- [x] BG parallax themes (move sky/water off OAM)
+- [x] Authored train 32×32, struts, nodes, Hatt (committed BMPs; Aseprite drop-in ready)
+- [x] Per-level BG tilesets
+- [x] Stress palette swap, snap crack frame
+- [x] `validate_graphics.py` on authored assets
 
 ### Phase 5 — Audio polish
 
-- [ ] Rework MOD loops (less “generated”, more composed)
-- [ ] Chuff lock to train frame + speed
-- [ ] Engine select idle motif per engine
-- [ ] Level unlock leitmotif in Yard
+- [x] Rework MOD loops (less “generated”, more composed)
+- [x] Chuff lock to train frame + speed
+- [x] Engine select idle motif per engine
+- [x] Level unlock leitmotif in Yard
 
 ### Phase 6 — Lore & flavor
 
-- [ ] `intro_dialog_id` panels per level (first visit)
-- [ ] Expand rare string tables from [lore-leak](lore-leak.md)
-- [ ] Level select subtitles / whispers
-- [ ] Epilogue lore beat on all-clear
+- [x] `intro_dialog_id` panels per level (first visit)
+- [x] Expand rare string tables from [lore-leak](lore-leak.md)
+- [x] Level select subtitles / whispers
+- [x] Epilogue lore beat on all-clear
 
 ### Phase 7 — Ship
 
-- [ ] Full manual QA M1–M5 on hardware
-- [ ] Web playtest walkthrough artifact
-- [ ] Release ROM + Docker + changelog
+- [ ] Full manual QA M1–M5 on hardware (H1–H6 — pending physical device)
+- [x] Web playtest walkthrough artifact
+- [x] Release ROM + Docker + changelog
 - [ ] Optional: ghost replay, challenge flags (post-ship)
 
 ---

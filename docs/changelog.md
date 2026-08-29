@@ -2,6 +2,11 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Master plan sync + hardware QA reference builds
+
+- Mark Phases 1–6 complete in `docs/master-plan.md` (Phase 7 hardware pending)
+- Add H2/H3 reference build steps to `docs/ship-qa.md` for Delta/EverDrive sign-off
+
 ## 2026-08-29 — Release ROM + walkthrough refresh after BG art
 
 - ROM **340,892 bytes** (BG parallax art pass baked in)
