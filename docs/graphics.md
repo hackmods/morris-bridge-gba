@@ -22,15 +22,31 @@ Each BMP has a matching **`.json`** in [`graphics/`](../graphics/) with `"type":
 - Indexed BMP, no compression
 - Multiples of 8 pixels for sprite dimensions
 
-## Regenerating placeholders
+## Asset workflow (CI validate-only)
+
+Committed BMPs in `graphics/` are the source of truth. CI and `./scripts/build_rom.sh` **validate** assets; they do not regenerate them on every build.
 
 ```bash
-python3 tools/gen_graphics.py
+# Validate dimensions, palette, and Butano JSON sidecars (same as CI)
+python3 tools/gen_graphics.py --check
 ```
 
-This overwrites BMPs in `graphics/`. Replace with your own art but keep JSON filenames aligned — Butano generates `bn::sprite_items::<name>` from the BMP basename.
+To regenerate placeholders after editing `tools/gen_graphics.py` templates locally:
 
-**Upgrade path:** procedural placeholders → Aseprite indexed BMPs → optional validator. See [Future expansion — Graphics upgrade strategy](future-expansion.md#5-graphics-upgrade-strategy-immersive-on-gba).
+```bash
+python3 tools/gen_graphics.py          # overwrites BMPs in graphics/
+python3 tools/gen_graphics.py --check  # confirm before commit
+```
+
+Or rebuild the ROM with a one-shot regen:
+
+```bash
+REGEN_ASSETS=1 ./scripts/build_rom.sh
+```
+
+**Aseprite drop-in:** export indexed BMPs (≤16 colors, index 0 transparent) at the sizes in the table above, keep JSON basenames aligned, then run `--check` and commit. Butano generates `bn::sprite_items::<name>` from the BMP basename.
+
+See [Future expansion — Graphics upgrade strategy](future-expansion.md#5-graphics-upgrade-strategy-immersive-on-gba).
 
 ## Rendering struts in code
 
