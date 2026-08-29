@@ -1006,7 +1006,7 @@ def main() -> None:
         ("splash.json", {"height": 64}),
         ("logo.json", None),
         ("sky.json", None),
-        ("bg_sky.json", None),
+        ("bg_sky.json", {"type": "regular_bg"}),
         ("cloud.json", None),
         ("panel.json", {"height": 32}),
         ("hatt.json", {"height": 16}),
