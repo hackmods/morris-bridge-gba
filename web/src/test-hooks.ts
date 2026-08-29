@@ -129,7 +129,21 @@ export function installTestHooks(
       const save = emulator.readSave();
       return save ? save[5]! : -1;
     },
-    readSaveProgress: () => decodeSaveProgress(emulator.readSave()),
+    readSaveProgress: () => {
+      const module = emulator.getModule();
+      let save = emulator.readSave();
+
+      if (module?.saveName) {
+        try {
+          const raw = module.FS.readFile(module.saveName) as Uint8Array;
+          save = raw.subarray(0, Math.min(raw.length, 32768));
+        } catch {
+          // Fall back to getSave().
+        }
+      }
+
+      return decodeSaveProgress(save);
+    },
     debugSaveState: () => {
       const module = emulator.getModule();
       if (!module) {

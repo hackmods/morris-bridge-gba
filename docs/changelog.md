@@ -2,6 +2,11 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Walkthrough artifact refresh (Phase 7)
+
+- Regenerated all 9 walkthrough PNGs after latest art pass (Hatt, train wheels, portraits, struts)
+- `readSaveProgress()` prefers mGBA FS `.sav` when available
+
 ## 2026-08-29 — SRAM persist E2E + engine portrait badges (Phase 4/7)
 
 - `readSaveProgress()` test hook decodes save_data v3 header
