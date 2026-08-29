@@ -10,7 +10,7 @@ else
 LIBBUTANO    :=  vendor/butano/butano
 endif
 PYTHON       :=  python
-SOURCES      :=  src
+SOURCES      :=  src src/screens
 INCLUDES     :=  include
 DATA         :=
 GRAPHICS     :=  graphics
