@@ -2,6 +2,22 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — GitHub + README ASCII art overhaul
+
+- Root `README.md`: ASCII banner, CI badge, updated feature list and repo table
+- Added `.github/PULL_REQUEST_TEMPLATE.md` and issue template for bugs
+- Renamed stale **Ryan's Bridge** / `ryans-bridge` references in `deploy/caprover.md`
+- Synced ROM size (~284 KB) in `docs/ship-qa.md`, `docs/hardware.md`, `docs/README.md`
+
+## 2026-08-29 — Lore strings + ROM refresh (Phase 6)
+
+- Expanded rare PG label tables (`LISTEN`, `CONFUS`, `LOOP!`, `THIN!`) from `docs/lore-leak.md`
+- Refreshed `rom/thomas_bridge.gba` to 290,572 bytes (ground/water BG + labels)
+
+## 2026-08-29 — Ground/water regular BG (Phase 4)
+
+- Bank ground and animated water moved from OAM to `bg_ground.bmp` / `bg_water.bmp`
+
 ## 2026-08-29 — Phase 7 ship QA (M1–M5)
 
 - Added `docs/ship-qa.md` — CI gates, M1–M5 evidence matrix, hardware sign-off
@@ -17,7 +33,7 @@ Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prot
 ## 2026-08-29 — Hills regular BG layer (Phase 4)
 
 - Far hills moved from 4 OAM sprites to `bg_hills.bmp` regular BG (priority 2)
-- Per-level hill Y offset preserved; ground/water remain OAM (water anim)
+- Per-level hill Y offset preserved; ground/water later moved to regular BG in PR #28
 
 ## 2026-08-29 — Level select flavor + engine idle chuff (Phases 5–6)
 

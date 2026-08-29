@@ -4,9 +4,11 @@ Quick connection reference. Full details: **[`docs/repository.md`](docs/reposito
 
 | | |
 |---|---|
-| **Repository** | `hackmods/morris-bridge-gba` |
-| **URL** | `https://origin.cursor.com/git/hackmods/morris-bridge-gba.git` |
+| **Game** | Thomas's Bridge |
+| **Repository** | [`hackmods/morris-bridge-gba`](https://github.com/hackmods/morris-bridge-gba) |
+| **Origin (push)** | `https://origin.cursor.com/git/hackmods/morris-bridge-gba.git` |
 | **Branch** | `main` |
+| **ROM** | `rom/thomas_bridge.gba` |
 
 ## Push
 

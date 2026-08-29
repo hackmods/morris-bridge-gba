@@ -92,7 +92,7 @@ Several wiki pages still referenced **`leo_bridge.gba`** / Ryan's Bridge from th
 ### High value
 
 - [ ] **Verify CI `web-e2e` on `main`** after merge — needs ROM artifact + Playwright Chromium on GitHub runners.
-- [ ] **Doc rename sweep** — any remaining `leo_bridge` / Ryan's Bridge references outside this wiki pass.
+- [x] **Doc rename sweep** — Ryan's Bridge / `ryans-bridge` removed from deploy docs; README ASCII + GitHub templates added (2026-08-29).
 - [ ] **Manual screen-flow QA (M1–M5)** — listed in [Testing](testing.md#screen-flow-scenarios); not yet automated.
 
 ### Medium

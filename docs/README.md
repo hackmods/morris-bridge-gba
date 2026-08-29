@@ -1,4 +1,4 @@
-# morris-bridge-gba — Documentation Wiki
+# Thomas's Bridge — Documentation
 
 Knowledge base for **Thomas's Bridge** (ROM codename `thomas_bridge`): a Game Boy Advance bridge-building prototype built with [Butano](https://github.com/GValiente/butano).
 
@@ -54,7 +54,6 @@ docs/
 
 ## Repository
 
-- **Name:** `morris-bridge-gba`
-- **Origin:** `https://origin.cursor.com/git/hackmods/morris-bridge-gba.git`
-- **ROM output:** `rom/thomas_bridge.gba` (~264 KB)
+- **GitHub:** [`hackmods/morris-bridge-gba`](https://github.com/hackmods/morris-bridge-gba)
+- **ROM output:** `rom/thomas_bridge.gba` (~284 KB / 290,572 bytes as of 2026-08-29)
 - **License:** zlib (same as Butano) — see root [README](../README.md)
