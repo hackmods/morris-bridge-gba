@@ -2,6 +2,12 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Yard unlock leitmotif (Phase 5)
+
+- `yard.mod` loops four patterns including unlock bell figures (patterns 2–3)
+- New `unlock.wav` sting on engine/level unlock win (`NEW!` flash)
+- Documented in `docs/audio.md`
+
 ## 2026-08-29 — GitHub + README ASCII art overhaul
 
 - Root `README.md`: ASCII banner, CI badge, updated feature list and repo table

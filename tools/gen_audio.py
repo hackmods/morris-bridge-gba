@@ -223,6 +223,16 @@ def make_ui() -> list[int]:
     return mix_tone(523.25, 0.05, 0.28, ((1.0, 1.0),), 0.05, 0.7)
 
 
+def make_unlock() -> list[int]:
+    """Yard unlock leitmotif — bell phrase in G major (matches yard.mod patterns 2–3)."""
+    notes = [(392.0, 0.11), (493.88, 0.11), (523.25, 0.13), (659.25, 0.22)]
+    chunks = [
+        mix_tone(freq, dur, 0.48, ((1.0, 0.72), (2.0, 0.22), (3.0, 0.06)), 0.04, 0.42)
+        for freq, dur in notes
+    ]
+    return concat_u8(*chunks, gap=int(SAMPLE_RATE * 0.012))
+
+
 # ---------------------------------------------------------------------------
 # MOD writer
 # ---------------------------------------------------------------------------
@@ -425,6 +435,11 @@ YARD_A = ["C-2", "-", "E-2", "-", "G-2", "-", "E-2", "-",
 YARD_B = ["E-2", "-", "G-2", "-", "C-3", "-", "G-2", "-",
           "F-2", "-", "A-2", "-", "G-2", "-", "E-2", "-"]
 YARD_BASS = (["C-1", "-", "-", "-", "G-1", "-", "-", "-"] * 4)
+# Unlock leitmotif — brighter bell figures woven into the Yard loop (patterns 2–3).
+YARD_UNLOCK_A = ["G-2", "-", "B-2", "-", "C-3", "-", "E-3", "-",
+                   "G-3", "-", "E-3", "-", "C-3", "-", "G-2", "-"]
+YARD_UNLOCK_B = ["E-3", "-", "G-3", "-", "C-4", "-", "G-3", "-",
+                 "E-3", "-", "C-3", "-", "G-2", "-", "C-2", "-"]
 
 # Workshop Shed — slower thinking music for build mode.
 WORK_A = ["C-2", "E-2", "G-2", "E-2", "F-2", "A-2", "G-2", "E-2",
@@ -466,6 +481,16 @@ def two_pattern_track(melody_a: list[str], melody_b: list[str], bass: list[str],
     return patterns
 
 
+def yard_track() -> list[list[bytes]]:
+    patterns = two_pattern_track(
+        YARD_A, YARD_B, YARD_BASS, melody_sample=INS_BELL, melody_vol=36,
+    )
+    patterns.extend(two_pattern_track(
+        YARD_UNLOCK_A, YARD_UNLOCK_B, YARD_BASS, melody_sample=INS_BELL, melody_vol=40,
+    ))
+    return patterns
+
+
 def generate_modules() -> None:
     write_mod(
         AUDIO_DIR / "island_line.mod",
@@ -478,8 +503,8 @@ def generate_modules() -> None:
     write_mod(
         AUDIO_DIR / "yard.mod",
         "Knapford Yard",
-        two_pattern_track(YARD_A, YARD_B, YARD_BASS, melody_sample=INS_BELL, melody_vol=36),
-        [0, 1],
+        yard_track(),
+        [0, 1, 2, 3],
         speed=7,
         bpm=118,
     )
@@ -605,13 +630,14 @@ def generate_sfx() -> None:
     write_wav_u8(AUDIO_DIR / "snap.wav", make_snap())
     write_wav_u8(AUDIO_DIR / "splash.wav", make_splash())
     write_wav_u8(AUDIO_DIR / "ui.wav", make_ui())
+    write_wav_u8(AUDIO_DIR / "unlock.wav", make_unlock())
 
 
 def validate() -> int:
     errors: list[str] = []
     wavs = [
         "chuff.wav", "whistle.wav", "peep.wav", "useful.wav",
-        "delay.wav", "snap.wav", "splash.wav", "ui.wav",
+        "delay.wav", "snap.wav", "splash.wav", "ui.wav", "unlock.wav",
     ]
     mods = ["island_line.mod", "yard.mod", "workshop.mod", "full_steam.mod"]
 
