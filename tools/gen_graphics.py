@@ -749,6 +749,7 @@ def make_cursor() -> None:
 
 
 def make_node() -> None:
+    """16×16 riveted trestle cap — visible joint at build nodes."""
     w = h = 16
     px = fill(w, h)
     blit_map(px, w, 0, 0, """
@@ -762,52 +763,82 @@ def make_node() -> None:
 ....1a522225a1....
 .....1aaaaaa1.....
 ......111111......
-.................
-.................
-.................
+.....1......1.....
+....1..1111..1....
+....1.1aaaa1.1....
+....1.1aaaa1.1....
+....1..1111..1....
+.....1......1.....
 """)
     write_indexed_bmp(os.path.join(GFX, "node.bmp"), w, h, px)
 
 
 def make_anchor() -> None:
-    w = h = 8
+    """16×16 bank anchor plate — bolted embankment tie."""
+    w = h = 16
     px = fill(w, h)
     blit_map(px, w, 0, 0, """
-.111111.
-1dddddd1
-1dcccd1.
-1dc3cd1.
-1dcccd1.
-1dddddd1
-.111111.
-........
+....11111111....
+...1dddddddd1...
+..1ddccccccdd1..
+..1dc111111cd1..
+..1dc1aaaa1cd1..
+..1dc1aaaa1cd1..
+..1dc111111cd1..
+..1ddccccccdd1..
+...1dddddddd1...
+....11111111....
+....1......1....
+....1.1111.1....
+....1.1aa1.1....
+....1.1aa1.1....
+....1.1111.1....
+....1......1....
 """)
     write_indexed_bmp(os.path.join(GFX, "anchor.bmp"), w, h, px)
+
+
+def draw_timber_beam(px: list[int], w: int, y0: int, body: int, hi: int, lo: int, rail: int) -> None:
+    """16×8 timber deck with metal rail cap (master-plan track link)."""
+    rect(px, w, 0, y0 + 3, 16, y0 + 11, body)
+    hline(px, w, 0, 16, y0 + 3, hi)
+    hline(px, w, 0, 16, y0 + 4, rail)
+    hline(px, w, 0, 16, y0 + 5, 2)
+    hline(px, w, 0, 16, y0 + 10, lo)
+    hline(px, w, 0, 16, y0 + 11, 1)
+    put(px, w, 0, y0 + 3, 1)
+    put(px, w, 15, y0 + 3, 1)
+    for x in range(2, 15, 3):
+        put(px, w, x, y0 + 7, lo)
+        put(px, w, x + 1, y0 + 8, hi if x % 6 else body)
+    for x in range(4, 13, 4):
+        put(px, w, x, y0 + 6, 10)
+        put(px, w, x, y0 + 9, 10)
 
 
 def make_strut() -> None:
     w, h = 16, 112
     px = fill(w, h)
     track_frames = (
-        (5, 12, 1),
-        (9, 4, 1),
-        (8, 2, 1),
-        (9, 3, 1),
+        (5, 12, 13, 10),
+        (9, 4, 1, 10),
+        (5, 12, 13, 10),
+        (9, 3, 1, 10),
     )
     for frame, colors in enumerate(track_frames):
         y0 = frame * 16
-        body, hi, lo = colors
-        rect(px, w, 0, y0 + 6, 16, y0 + 10, body)
-        hline(px, w, 0, 16, y0 + 7, hi)
-        hline(px, w, 0, 16, y0 + 9, lo)
-        put(px, w, 0, y0 + 6, 1)
-        put(px, w, 15, y0 + 6, 1)
-    # Brace rod frames (4–5): thinner diagonal-friendly beam.
-    for frame, body in enumerate((6, 9)):
+        body, hi, lo, rail = colors
+        draw_timber_beam(px, w, y0, body, hi, lo, rail)
+    # Brace rod frames (4–5): darker metal rod with rivet ends.
+    for frame, (body, hi) in enumerate(((10, 2), (1, 12))):
         y0 = (4 + frame) * 16
-        rect(px, w, 6, y0 + 7, 10, y0 + 9, body)
-        hline(px, w, 6, 10, y0 + 7, 12)
-        hline(px, w, 6, 10, y0 + 9, 1)
+        rect(px, w, 5, y0 + 7, 11, y0 + 9, body)
+        hline(px, w, 5, 11, y0 + 7, hi)
+        hline(px, w, 5, 11, y0 + 9, 1)
+        put(px, w, 4, y0 + 8, hi)
+        put(px, w, 12, y0 + 8, hi)
+        vline(px, w, 5, y0 + 7, y0 + 10, 1)
+        vline(px, w, 10, y0 + 7, y0 + 10, 1)
     # Frame 6 — snap crack (jagged break at center).
     y0 = 6 * 16
     rect(px, w, 0, y0 + 6, 7, y0 + 10, 5)

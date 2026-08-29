@@ -9,7 +9,7 @@
 | `strut.bmp` | 16×1 (line) | Beam segment (scaled/rotated) |
 | `train.bmp` | 32×32 × 5 engines × 2 frames | Side-view tank engines (Thomas, Percy, Edward, James, Gordon) |
 | `portrait.bmp` | 32×32 × 5 | Engine select portraits with name plate |
-| `anchor.bmp` | 8×8 | Bank anchor marker |
+| `anchor.bmp` | 16×16 | Bank anchor plate (riveted) |
 | `ground.bmp` | — | Canyon bank tiles |
 | `water.bmp` | — | Gap / water backdrop |
 | `label.bmp` | 32×8 frames | HUD text tiles (BUILD, TEST, hints, etc.) |

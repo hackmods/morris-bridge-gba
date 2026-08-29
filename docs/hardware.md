@@ -38,7 +38,7 @@ Recommended before hardware testing:
 
 ## ROM details
 
-- Size: ~330 KB (338,236 bytes as of 2026-08-29 release)
+- Size: ~330 KB (338,332 bytes as of 2026-08-29 release)
 - Title: `THOMASBRIDGE`
 - Code: `THOM01`
 - Resolution: 240×160 @ 60 Hz target
