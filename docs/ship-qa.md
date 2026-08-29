@@ -15,7 +15,7 @@ This document records master-plan **M1–M5** screen-flow QA and related ship ga
 | Host physics + session | `make -C tests` | Green on `main` |
 | All-level playthroughs | `test_physics` Knapford / Gordon / Vicarstown 3★ | Green |
 | Web unit tests | `cd web && npm test` | Green |
-| Web E2E (ROM boot, gameplay, **ship-qa M1–M5**, Gordon save) | `npm run test:e2e` | Green on `main` (22 tests) |
+| Web E2E (ROM boot, gameplay, **ship-qa M1–M2 + Gordon win**, M3–M5) | `npm run test:e2e` | Green on `main` (23 tests) |
 | GBA ROM build | Release workflow `build-rom` | Green |
 | Graphics lint | `validate_graphics.py` in host tests | Green |
 | Audio lint | `gen_audio.py --check` | Green |
@@ -128,6 +128,7 @@ Record results in this file or a hardware test log when complete.
 | M1/M2 simulation playthroughs | Yes |
 | M1 web win E2E | Yes (`ship-qa.spec.ts`) |
 | M2 web fail E2E | Yes (`ship-qa.spec.ts`) |
+| Gordon Hill web win E2E | Yes (`ship-qa.spec.ts` + `?walkthrough=gordon`) |
 | Hardware EverDrive smoke | Pending physical device — see H1–H6 checklist below |
 | Walkthrough artifact | `artifacts/walkthrough/` (7 PNGs) + `web/e2e/walkthrough-capture.spec.ts` |
 

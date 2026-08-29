@@ -2,9 +2,11 @@ import { test, expect } from '@playwright/test';
 import {
   assertCanvasChanged,
   assertCanvasIsRendering,
+  buildGordonHillReferenceBridge,
   buildKnapfordReferenceBridge,
   buildOverlongKnapfordSpan,
   navigateToBuildMode,
+  navigateToGordonBuildMode,
   waitForRenderSettle,
 } from './helpers';
 
@@ -88,6 +90,21 @@ test.describe('Ship QA navigation smoke (M1–M2)', () => {
     const beforeTest = await page.locator('#game-canvas').screenshot();
     await page.evaluate(() => window.__TEST__!.tapButton('Start'));
     await page.waitForTimeout(12_000);
+
+    const afterTest = await page.locator('#game-canvas').screenshot();
+    expect(beforeTest.equals(afterTest)).toBe(false);
+    await assertCanvasIsRendering(page, 500);
+  });
+
+  test("Gordon's Hill reference bridge wins with walkthrough save", async ({ page }) => {
+    test.setTimeout(240_000);
+
+    await navigateToGordonBuildMode(page);
+    await buildGordonHillReferenceBridge(page);
+
+    const beforeTest = await page.locator('#game-canvas').screenshot();
+    await page.evaluate(() => window.__TEST__!.tapButton('Start'));
+    await page.waitForTimeout(22_000);
 
     const afterTest = await page.locator('#game-canvas').screenshot();
     expect(beforeTest.equals(afterTest)).toBe(false);
