@@ -1,4 +1,4 @@
-# Deploy Ryan's Bridge playtest to CapRover
+# Deploy Thomas's Bridge playtest to CapRover
 
 Friends can play the GBA web emulator at your CapRover URL once this is set up. The
 [`release.yml`](../.github/workflows/release.yml) workflow builds the ROM, packages the
@@ -7,7 +7,7 @@ to CapRover on every push to `main` or version tag (`v*`).
 
 ## 1. Create the CapRover app
 
-1. In CapRover, create a new app (e.g. `ryans-bridge`).
+1. In CapRover, create a new app (e.g. `thomas-bridge`).
 2. Enable **HTTPS** and set your domain (e.g. `bridge.yourdomain.com`).
 3. Under **HTTP Settings**, leave the container port at **80**.
 4. Under **App Configs → Container HTTP Settings**, no special env vars are required.
@@ -28,7 +28,7 @@ In GitHub → **Settings → Secrets and variables → Actions**, add:
 | Secret | Example | Purpose |
 |--------|---------|---------|
 | `CAPROVER_SERVER` | `captain.yourdomain.com` | CapRover dashboard host (no `https://`) |
-| `CAPROVER_APP_NAME` | `ryans-bridge` | App name from step 1 |
+| `CAPROVER_APP_NAME` | `thomas-bridge` | App name from step 1 |
 | `CAPROVER_APP_TOKEN` | *(from CapRover app settings)* | Deploy token for that app |
 
 Create the CapRover app token: open the app → **Deployment** tab → enable
@@ -62,8 +62,8 @@ If you build locally:
 
 ```bash
 ./scripts/sync_rom_to_web.sh
-docker build -t ryans-bridge:local .
-docker run --rm -p 8080:80 ryans-bridge:local
+docker build -t morris-bridge-gba:local .
+docker run --rm -p 8080:80 morris-bridge-gba:local
 # open http://localhost:8080
 ```
 

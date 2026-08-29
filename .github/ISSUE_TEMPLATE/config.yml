@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation wiki
+    url: https://github.com/hackmods/morris-bridge-gba/blob/main/docs/README.md
+    about: Getting started, master plan, troubleshooting
+  - name: Ship QA record
+    url: https://github.com/hackmods/morris-bridge-gba/blob/main/docs/ship-qa.md
+    about: M1–M5 manual and automated verification

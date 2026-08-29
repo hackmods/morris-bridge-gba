@@ -1,7 +1,7 @@
 # Ship QA — Phase 7 verification
 
 **Product:** Thomas's Bridge (`thomas_bridge.gba`)  
-**ROM:** `THOMASBRIDGE` / `THOM01` · ~276 KB (282,636 bytes) as of 2026-08-29  
+**ROM:** `THOMASBRIDGE` / `THOM01` · ~284 KB (290,572 bytes) as of 2026-08-29  
 **Release branch:** `main`
 
 This document records master-plan **M1–M5** screen-flow QA and related ship gates. Physical GBA hardware was not available in the Cloud Agent environment; **mGBA-WASM web playtest** and **host playthrough tests** provide equivalent coverage where noted.
