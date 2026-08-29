@@ -76,3 +76,15 @@ export async function assertCanvasChanged(page: Page, waitMs = 2_500): Promise<v
 export async function screenshotCanvas(page: Page, name: string): Promise<void> {
   await page.locator('#game-canvas').screenshot({ path: `test-results/${name}.png` });
 }
+
+/** Title → level select → engine select → (intro) → build mode. */
+export async function navigateToBuildMode(page: Page): Promise<void> {
+  await waitForRenderSettle(page, 3_000);
+
+  for (let step = 0; step < 4; ++step) {
+    await page.evaluate(() => window.__TEST__!.tapButton('Start'));
+    await page.waitForTimeout(1_200);
+  }
+
+  await page.waitForTimeout(1_500);
+}
