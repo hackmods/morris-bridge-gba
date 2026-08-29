@@ -8,6 +8,8 @@
 
 #include "bn_fixed.h"
 
+#include "engine.h"
+
 namespace audio
 {
 
@@ -30,12 +32,20 @@ public:
     void duck_for_pause();
     void restore_from_pause();
 
+    /** Yard patterns 0–1 — level select / intro idler. */
+    void play_yard_menu();
+
+    /** Yard patterns 4+ — engine-select idle motif for @p id. */
+    void play_yard_engine_motif(engine::Id id);
+
     [[nodiscard]] MusicCue current() const
     {
         return _current;
     }
 
 private:
+    void ensure_yard_playing();
+
     MusicCue _current = MusicCue::none;
     bn::fixed _normal_volume = NORMAL_VOLUME;
     bn::fixed _pause_volume = PAUSE_VOLUME;

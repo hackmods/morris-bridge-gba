@@ -2,6 +2,12 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Engine idle motifs (Phase 5)
+
+- `yard.mod` extended to 14 patterns with per-engine bell motifs (patterns 4–13)
+- Engine select jumps to the selected engine's motif via `AudioDirector::play_yard_engine_motif`
+- Level select / intro use `play_yard_menu()` (patterns 0–1)
+
 ## 2026-08-29 — Stress palette + snap crack frame (Phase 4)
 
 - Hot struts swap to a red stress palette while pulsing under load

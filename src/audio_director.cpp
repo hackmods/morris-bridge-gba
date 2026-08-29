@@ -6,6 +6,34 @@
 namespace audio
 {
 
+namespace
+{
+
+constexpr int YARD_ENGINE_MOTIF_BASE = 4;
+
+} // namespace
+
+void Director::ensure_yard_playing()
+{
+    if(_current != MusicCue::yard)
+    {
+        _current = MusicCue::yard;
+        bn::music_items::yard.play(_normal_volume, true);
+    }
+}
+
+void Director::play_yard_menu()
+{
+    ensure_yard_playing();
+    bn::music::set_position(0);
+}
+
+void Director::play_yard_engine_motif(const engine::Id id)
+{
+    ensure_yard_playing();
+    bn::music::set_position(YARD_ENGINE_MOTIF_BASE + int(id) * 2);
+}
+
 void Director::play(const MusicCue cue)
 {
     if(cue == _current)

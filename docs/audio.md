@@ -26,7 +26,13 @@ The music is **original**. It aims for cheerful steam-railway / 1980s British ch
 | **UI tick** | `audio/ui.wav` | Menu move | one-shot |
 | **Unlock leitmotif** | `audio/unlock.wav` | Engine / level unlock on win | one-shot |
 
-**Knapford Yard** (`yard.mod`) loops four patterns: the station idler plus an unlock leitmotif figure on patterns 2–3.
+**Knapford Yard** (`yard.mod`) loops fourteen patterns:
+
+| Patterns | Use |
+|----------|-----|
+| 0–1 | Level select / intro idler (Bxx loop) |
+| 2–3 | Unlock leitmotif figures (Bxx loop) |
+| 4–13 | Per-engine idle motifs on engine select (Thomas, Percy, Edward, James, Gordon) |
 
 Pause ducks music volume to 20% and restores it on resume.
 
