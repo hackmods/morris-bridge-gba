@@ -2,6 +2,20 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Engine v2 ship wave (PRs #14–#19)
+
+Merged engine v2 architecture and Phase 1–3/6 foundations into `main`:
+
+| Area | Highlights |
+|------|------------|
+| **Simulation** | LinkRole track vs brace, per-level tools, host playthrough per level |
+| **Session** | RunScore ★ efficiency, SRAM v2/v3 (stars, intro_seen) |
+| **Structure** | AudioDirector, BackdropView, GraphView, screen types, ScreenManager dispatch |
+| **Lore** | First-visit level intros, rare whispers, all-clear PEEP epilogue |
+| **CI** | Web E2E, Docker web build fix (`vite-env.d.ts`), full 7-check green |
+
+Reference solutions: Knapford, Gordon's Hill, Vicarstown (3★ at par). `main.cpp` ~1770 lines (down from ~2090).
+
 ## 2026-08-28 — Refresh prebuilt ROM + CI audio fix
 
 - CI `build-rom` now runs `tools/gen_audio.py` before `make` (fixes missing `bn_music_items_*` headers)

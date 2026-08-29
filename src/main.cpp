@@ -42,6 +42,7 @@
 #include "progress.h"
 #include "run_score.h"
 #include "save_data.h"
+#include "screen_manager.h"
 #include "screen_types.h"
 
 namespace
@@ -50,6 +51,18 @@ namespace
 using Screen = screen::Id;
 using PlayMode = screen::PlayMode;
 using PauseOption = screen::PauseOption;
+
+class Game;
+
+void screen_trampoline_title(void* context);
+void screen_trampoline_level_select(void* context);
+void screen_trampoline_engine_select(void* context);
+void screen_trampoline_level_intro(void* context);
+void screen_trampoline_playing(void* context);
+void screen_trampoline_pause(void* context);
+void screen_trampoline_level_complete(void* context);
+void screen_trampoline_level_failed(void* context);
+void screen_trampoline_all_complete(void* context);
 
 constexpr bn::fixed CURSOR_SPEED = 3;
 constexpr bn::fixed CURSOR_FAST = 6;
@@ -161,6 +174,16 @@ constexpr int MENU_ENGINE_BASE = 7;
 
 class Game
 {
+    friend void screen_trampoline_title(void* context);
+    friend void screen_trampoline_level_select(void* context);
+    friend void screen_trampoline_engine_select(void* context);
+    friend void screen_trampoline_level_intro(void* context);
+    friend void screen_trampoline_playing(void* context);
+    friend void screen_trampoline_pause(void* context);
+    friend void screen_trampoline_level_complete(void* context);
+    friend void screen_trampoline_level_failed(void* context);
+    friend void screen_trampoline_all_complete(void* context);
+
 public:
     Game() :
         _cursor(bn::sprite_items::cursor.create_sprite(0, 0)),
@@ -215,6 +238,7 @@ public:
         _load_progress();
         _place_splash_tiles();
         _backdrop.init();
+        _register_screen_handlers();
         _show_title();
     }
 
@@ -224,50 +248,24 @@ public:
         _animate_backdrop();
         _update_shake();
         _update_dust();
-
-        switch(_screen)
-        {
-            case Screen::title:
-                _update_title();
-                break;
-
-            case Screen::level_select:
-                _update_level_select();
-                break;
-
-            case Screen::engine_select:
-                _update_engine_select();
-                break;
-
-            case Screen::level_intro:
-                _update_level_intro();
-                break;
-
-            case Screen::playing:
-                _update_playing();
-                break;
-
-            case Screen::pause:
-                _update_pause();
-                break;
-
-            case Screen::level_complete:
-                _update_level_complete();
-                break;
-
-            case Screen::level_failed:
-                _update_level_failed();
-                break;
-
-            case Screen::all_complete:
-                _update_all_complete();
-                break;
-        }
-
+        _screen_manager.update(_screen, this);
         _animate_train();
     }
 
 private:
+    void _register_screen_handlers()
+    {
+        _screen_manager.set_handler(Screen::title, screen_trampoline_title);
+        _screen_manager.set_handler(Screen::level_select, screen_trampoline_level_select);
+        _screen_manager.set_handler(Screen::engine_select, screen_trampoline_engine_select);
+        _screen_manager.set_handler(Screen::level_intro, screen_trampoline_level_intro);
+        _screen_manager.set_handler(Screen::playing, screen_trampoline_playing);
+        _screen_manager.set_handler(Screen::pause, screen_trampoline_pause);
+        _screen_manager.set_handler(Screen::level_complete, screen_trampoline_level_complete);
+        _screen_manager.set_handler(Screen::level_failed, screen_trampoline_level_failed);
+        _screen_manager.set_handler(Screen::all_complete, screen_trampoline_all_complete);
+    }
+
     void _sync_graph_sprites()
     {
         const bool visible = _screen == Screen::playing;
@@ -1714,6 +1712,7 @@ private:
     bridge::BridgeSystem _bridge;
     Screen _screen = Screen::title;
     PlayMode _play_mode = PlayMode::build;
+    screen::Manager _screen_manager;
     bridge::LinkRole _connect_role = bridge::LinkRole::track;
     bn::fixed_point _cursor_pos;
     bn::optional<int> _selected;
@@ -1759,6 +1758,51 @@ private:
     view::GraphView _graph;
     bn::vector<bn::sprite_ptr, 4> _splash;
 };
+
+void screen_trampoline_title(void* context)
+{
+    static_cast<Game*>(context)->_update_title();
+}
+
+void screen_trampoline_level_select(void* context)
+{
+    static_cast<Game*>(context)->_update_level_select();
+}
+
+void screen_trampoline_engine_select(void* context)
+{
+    static_cast<Game*>(context)->_update_engine_select();
+}
+
+void screen_trampoline_level_intro(void* context)
+{
+    static_cast<Game*>(context)->_update_level_intro();
+}
+
+void screen_trampoline_playing(void* context)
+{
+    static_cast<Game*>(context)->_update_playing();
+}
+
+void screen_trampoline_pause(void* context)
+{
+    static_cast<Game*>(context)->_update_pause();
+}
+
+void screen_trampoline_level_complete(void* context)
+{
+    static_cast<Game*>(context)->_update_level_complete();
+}
+
+void screen_trampoline_level_failed(void* context)
+{
+    static_cast<Game*>(context)->_update_level_failed();
+}
+
+void screen_trampoline_all_complete(void* context)
+{
+    static_cast<Game*>(context)->_update_all_complete();
+}
 
 } // namespace
 
