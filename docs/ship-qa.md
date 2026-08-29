@@ -75,9 +75,41 @@ Use [testing.md](testing.md) for the full GBA and web checklist. Recommended ord
 
 ## Walkthrough artifact
 
-Web playthrough demonstrating title → level select → build mode on the shipped ROM (Phase 7 deliverable). See Cloud Agent walkthrough recording / screenshots attached to the Phase 7 PR.
+Captured via Playwright (`web/e2e/walkthrough-capture.spec.ts`):
+
+```bash
+./scripts/sync_rom_to_web.sh
+cd web && WALKTHROUGH_DIR=../artifacts/walkthrough npm run test:e2e -- e2e/walkthrough-capture.spec.ts
+```
+
+| Screenshot | Screen |
+|------------|--------|
+| `01_title_screen` | Island Line title |
+| `02_level_select` | PICK TRACK (Knapford) |
+| `03_engine_select` | PICK ENGINE + Thomas portrait |
+| `04_knapford_build` | BUILD mode + meadow theme |
+| `05_knapford_test_no_go` | Test start → NO GO auto-return |
+
+Gordon's Hill / Vicarstown themed BG and brace tools require SRAM unlock (clear prior track). Host `run_level_playthrough(1|2)` proves 3★ reference wins on those levels.
 
 **Reference win build (M1 simulation source of truth):** `include/level_solutions.h` → `build_knapford_reference()` — must match host `run_level_playthrough(0)`.
+
+---
+
+## EverDrive hardware sign-off (pending physical device)
+
+Run on real GBA / EverDrive after copying `rom/thomas_bridge.gba` (334,984 bytes) to SD `GBA/`:
+
+| Step | Check | Pass? |
+|------|-------|-------|
+| H1 | ROM boots to title; no crash in 60 s attract loop | |
+| H2 | Level select → Knapford build → test → reference win → HATT OK | |
+| H3 | Clear Knapford → Gordon's Hill unlocks; hill BG theme visible; brace tool works | |
+| H4 | Engine select plays per-engine yard motif when scrolling | |
+| H5 | Pause (Select) ducks music; resume restores volume | |
+| H6 | Power off/on — SRAM stars + intro_seen persist | |
+
+Record results in this file or a hardware test log when complete.
 
 ---
 
@@ -90,7 +122,7 @@ Web playthrough demonstrating title → level select → build mode on the shipp
 | CI pyramid green | Yes |
 | M3–M5 E2E | Yes |
 | M1/M2 simulation playthroughs | Yes |
-| Hardware EverDrive smoke | Pending physical device |
-| Walkthrough artifact | PR / agent recording |
+| Hardware EverDrive smoke | Pending physical device — see H1–H6 checklist below |
+| Walkthrough artifact | `web/e2e/walkthrough-capture.spec.ts` + Cloud Agent screenshots |
 
 Post-ship optional: ghost replay, challenge flags (master-plan §13).
