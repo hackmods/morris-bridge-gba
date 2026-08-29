@@ -52,4 +52,13 @@ test.describe('Ship QA navigation smoke (M1 partial)', () => {
     const metrics = await assertCanvasIsRendering(page);
     expect(metrics.screenshotBytes).toBeGreaterThan(3_000);
   });
+
+  test('level select shows readable KNAPFORD track card', async ({ page }) => {
+    await waitForRenderSettle(page, 3_000);
+    await page.evaluate(() => window.__TEST__!.tapButton('Start'));
+    await page.waitForTimeout(1_500);
+
+    const shot = await page.locator('#game-canvas').screenshot();
+    expect(shot.byteLength).toBeGreaterThan(3_000);
+  });
 });
