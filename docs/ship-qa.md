@@ -146,6 +146,7 @@ Web E2E builds the same layouts via `web/e2e/helpers.ts` (`buildKnapfordReferenc
 | M2 web fail E2E | Yes (`ship-qa.spec.ts`) |
 | Gordon Hill web win E2E | Yes (`ship-qa.spec.ts` + `?walkthrough=gordon`) |
 | Vicarstown web win E2E | Yes (`ship-qa.spec.ts` + `?walkthrough=vicarstown`) |
+| Hardware QA web proxies | Yes (`hardware-qa-proxy.spec.ts` H1–H5; `sram-persist.spec.ts` H6 soft reset) |
 | Hardware EverDrive smoke | Pending physical device — see H1–H6 checklist below |
 | Walkthrough artifact | `artifacts/walkthrough/` (9 PNGs) + `web/e2e/walkthrough-capture.spec.ts` |
 
