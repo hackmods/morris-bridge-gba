@@ -2,6 +2,12 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Level select track cards + release ROM refresh
+
+- Replaced broken level select (empty panel + tiny 5-char menu row) with 64×32 **track_card** sprites: KNAPFORD/FLAT!, GORDON/HILL!, VICARSTOWN/LONG!
+- Added missing **F** glyph to procedural font (KNAPFORD was rendering as KNAP ORD)
+- Release ROM refreshed to **338,236 bytes** (includes track_card assets)
+
 ## 2026-08-29 — Gordon's Hill walkthrough save + capture (Phase 7)
 
 - `tools/gen_playtest_save.py` writes mGBA SRAM saves for web playtest walkthroughs
