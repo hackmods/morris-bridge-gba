@@ -121,7 +121,7 @@ Record results in this file or a hardware test log when complete.
 
 ### Delta emulator (iOS)
 
-1. **Import ROM:** AirDrop or Files → import `rom/thomas_bridge.gba` into Delta.
+1. **Import ROM:** AirDrop or Files → import `rom/thomas_bridge.gba` into Delta. Or download **`thomas_bridge.gba`** from the [v1.0.0 draft release](https://github.com/hackmods/morris-bridge-gba/releases) on GitHub (publish after H1–H6 pass).
 2. **Fresh SRAM (H1/H2):** Long-press the game → delete save data, or remove any existing `thomas_bridge.sav` before first boot.
 3. **H3 shortcut (optional):** Skip manual Knapford clear by seeding a walkthrough save:
    ```bash
