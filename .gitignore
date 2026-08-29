@@ -17,3 +17,10 @@ __pycache__/
 web/node_modules/
 web/dist/
 web/public/rom/*.gba
+tests/test_*
+
+# Host test binaries
+tests/test_physics
+tests/test_progress
+tests/test_save_data
+tests/test_session
