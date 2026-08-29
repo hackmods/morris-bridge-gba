@@ -31,6 +31,7 @@ test: test_physics test_progress test_save_data test_session
 	python3 ../tools/gen_audio.py --check
 	python3 ../tools/validate_graphics.py
 	python3 ../tools/validate_level.py --check
+	python3 ../tools/gen_playtest_save.py --check
 
 clean:
 	rm -f test_physics test_progress test_save_data test_session test_physics.exe test_progress.exe test_save_data.exe test_session.exe

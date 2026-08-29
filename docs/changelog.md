@@ -2,6 +2,12 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Gordon's Hill walkthrough save + capture (Phase 7)
+
+- `tools/gen_playtest_save.py` writes mGBA SRAM saves for web playtest walkthroughs
+- Web playtest injects `gordon_hill_walkthrough.sav` via `__TEST__.loadWalkthroughSave()`
+- Walkthrough capture spec screenshots Gordon's Hill build + ROD/brace toggle
+
 ## 2026-08-29 — Per-theme BG tilesets (Phase 4)
 
 - Three BG theme sets (`knapford`, `hill`, `viaduct`) for sky/hills/ground/water layers

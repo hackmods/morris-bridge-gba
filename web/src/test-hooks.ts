@@ -16,6 +16,7 @@ export interface PlaytestTestHooks {
   hasError(): boolean;
   enqueue(command: string): void;
   tapButton(button: string): void;
+  loadWalkthroughSave(): Promise<void>;
   sampleCanvas(): CanvasSample;
   waitForFrames(minFrames: number, timeoutMs?: number): Promise<number>;
 }
@@ -47,6 +48,19 @@ export function installTestHooks(
     tapButton: (button) => {
       emulator.pressButton(button);
       window.setTimeout(() => emulator.unpressButton(button), 100);
+    },
+    loadWalkthroughSave: async () => {
+      const response = await fetch('/saves/gordon_hill_walkthrough.sav');
+
+      if (!response.ok) {
+        throw new Error('Missing /saves/gordon_hill_walkthrough.sav — run tools/gen_playtest_save.py');
+      }
+
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      emulator.injectSave(bytes);
+      await new Promise<void>((resolve) => {
+        window.setTimeout(resolve, 4_000);
+      });
     },
     sampleCanvas: () => sampleCanvas(document.getElementById('game-canvas') as HTMLCanvasElement),
     waitForFrames: (minFrames, timeoutMs = 30_000) =>
