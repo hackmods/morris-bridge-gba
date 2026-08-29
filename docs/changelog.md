@@ -2,6 +2,12 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Hatt bust + train wheel art (Phase 4)
+
+- Hatt: wider top hat, coat shoulders, stern/furious expressions (16×16 frames)
+- Train: visible drive wheels + connecting rod on chuff frame for all engines
+- Regenerated `hatt.bmp` + `train.bmp`; release ROM refresh follows CI build
+
 ## 2026-08-29 — Authored strut/node/anchor sprites (Phase 4)
 
 - Track links: 16×8 timber deck with metal rail cap, grain, and rivets
