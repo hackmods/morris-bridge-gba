@@ -219,3 +219,70 @@ export async function buildGordonHillReferenceBridge(page: Page): Promise<void> 
 
   await page.waitForTimeout(500);
 }
+
+/** Vicarstown build with ?walkthrough=vicarstown (all_unlocked save). */
+export async function navigateToVicarstownBuildMode(page: Page): Promise<void> {
+  await page.goto('/?walkthrough=vicarstown');
+  await waitForRenderSettle(page, 3_000);
+
+  const { tap } = createInputHelpers(page);
+
+  await tap('Start');
+  await page.waitForTimeout(1_200);
+  await tap('Down');
+  await tap('Down');
+  await page.waitForTimeout(800);
+  await tap('Start');
+  await page.waitForTimeout(1_200);
+  await tap('Down');
+  await tap('Down');
+  await tap('Down');
+  await page.waitForTimeout(400);
+  await tap('Start');
+  await page.waitForTimeout(1_500);
+}
+
+/** Build Vicarstown reference track + START brace (host playthrough layout). */
+export async function buildVicarstownReferenceBridge(page: Page): Promise<void> {
+  const { tap, fast, hold } = createInputHelpers(page);
+
+  await fast('Left', 220);
+  await tap('A');
+  await fast('Right', 420);
+  await tap('A');
+  await fast('Left', 420);
+  await tap('A');
+  await fast('Right', 420);
+  await tap('A');
+  await fast('Left', 420);
+  await tap('A');
+  await fast('Right', 420);
+  await tap('A');
+  await fast('Left', 420);
+  await tap('A');
+  await fast('Right', 420);
+  await tap('A');
+  await fast('Left', 420);
+  await tap('A');
+  await fast('Right', 420);
+  await tap('A');
+  await fast('Left', 420);
+  await tap('A');
+  await fast('Right', 420);
+  await tap('A');
+  await fast('Left', 420);
+  await tap('A');
+  await fast('Right', 420);
+  await tap('A');
+  await fast('Right', 420);
+  await tap('A');
+
+  await tap('R');
+  await fast('Left', 220);
+  await tap('A');
+  await hold(['R', 'Down'], 280);
+  await hold(['R', 'Right'], 220);
+  await tap('A');
+
+  await page.waitForTimeout(500);
+}

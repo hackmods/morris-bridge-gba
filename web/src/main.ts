@@ -224,6 +224,8 @@ async function main(): Promise<void> {
     const walkthrough = new URLSearchParams(window.location.search).get('walkthrough');
     if (walkthrough === 'gordon') {
       await emulator.prepareWalkthroughSave('/saves/gordon_hill_walkthrough.sav');
+    } else if (walkthrough === 'vicarstown') {
+      await emulator.prepareWalkthroughSave('/saves/all_unlocked.sav');
     }
 
     await emulator.init();

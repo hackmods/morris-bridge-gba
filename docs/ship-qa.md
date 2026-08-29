@@ -15,7 +15,7 @@ This document records master-plan **M1–M5** screen-flow QA and related ship ga
 | Host physics + session | `make -C tests` | Green on `main` |
 | All-level playthroughs | `test_physics` Knapford / Gordon / Vicarstown 3★ | Green |
 | Web unit tests | `cd web && npm test` | Green |
-| Web E2E (ROM boot, gameplay, **ship-qa M1–M2 + Gordon win**, M3–M5) | `npm run test:e2e` | Green on `main` (23 tests) |
+| Web E2E (all-level wins, M1–M2, M3–M5, Gordon save) | `npm run test:e2e` | Green on `main` (24 tests) |
 | GBA ROM build | Release workflow `build-rom` | Green |
 | Graphics lint | `validate_graphics.py` in host tests | Green |
 | Audio lint | `gen_audio.py --check` | Green |
@@ -92,7 +92,7 @@ cd web && WALKTHROUGH_DIR=../artifacts/walkthrough npm run test:e2e -- e2e/walkt
 | `06_gordons_hill_build_track` | BUILD on hill theme (track tool) |
 | `07_gordons_hill_build_rod` | ROD/brace tool toggled (R button) |
 
-- Web playtest seeds Gordon's Hill unlock via `?walkthrough=gordon` (`uploadSaveOrSaveState` before first `loadGame`; E2E `gordon-save.spec.ts`).
+- Web playtest seeds Gordon's Hill unlock via `?walkthrough=gordon` (`uploadSaveOrSaveState` before first `loadGame`; E2E `gordon-save.spec.ts`). Vicarstown uses `?walkthrough=vicarstown` with `all_unlocked.sav`.
 
 Gordon's Hill / Vicarstown themed BG and brace tools require SRAM unlock (clear prior track). Host `run_level_playthrough(1|2)` proves 3★ reference wins on those levels.
 
@@ -129,6 +129,7 @@ Record results in this file or a hardware test log when complete.
 | M1 web win E2E | Yes (`ship-qa.spec.ts`) |
 | M2 web fail E2E | Yes (`ship-qa.spec.ts`) |
 | Gordon Hill web win E2E | Yes (`ship-qa.spec.ts` + `?walkthrough=gordon`) |
+| Vicarstown web win E2E | Yes (`ship-qa.spec.ts` + `?walkthrough=vicarstown`) |
 | Hardware EverDrive smoke | Pending physical device — see H1–H6 checklist below |
 | Walkthrough artifact | `artifacts/walkthrough/` (7 PNGs) + `web/e2e/walkthrough-capture.spec.ts` |
 
