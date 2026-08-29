@@ -16,6 +16,8 @@ export interface PlaytestTestHooks {
   hasError(): boolean;
   enqueue(command: string): void;
   tapButton(button: string): void;
+  holdButton(button: string, ms?: number): Promise<void>;
+  holdButtons(buttons: string[], ms?: number): Promise<void>;
   loadWalkthroughSave(): Promise<void>;
   readWalkthroughSaveLevel(): number;
   debugSaveState?(): Record<string, unknown>;
@@ -51,6 +53,28 @@ export function installTestHooks(
       emulator.pressButton(button);
       window.setTimeout(() => emulator.unpressButton(button), 100);
     },
+    holdButton: (button, ms = 300) =>
+      new Promise<void>((resolve) => {
+        emulator.pressButton(button);
+        window.setTimeout(() => {
+          emulator.unpressButton(button);
+          resolve();
+        }, ms);
+      }),
+    holdButtons: (buttons, ms = 300) =>
+      new Promise<void>((resolve) => {
+        for (const button of buttons) {
+          emulator.pressButton(button);
+        }
+
+        window.setTimeout(() => {
+          for (const button of buttons) {
+            emulator.unpressButton(button);
+          }
+
+          resolve();
+        }, ms);
+      }),
     loadWalkthroughSave: async () => {
       const response = await fetch('/saves/gordon_hill_walkthrough.sav');
 

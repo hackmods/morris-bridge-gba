@@ -8,6 +8,12 @@ Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prot
 - Added missing **F** glyph to procedural font (KNAPFORD was rendering as KNAP ORD)
 - Release ROM refreshed to **338,236 bytes** (includes track_card assets)
 
+## 2026-08-29 — M1 web win E2E (Phase 7)
+
+- `holdButton` / `holdButtons` test hooks for build macros in mGBA-WASM playtest
+- `buildKnapfordReferenceBridge()` helper + `ship-qa.spec.ts` M1 full win test
+- `docs/ship-qa.md` updated — M1 web E2E gate (21 Playwright tests)
+
 ## 2026-08-29 — mGBA walkthrough save load fix (Phase 7)
 
 - Web emulator seeds Gordon's Hill unlock via `uploadSaveOrSaveState` before first `loadGame` (`?walkthrough=gordon`)

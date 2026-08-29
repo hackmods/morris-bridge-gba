@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import {
   assertCanvasChanged,
   assertCanvasIsRendering,
+  buildKnapfordReferenceBridge,
   navigateToBuildMode,
   waitForRenderSettle,
 } from './helpers';
@@ -60,5 +61,20 @@ test.describe('Ship QA navigation smoke (M1 partial)', () => {
 
     const shot = await page.locator('#game-canvas').screenshot();
     expect(shot.byteLength).toBeGreaterThan(3_000);
+  });
+
+  test('M1: Knapford reference bridge wins', async ({ page }) => {
+    test.setTimeout(180_000);
+
+    await navigateToBuildMode(page);
+    await buildKnapfordReferenceBridge(page);
+
+    const beforeTest = await page.locator('#game-canvas').screenshot();
+    await page.evaluate(() => window.__TEST__!.tapButton('Start'));
+    await page.waitForTimeout(18_000);
+
+    const afterTest = await page.locator('#game-canvas').screenshot();
+    expect(beforeTest.equals(afterTest)).toBe(false);
+    await assertCanvasIsRendering(page, 500);
   });
 });
