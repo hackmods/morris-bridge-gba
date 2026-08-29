@@ -53,7 +53,7 @@ Use [testing.md](testing.md) for the full GBA and web checklist. Recommended ord
 - [x] NO GO auto-return on test
 - [x] Pause menu (Select)
 - [x] Mode music via AudioDirector (Island Line / Yard / Workshop / Full Steam)
-- [x] Chuff sync on test run + idle on engine select
+- [x] Per-level BG themes (knapford / hill / viaduct tilesets)
 - [x] Per-engine idle motif on engine select (yard.mod patterns 4–13)
 - [x] Win/fail stings (Useful+Whistle / snap+delay+splash)
 - [x] SRAM stars + intro_seen (host `test_save_data`, `test_progress`)

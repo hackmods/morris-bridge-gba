@@ -27,6 +27,7 @@ public:
 
     void reset_scenery_layout();
     void layout_for_level(const level::Def& def);
+    void apply_theme(int bg_theme_id);
 
     void animate_clouds();
     void animate_water(int frame);
@@ -51,6 +52,8 @@ private:
     int _water_frame = 0;
 
     bn::vector<bn::sprite_ptr, 2> _clouds;
+
+    int _active_theme_id = -1;
 };
 
 } // namespace view

@@ -2,6 +2,12 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Per-theme BG tilesets (Phase 4)
+
+- Three BG theme sets (`knapford`, `hill`, `viaduct`) for sky/hills/ground/water layers
+- `BackdropView::apply_theme()` swaps regular BG items from `level::Def::bg_theme_id`
+- Vicarstown hides OAM clouds for industrial sky; hill theme uses warmer palette + embankment browns
+
 ## 2026-08-29 — Engine idle motifs (Phase 5)
 
 - `yard.mod` extended to 14 patterns with per-engine bell motifs (patterns 4–13)
