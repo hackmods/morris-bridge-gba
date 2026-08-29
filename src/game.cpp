@@ -148,7 +148,20 @@ int Game::_pick_win_label() const
         return game_ui::LABEL_PEEP;
     }
 
-    return (_lore_roll(2) & 1) ? game_ui::LABEL_CHUFF : game_ui::LABEL_TOOT;
+    switch(_lore_roll(2) % 4)
+    {
+        case 0:
+            return game_ui::LABEL_CHUFF;
+
+        case 1:
+            return game_ui::LABEL_TOOT;
+
+        case 2:
+            return game_ui::LABEL_LOOP;
+
+        default:
+            return game_ui::LABEL_THIN;
+    }
 }
 
 int Game::_pick_fail_label() const
@@ -158,7 +171,7 @@ int Game::_pick_fail_label() const
         return game_ui::LABEL_ASHES;
     }
 
-    switch(_lore_roll(4) % 3)
+    switch(_lore_roll(4) % 5)
     {
         case 0:
             return game_ui::LABEL_OOPS;
@@ -166,8 +179,14 @@ int Game::_pick_fail_label() const
         case 1:
             return game_ui::LABEL_WAIT;
 
-        default:
+        case 2:
             return game_ui::LABEL_AGAIN;
+
+        case 3:
+            return game_ui::LABEL_LISTEN;
+
+        default:
+            return game_ui::LABEL_CONFUS;
     }
 }
 
