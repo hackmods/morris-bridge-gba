@@ -140,3 +140,32 @@ export async function buildKnapfordReferenceBridge(page: Page): Promise<void> {
 
   await page.waitForTimeout(500);
 }
+
+/** Single START→END span — snaps under Thomas (host M2 simulation). */
+export async function buildOverlongKnapfordSpan(page: Page): Promise<void> {
+  const hold = async (buttons: string | string[], ms: number) => {
+    if (Array.isArray(buttons)) {
+      await page.evaluate(
+        ({ list, duration }) => window.__TEST__!.holdButtons(list, duration),
+        { list: buttons, duration: ms },
+      );
+    } else {
+      await page.evaluate(
+        ({ button, duration }) => window.__TEST__!.holdButton(button, duration),
+        { button: buttons, duration: ms },
+      );
+    }
+  };
+
+  const tap = async (button: string) => {
+    await page.evaluate((b) => window.__TEST__!.tapButton(b), button);
+  };
+
+  const fast = (direction: string, ms: number) => hold(['R', direction], ms);
+
+  await fast('Left', 220);
+  await tap('A');
+  await fast('Right', 1_200);
+  await tap('A');
+  await page.waitForTimeout(500);
+}
