@@ -2,6 +2,12 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Sky regular BG layer (Phase 4 start)
+
+- Move sky parallax from 8 OAM sprites to a **256×256 regular BG** (`bg_sky.bmp`)
+- `BackdropView` uses `bn::regular_bg_ptr` on BG priority 3; clouds/hills/ground/water remain OAM for now
+- `validate_graphics.py` checks `bg_sky.bmp`; `gen_graphics.py` generates it
+
 ## 2026-08-29 — Screen extraction (Phase 2)
 
 - Split monolithic `main.cpp` into `game.h` / `game.cpp` + `src/screens/*` (attract, select, playing, pause, result)
