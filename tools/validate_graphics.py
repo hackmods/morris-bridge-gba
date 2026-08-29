@@ -22,6 +22,9 @@ EXPECTED = {
     "scenery_far.bmp": {"width": 64, "height": 32, "max_colors": 16},
 }
 
+THEME_BG_LAYERS = ("bg_sky", "bg_hills", "bg_ground", "bg_water")
+THEME_COUNT = 3
+
 
 def read_bmp(path: str) -> tuple[int, int, list[int]]:
     with open(path, "rb") as handle:
@@ -64,6 +67,15 @@ def main() -> int:
     errors: list[str] = []
     for name, rules in EXPECTED.items():
         errors.extend(validate_file(name, rules))
+
+    for theme_id in range(THEME_COUNT):
+        for layer in THEME_BG_LAYERS:
+            name = f"{layer}_{theme_id}.bmp"
+            if layer == "bg_water":
+                rules = {"width": 256, "height": 512, "max_colors": 16}
+            else:
+                rules = {"width": 256, "height": 256, "max_colors": 16}
+            errors.extend(validate_file(name, rules))
     if errors:
         for err in errors:
             print(f"ERROR {err}")

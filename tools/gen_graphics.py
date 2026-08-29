@@ -111,14 +111,60 @@ def blit_map(px: list[int], w: int, ox: int, oy: int, art: str) -> None:
                 put(px, w, ox + x, oy + y, idx)
 
 
-def sky_gradient(px: list[int], w: int, h: int, y0: int, y1: int) -> None:
+def sky_gradient(px: list[int], w: int, h: int, y0: int, y1: int,
+                 colors: tuple[int, int, int] = (15, 8, 7)) -> None:
     """Ordered dither sky ramp."""
+    light, mid, dark = colors
     for y in range(y0, y1):
         t = (y - y0) / max(1, y1 - y0 - 1)
-        base = 15 if t < 0.45 else (8 if t < 0.75 else 7)
-        alt = 8 if base == 15 else (7 if base == 8 else 7)
+        base = light if t < 0.45 else (mid if t < 0.75 else dark)
+        alt = mid if base == light else (dark if base == mid else dark)
         for x in range(w):
             put(px, w, x, y, base if (x + y) % 3 else alt)
+
+
+# Per-level BG themes — knapford (0), hill (1), viaduct (2).
+BG_THEMES: list[dict] = [
+    {
+        "name": "knapford",
+        "sky": (15, 8, 7),
+        "hill_light": 11,
+        "hill_shadow": 14,
+        "ground_top": 11,
+        "ground_mid": 14,
+        "ground_fill": 13,
+        "ground_hi": 12,
+        "water_dark": 7,
+        "water_light": 8,
+        "water_spark": 2,
+    },
+    {
+        "name": "hill",
+        "sky": (3, 8, 7),
+        "hill_light": 14,
+        "hill_shadow": 13,
+        "ground_top": 13,
+        "ground_mid": 14,
+        "ground_fill": 13,
+        "ground_hi": 12,
+        "water_dark": 7,
+        "water_light": 7,
+        "water_spark": 1,
+    },
+    {
+        "name": "viaduct",
+        "sky": (10, 1, 7),
+        "hill_light": 10,
+        "hill_shadow": 1,
+        "ground_top": 10,
+        "ground_mid": 13,
+        "ground_fill": 12,
+        "ground_hi": 1,
+        "water_dark": 1,
+        "water_light": 10,
+        "water_spark": 7,
+    },
+]
 
 
 def panel_box(px: list[int], w: int, x0: int, y0: int, x1: int, y1: int) -> None:
@@ -618,12 +664,21 @@ def make_sky() -> None:
     write_indexed_bmp(os.path.join(GFX, "sky.bmp"), w, h, px)
 
 
-def make_bg_sky() -> None:
-    """Full-screen sky layer for regular BG parallax (256×256, Butano regular_bg)."""
+def make_bg_sky_theme(theme_id: int) -> None:
+    """Full-screen sky layer for regular BG parallax (256×256)."""
+    theme = BG_THEMES[theme_id]
     w = h = 256
     px = fill(w, h)
-    sky_gradient(px, w, h, 0, h)
-    write_indexed_bmp(os.path.join(GFX, "bg_sky.bmp"), w, h, px)
+    sky_gradient(px, w, h, 0, h, theme["sky"])
+    name = f"bg_sky_{theme_id}.bmp"
+    write_indexed_bmp(os.path.join(GFX, name), w, h, px)
+    if theme_id == 0:
+        write_indexed_bmp(os.path.join(GFX, "bg_sky.bmp"), w, h, px)
+
+
+def make_bg_sky() -> None:
+    for theme_id in range(len(BG_THEMES)):
+        make_bg_sky_theme(theme_id)
 
 
 def make_cloud() -> None:
@@ -854,57 +909,90 @@ def make_scenery_far() -> None:
     write_indexed_bmp(os.path.join(GFX, "scenery_far.bmp"), w, h, px)
 
 
-def make_bg_hills() -> None:
+def make_bg_hills_theme(theme_id: int) -> None:
     """Far hills on regular BG — transparent sky, rolling hills at bottom."""
+    theme = BG_THEMES[theme_id]
     w = h = 256
     px = fill(w, h, 0)
+    hill_base = 168 if theme_id == 0 else (172 if theme_id == 1 else 176)
     for x in range(w):
-        hill = 168 + abs((x - 128) // 6) % 28
+        hill = hill_base + abs((x - 128) // (6 if theme_id != 2 else 5)) % 28
         for y in range(hill, h):
-            put(px, w, x, y, 14 if y == hill else 11)
-    write_indexed_bmp(os.path.join(GFX, "bg_hills.bmp"), w, h, px)
+            put(px, w, x, y, theme["hill_shadow"] if y == hill else theme["hill_light"])
+    if theme_id == 2:
+        for x in range(40, 220, 48):
+            factory_h = hill_base - 24 - (x % 96) // 16
+            rect(px, w, x, factory_h, x + 20, hill_base, 10)
+            rect(px, w, x + 4, factory_h - 8, x + 10, factory_h, 1)
+    name = f"bg_hills_{theme_id}.bmp"
+    write_indexed_bmp(os.path.join(GFX, name), w, h, px)
+    if theme_id == 0:
+        write_indexed_bmp(os.path.join(GFX, "bg_hills.bmp"), w, h, px)
 
 
-def draw_ground_strip(px: list[int], w: int, x0: int, x1: int, y0: int) -> None:
+def make_bg_hills() -> None:
+    for theme_id in range(len(BG_THEMES)):
+        make_bg_hills_theme(theme_id)
+
+
+def draw_ground_strip_themed(px: list[int], w: int, x0: int, x1: int, y0: int, theme: dict) -> None:
     """16 px bank ground band for regular BG (transparent index 0 elsewhere)."""
-    rect(px, w, x0, y0, x1, y0 + 4, 11)
-    rect(px, w, x0, y0 + 3, x1, y0 + 5, 14)
-    rect(px, w, x0, y0 + 5, x1, y0 + 16, 13)
-    rect(px, w, x0, y0 + 5, x1, y0 + 7, 12)
+    rect(px, w, x0, y0, x1, y0 + 4, theme["ground_top"])
+    rect(px, w, x0, y0 + 3, x1, y0 + 5, theme["ground_mid"])
+    rect(px, w, x0, y0 + 5, x1, y0 + 16, theme["ground_fill"])
+    rect(px, w, x0, y0 + 5, x1, y0 + 7, theme["ground_hi"])
     for x in range(x0, x1, 4):
-        shade = 12 if x % 8 else 13
+        shade = theme["ground_hi"] if x % 8 else theme["ground_fill"]
         put(px, w, x, y0 + 8, shade)
         put(px, w, x, y0 + 10, shade)
     hline(px, w, x0, x1, y0 + 15, 1)
 
 
-def make_bg_ground() -> None:
+def make_bg_ground_theme(theme_id: int) -> None:
     """Bank ground on regular BG — side strips, transparent center gap for water."""
+    theme = BG_THEMES[theme_id]
     w = h = 256
     px = fill(w, h, 0)
     y0 = 240
-    draw_ground_strip(px, w, 0, 104, y0)
-    draw_ground_strip(px, w, 152, w, y0)
-    write_indexed_bmp(os.path.join(GFX, "bg_ground.bmp"), w, h, px)
+    draw_ground_strip_themed(px, w, 0, 104, y0, theme)
+    draw_ground_strip_themed(px, w, 152, w, y0, theme)
+    name = f"bg_ground_{theme_id}.bmp"
+    write_indexed_bmp(os.path.join(GFX, name), w, h, px)
+    if theme_id == 0:
+        write_indexed_bmp(os.path.join(GFX, "bg_ground.bmp"), w, h, px)
 
 
-def make_bg_water() -> None:
+def make_bg_ground() -> None:
+    for theme_id in range(len(BG_THEMES)):
+        make_bg_ground_theme(theme_id)
+
+
+def make_bg_water_theme(theme_id: int) -> None:
     """Animated water band on regular BG — two 256 px maps stacked vertically."""
+    theme = BG_THEMES[theme_id]
     w = frame_h = 256
     px = fill(w, frame_h * 2, 0)
     for frame in range(2):
         y_base = frame * frame_h
         y0 = 232
         for y in range(y0, y0 + 16):
-            base = 7 if (y + frame) % 2 == 0 else 8
+            base = theme["water_dark"] if (y + frame) % 2 == 0 else theme["water_light"]
             for x in range(w):
                 c = base
                 if (x + y + frame * 3) % 7 == 0:
-                    c = 8
+                    c = theme["water_light"]
                 if (x + y + frame * 5) % 11 == 0:
-                    c = 2
+                    c = theme["water_spark"]
                 put(px, w, x, y_base + y, c)
-    write_indexed_bmp(os.path.join(GFX, "bg_water.bmp"), w, frame_h * 2, px)
+    name = f"bg_water_{theme_id}.bmp"
+    write_indexed_bmp(os.path.join(GFX, name), w, frame_h * 2, px)
+    if theme_id == 0:
+        write_indexed_bmp(os.path.join(GFX, "bg_water.bmp"), w, frame_h * 2, px)
+
+
+def make_bg_water() -> None:
+    for theme_id in range(len(BG_THEMES)):
+        make_bg_water_theme(theme_id)
 
 
 def make_ground() -> None:
@@ -1110,6 +1198,13 @@ def main() -> None:
         ("menu.json", {"height": 32}),
     ):
         write_json(name, extra)
+
+    for theme_id, theme in enumerate(BG_THEMES):
+        suffix = f"_{theme_id}"
+        for layer in ("bg_sky", "bg_hills", "bg_ground"):
+            write_json(f"{layer}{suffix}.json", {"type": "regular_bg"})
+        write_json(f"bg_water{suffix}.json", {"type": "regular_bg", "height": 256})
+        print(f"  theme {theme_id}: {theme['name']}")
     print(f"Thomas's Bridge sprites written to {GFX}")
 
 

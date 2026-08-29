@@ -1,7 +1,7 @@
 # Ship QA — Phase 7 verification
 
 **Product:** Thomas's Bridge (`thomas_bridge.gba`)  
-**ROM:** `THOMASBRIDGE` / `THOM01` · ~299 KB (306,396 bytes) as of 2026-08-29  
+**ROM:** `THOMASBRIDGE` / `THOM01` · ~327 KB (334,984 bytes) as of 2026-08-29  
 **Release branch:** `main`
 
 This document records master-plan **M1–M5** screen-flow QA and related ship gates. Physical GBA hardware was not available in the Cloud Agent environment; **mGBA-WASM web playtest** and **host playthrough tests** provide equivalent coverage where noted.
@@ -54,6 +54,7 @@ Use [testing.md](testing.md) for the full GBA and web checklist. Recommended ord
 - [x] Pause menu (Select)
 - [x] Mode music via AudioDirector (Island Line / Yard / Workshop / Full Steam)
 - [x] Chuff sync on test run + idle on engine select
+- [x] Per-level BG themes (knapford / hill / viaduct tilesets)
 - [x] Per-engine idle motif on engine select (yard.mod patterns 4–13)
 - [x] Win/fail stings (Useful+Whistle / snap+delay+splash)
 - [x] SRAM stars + intro_seen (host `test_save_data`, `test_progress`)
