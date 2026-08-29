@@ -2,6 +2,10 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — SRAM stars/clear persist E2E (H6 proxy)
+
+- `sram-persist.spec.ts`: all_unlocked walkthrough save keeps stars + clear flags across soft reset (29 E2E)
+
 ## 2026-08-29 — Walkthrough artifact refresh (Phase 7)
 
 - Regenerated all 9 walkthrough PNGs after latest art pass (Hatt, train wheels, portraits, struts)

@@ -15,7 +15,7 @@ This document records master-plan **M1–M5** screen-flow QA and related ship ga
 | Host physics + session | `make -C tests` | Green on `main` |
 | All-level playthroughs | `test_physics` Knapford / Gordon / Vicarstown 3★ | Green |
 | Web unit tests | `cd web && npm test` | Green |
-| Web E2E (all-level wins, M1–M2, M3–M5, Gordon save) | `npm run test:e2e` | Green on `main` (28 tests) |
+| Web E2E (all-level wins, M1–M2, M3–M5, Gordon save) | `npm run test:e2e` | Green on `main` (29 tests) |
 | GBA ROM build | Release workflow `build-rom` | Green |
 | Graphics lint | `validate_graphics.py` in host tests | Green |
 | Audio lint | `gen_audio.py --check` | Green |
@@ -115,7 +115,7 @@ Run on real GBA / EverDrive after copying `rom/thomas_bridge.gba` (338,332 bytes
 | H5 | Pause (Select) ducks music; resume restores volume | |
 | H6 | Power off/on — SRAM stars + intro_seen persist | |
 
-Web E2E proxy for H6: `web/e2e/sram-persist.spec.ts` verifies `intro_seen_mask` survives mGBA soft reset.
+Web E2E proxy for H6: `web/e2e/sram-persist.spec.ts` verifies `intro_seen_mask`, stars, and clear flags survive mGBA soft reset (walkthrough saves).
 
 Record results in this file or a hardware test log when complete.
 

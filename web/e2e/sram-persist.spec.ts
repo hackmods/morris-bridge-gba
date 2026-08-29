@@ -33,3 +33,24 @@ test('walkthrough save intro_seen mask survives soft reset', async ({ page }) =>
   expect(afterReset?.introSeenMask).toBe(0b011);
   expect(afterReset?.maxUnlockedLevel).toBe(1);
 });
+
+/** H6 proxy: stars + clear flags from all_unlocked walkthrough save survive soft reset. */
+test('walkthrough save stars and clear flags survive soft reset', async ({ page }) => {
+  await page.goto('/?walkthrough=vicarstown');
+  await page.waitForTimeout(3_000);
+  await expect(page.locator('#status-bar')).toHaveClass(/ready/, { timeout: 60_000 });
+
+  const beforeReset = await page.evaluate(() => window.__TEST__!.readSaveProgress());
+  expect(beforeReset?.clearedLevels).toBe(0b111);
+  expect(beforeReset?.packedStars).toBe(0b111011);
+  expect(beforeReset?.maxUnlockedLevel).toBe(2);
+  expect(beforeReset?.introSeenMask).toBe(0b111);
+
+  await page.locator('#btn-reset').click();
+  await page.waitForTimeout(2_500);
+
+  const afterReset = await page.evaluate(() => window.__TEST__!.readSaveProgress());
+  expect(afterReset?.clearedLevels).toBe(beforeReset?.clearedLevels);
+  expect(afterReset?.packedStars).toBe(beforeReset?.packedStars);
+  expect(afterReset?.introSeenMask).toBe(beforeReset?.introSeenMask);
+});
