@@ -2,6 +2,13 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Screen extraction (Phase 2)
+
+- Split monolithic `main.cpp` into `game.h` / `game.cpp` + `src/screens/*` (attract, select, playing, pause, result)
+- `main.cpp` is now init + `Game::update()` loop only (~16 lines)
+- Shared UI constants moved to `include/game_ui.h`
+- `validate_graphics.py` wired into `make -C tests`; strut sheet height corrected to 96px (6 frames)
+
 ## 2026-08-29 — Engine v2 ship wave (PRs #14–#19)
 
 Merged engine v2 architecture and Phase 1–3/6 foundations into `main`:
