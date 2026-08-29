@@ -38,6 +38,7 @@ void Game::_show_gameplay()
     _banner.set_visible(false);
     _menu_row.set_visible(false);
     _menu_arrow.set_visible(false);
+    _track_card.set_visible(false);
     _hatt.set_visible(false);
     _panel.set_visible(true);
     _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_HUD);

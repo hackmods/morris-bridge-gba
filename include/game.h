@@ -58,6 +58,7 @@ private:
     void _step_level(int delta);
     void _sync_level_select_flavor();
     void _sync_level_select_stars();
+    void _sync_level_select_card();
     void _step_engine(int delta);
     bool _dir_repeat(bool pressed, bool held, int& counter);
     void _place_splash_tiles();
@@ -144,6 +145,7 @@ private:
     bn::sprite_ptr _logo;
     bn::sprite_ptr _menu_row;
     bn::sprite_ptr _menu_arrow;
+    bn::sprite_ptr _track_card;
     bn::sprite_ptr _hatt;
     bn::sprite_ptr _ghost;
     bn::sprite_ptr _ring;

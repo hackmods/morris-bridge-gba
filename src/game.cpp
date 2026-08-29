@@ -22,6 +22,7 @@
 #include "bn_sprite_items_splash.h"
 #include "bn_sprite_items_strut.h"
 #include "bn_sprite_items_toast.h"
+#include "bn_sprite_items_track_card.h"
 #include "bn_sprite_items_train.h"
 
 #include "audio_director.h"
@@ -52,6 +53,7 @@ Game::Game() :
     _logo(bn::sprite_items::logo.create_sprite(0, -52)),
     _menu_row(bn::sprite_items::menu.create_sprite(0, 8)),
     _menu_arrow(bn::sprite_items::cursor.create_sprite(-36, 8)),
+    _track_card(bn::sprite_items::track_card.create_sprite(0, 16)),
     _hatt(bn::sprite_items::hatt.create_sprite(52, 8)),
     _ghost(game_ui::make_sprite(bn::sprite_items::ghost, 0, 0, game_ui::Z_GHOST)),
     _ring(game_ui::make_sprite(bn::sprite_items::ring, 0, 0, game_ui::Z_RING)),
@@ -76,6 +78,8 @@ Game::Game() :
     _logo.set_visible(false);
     _menu_row.set_z_order(-25);
     _menu_arrow.set_z_order(-24);
+    _track_card.set_z_order(-20);
+    _track_card.set_visible(false);
     _hatt.set_z_order(-23);
     _ghost.set_visible(false);
     _ring.set_visible(false);
@@ -377,10 +381,15 @@ void Game::_step_level(const int delta)
         }
     }
 
-    _menu_row.set_item(bn::sprite_items::menu, _selected_level);
+    _sync_level_select_card();
     _sync_train_sprite();
     _sync_level_select_stars();
     _sync_level_select_flavor();
+}
+
+void Game::_sync_level_select_card()
+{
+    _track_card.set_item(bn::sprite_items::track_card, _selected_level);
 }
 
 void Game::_step_engine(const int delta)
@@ -518,6 +527,7 @@ void Game::_enter_pause()
     _panel.set_visible(true);
     _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_SELECT);
     _panel.set_position(0, 12);
+    _track_card.set_visible(false);
     _label.set_visible(false);
     _hint_label.set_visible(false);
     _hint_secondary.set_visible(false);
