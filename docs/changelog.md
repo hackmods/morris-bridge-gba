@@ -2,6 +2,13 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Authored strut/node/anchor sprites (Phase 4)
+
+- Track links: 16×8 timber deck with metal rail cap, grain, and rivets
+- Brace rods: metal rod frames with end caps (distinct from track)
+- Nodes: 16×16 riveted trestle cap; anchors: 16×16 bank bolt plate
+- Committed regenerated BMPs; CI validates via `gen_graphics.py --check`
+
 ## 2026-08-29 — Graphics validate-only CI + M4 pause E2E (Phase 4/7)
 
 - `gen_graphics.py --check` validates committed BMPs + Butano JSON sidecars (no CI overwrite)
