@@ -39,6 +39,35 @@ test.describe('Ship QA screen flows (M3–M5)', () => {
     await assertCanvasIsRendering(page);
   });
 
+  test('M4: pause menu returns to level select', async ({ page }) => {
+    await navigateToBuildMode(page);
+
+    await page.evaluate(() => window.__TEST__!.tapButton('Select'));
+    await page.waitForTimeout(800);
+    await page.evaluate(() => window.__TEST__!.tapButton('Down'));
+    await page.evaluate(() => window.__TEST__!.tapButton('Down'));
+    await page.waitForTimeout(300);
+    await page.evaluate(() => window.__TEST__!.tapButton('Start'));
+    await page.waitForTimeout(1_500);
+
+    await assertCanvasIsRendering(page, 500);
+  });
+
+  test('M4: pause menu returns to title', async ({ page }) => {
+    await navigateToBuildMode(page);
+
+    await page.evaluate(() => window.__TEST__!.tapButton('Select'));
+    await page.waitForTimeout(800);
+    for (let i = 0; i < 3; i += 1) {
+      await page.evaluate(() => window.__TEST__!.tapButton('Down'));
+      await page.waitForTimeout(200);
+    }
+    await page.evaluate(() => window.__TEST__!.tapButton('Start'));
+    await page.waitForTimeout(2_000);
+
+    await assertCanvasIsRendering(page, 500);
+  });
+
   test('M5: theater mode survives viewport resize', async ({ page }) => {
     await waitForRenderSettle(page, 3_000);
 

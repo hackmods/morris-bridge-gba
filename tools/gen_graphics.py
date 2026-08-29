@@ -7,9 +7,12 @@ ordered dither for gradients, no scaled-font title on the splash illustration.
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import struct
+import subprocess
+import sys
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
 GFX = os.path.join(ROOT, "graphics")
@@ -1160,7 +1163,69 @@ def write_json(name: str, extra: dict | None = None) -> None:
         f.write("\n")
 
 
-def main() -> None:
+def validate() -> int:
+    """Validate committed graphics + Butano JSON sidecars (no regeneration)."""
+    validator = os.path.join(ROOT, "tools", "validate_graphics.py")
+    result = subprocess.run([sys.executable, validator], cwd=ROOT, check=False)
+    if result.returncode != 0:
+        return result.returncode
+
+    json_names = [
+        "splash.json",
+        "logo.json",
+        "sky.json",
+        "bg_sky.json",
+        "bg_hills.json",
+        "bg_ground.json",
+        "bg_water.json",
+        "cloud.json",
+        "panel.json",
+        "hatt.json",
+        "cursor.json",
+        "node.json",
+        "anchor.json",
+        "ghost.json",
+        "ring.json",
+        "strut.json",
+        "train.json",
+        "portrait.json",
+        "scenery_far.json",
+        "ground.json",
+        "water.json",
+        "digit.json",
+        "toast.json",
+        "label.json",
+        "banner.json",
+        "menu.json",
+        "track_card.json",
+    ]
+    for theme_id in range(len(BG_THEMES)):
+        suffix = f"_{theme_id}"
+        for layer in ("bg_sky", "bg_hills", "bg_ground", "bg_water"):
+            json_names.append(f"{layer}{suffix}.json")
+
+    errors: list[str] = []
+    for name in json_names:
+        path = os.path.join(GFX, name)
+        if not os.path.isfile(path):
+            errors.append(f"missing {name}")
+            continue
+        try:
+            with open(path, encoding="utf-8") as handle:
+                json.load(handle)
+        except json.JSONDecodeError as exc:
+            errors.append(f"{name}: invalid JSON ({exc})")
+
+    if errors:
+        for err in errors:
+            print(f"FAIL {err}", file=sys.stderr)
+        return 1
+
+    print("ok graphics assets")
+    return 0
+
+
+def generate() -> None:
     os.makedirs(GFX, exist_ok=True)
     make_splash()
     make_logo()
@@ -1230,5 +1295,19 @@ def main() -> None:
     print(f"Thomas's Bridge sprites written to {GFX}")
 
 
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Generate or validate Thomas's Bridge graphics.")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="validate committed BMPs and JSON sidecars only (do not overwrite art)",
+    )
+    args = parser.parse_args()
+
+    if not args.check:
+        generate()
+    return validate()
+
+
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

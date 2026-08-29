@@ -2,6 +2,12 @@
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
+## 2026-08-29 — Graphics validate-only CI + M4 pause E2E (Phase 4/7)
+
+- `gen_graphics.py --check` validates committed BMPs + Butano JSON sidecars (no CI overwrite)
+- Release workflow and `build_rom.sh` use `--check` for graphics and audio
+- M4 E2E: pause → level select and pause → title (`ship-qa.spec.ts`); 26 Playwright tests
+
 ## 2026-08-29 — Level select track cards + release ROM refresh
 
 - Replaced broken level select (empty panel + tiny 5-char menu row) with 64×32 **track_card** sprites: KNAPFORD/FLAT!, GORDON/HILL!, VICARSTOWN/LONG!
