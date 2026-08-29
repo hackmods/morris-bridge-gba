@@ -9,6 +9,16 @@ export interface CanvasSample {
   averageLuminance: number;
 }
 
+export interface SaveProgressSnapshot {
+  magic: number;
+  version: number;
+  maxUnlockedLevel: number;
+  clearedLevels: number;
+  unlockedEngines: number;
+  packedStars: number;
+  introSeenMask: number;
+}
+
 export interface PlaytestTestHooks {
   getFrameCount(): number;
   getStatusText(): string;
@@ -20,6 +30,7 @@ export interface PlaytestTestHooks {
   holdButtons(buttons: string[], ms?: number): Promise<void>;
   loadWalkthroughSave(): Promise<void>;
   readWalkthroughSaveLevel(): number;
+  readSaveProgress(): SaveProgressSnapshot | null;
   debugSaveState?(): Record<string, unknown>;
   sampleCanvas(): CanvasSample;
   waitForFrames(minFrames: number, timeoutMs?: number): Promise<number>;
@@ -29,6 +40,31 @@ declare global {
   interface Window {
     __TEST__?: PlaytestTestHooks;
   }
+}
+
+const SAVE_MAGIC = 0x47425254; // 'TRBG' little-endian
+
+function decodeSaveProgress(save: Uint8Array | null): SaveProgressSnapshot | null {
+  if (!save || save.length < 20) {
+    return null;
+  }
+
+  const magic =
+    save[0]! | (save[1]! << 8) | (save[2]! << 16) | (save[3]! << 24);
+
+  if (magic !== SAVE_MAGIC) {
+    return null;
+  }
+
+  return {
+    magic,
+    version: save[4]!,
+    maxUnlockedLevel: save[5]!,
+    clearedLevels: save[6]!,
+    unlockedEngines: save[7]!,
+    packedStars: save[8]!,
+    introSeenMask: save[15]!,
+  };
 }
 
 export function installTestHooks(
@@ -93,6 +129,7 @@ export function installTestHooks(
       const save = emulator.readSave();
       return save ? save[5]! : -1;
     },
+    readSaveProgress: () => decodeSaveProgress(emulator.readSave()),
     debugSaveState: () => {
       const module = emulator.getModule();
       if (!module) {
