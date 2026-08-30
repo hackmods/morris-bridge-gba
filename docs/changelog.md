@@ -1,5 +1,11 @@
 # Changelog & project history
 
+## 2026-08-30 — Timber vs rod materials
+
+- Track welds are **timber** (cost 1); braces are **rod** (cost 2, 1.25× strength)
+- 3★ pars updated so every reference still clears on budget
+- Materials stay independent of engine type (load vs capacity)
+
 ## 2026-08-30 — Illustrated GBA presentation + chain-weld
 
 - Hold **A** and drag to chain-draw joints every 24 px (Poly Bridge-style weld); tap A still joins

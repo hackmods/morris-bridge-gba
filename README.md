@@ -34,7 +34,7 @@ Open the web playtest at **http://127.0.0.1:4317** — arrow keys + Z/X, or the 
 
 ## Features
 
-- **Build** — Hold **A** and drag to chain-weld spans; tap A to join a joint; Start sends the train
+- **Build** — Hold **A** and drag to chain-weld spans; tap A to join a joint; R swaps timber track / steel rod; Start sends the train
 - **Eight tracks** — Knapford through Sodor Summit, with brace tools, par cost, and ★ ratings
 - **Five engines** — Thomas, Percy, Edward, James, Gordon with unlock progression + SRAM stars
 - **BG parallax** — sky, hills, bank ground, and animated water on regular backgrounds

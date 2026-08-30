@@ -44,7 +44,9 @@ RunScore compute_run_score(const bridge::BridgeSystem& system, const level::Def&
         }
     }
 
-    score.total_cost = score.player_nodes + score.track_links + score.brace_links;
+    score.total_cost = score.player_nodes * bridge::NODE_COST +
+                       score.track_links * bridge::TIMBER_LINK_COST +
+                       score.brace_links * bridge::ROD_LINK_COST;
 
     if(def.par_cost > 0)
     {

@@ -28,7 +28,7 @@ Optional **PG lore** for friends: [Lore leak](lore-leak.md) (creepy copypasta ba
 | **Title** | Full splash artwork; hints for **HOLD A** and **A WELD**; Start / A → levels |
 | **Level select** | Up/Down (locked tracks skipped), A → engine pick, B back — track name shown in menu row |
 | **Engine select** | Up/Down (locked engines skipped), weight shown; A start, B back |
-| **Build** | Hold **A** and drag to weld; tap A to join joints; Start tests; Select pause; B delete; L undo |
+| **Build** | Hold **A** and drag to weld; tap A to join joints; R cycles timber track / steel rod; Start tests; Select pause; B delete; L undo |
 | **Test** | Train runs; B cancel |
 
 ## Onboarding

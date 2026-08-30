@@ -39,9 +39,35 @@ inline constexpr bn::fixed FALL_Y_LIMIT = 90;
 
 enum class LinkRole : uint8_t
 {
-    track,  ///< Routable deck — train follows these links.
+    track,  ///< Routable timber deck — train follows these links.
     brace,  ///< Structural rod — supports joints, not traversable.
 };
+
+enum class MaterialId : uint8_t
+{
+    timber,  ///< Wood deck — cost 1, baseline strength.
+    rod,     ///< Steel rod — cost 2, stronger, not a train route.
+};
+
+inline constexpr int NODE_COST = 1;
+inline constexpr int TIMBER_LINK_COST = 1;
+inline constexpr int ROD_LINK_COST = 2;
+inline constexpr bn::fixed ROD_STRENGTH_MUL = bn::fixed(5) / 4;
+
+[[nodiscard]] inline constexpr MaterialId material_for_role(const LinkRole role)
+{
+    return role == LinkRole::brace ? MaterialId::rod : MaterialId::timber;
+}
+
+[[nodiscard]] inline constexpr int link_cost(const MaterialId material)
+{
+    return material == MaterialId::rod ? ROD_LINK_COST : TIMBER_LINK_COST;
+}
+
+[[nodiscard]] inline constexpr bn::fixed material_strength(const MaterialId material)
+{
+    return material == MaterialId::rod ? ROD_STRENGTH_MUL : bn::fixed(1);
+}
 
 [[nodiscard]] inline constexpr uint8_t link_role_bit(const LinkRole role)
 {
@@ -112,6 +138,7 @@ struct Strut
     int node_a = 0;
     int node_b = 0;
     LinkRole role = LinkRole::track;
+    MaterialId material = MaterialId::timber;
     bn::fixed length = 0;
     bn::fixed current_tension = 0;
     bn::fixed max_tension = 0;

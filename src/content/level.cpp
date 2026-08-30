@@ -105,7 +105,7 @@ constexpr Def DEFINITIONS[COUNT] = {
         bn::fixed(3) / 5,
         ALLOW_TRACK_AND_BRACE,
         2,
-        11,
+        13,
     },
     {
         Vicarstown,
@@ -118,7 +118,7 @@ constexpr Def DEFINITIONS[COUNT] = {
         bn::fixed(2) / 3,
         ALLOW_TRACK_AND_BRACE,
         3,
-        12,
+        13,
     },
     {
         Tidmouth,
@@ -144,7 +144,7 @@ constexpr Def DEFINITIONS[COUNT] = {
         bn::fixed(3) / 5,
         ALLOW_TRACK_AND_BRACE,
         5,
-        10,
+        11,
     },
     {
         CrovanGate,
@@ -157,7 +157,7 @@ constexpr Def DEFINITIONS[COUNT] = {
         bn::fixed(3) / 5,
         ALLOW_TRACK_AND_BRACE,
         6,
-        12,
+        13,
     },
     {
         CallanCanal,
@@ -170,7 +170,7 @@ constexpr Def DEFINITIONS[COUNT] = {
         bn::fixed(2) / 3,
         ALLOW_TRACK_AND_BRACE,
         7,
-        14,
+        15,
     },
     {
         SodorSummit,
@@ -183,7 +183,7 @@ constexpr Def DEFINITIONS[COUNT] = {
         bn::fixed(2) / 3,
         ALLOW_TRACK_AND_BRACE,
         8,
-        16,
+        17,
     },
 };
 
