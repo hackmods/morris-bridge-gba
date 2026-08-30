@@ -253,7 +253,8 @@ FONT = {
 }
 
 
-def blit_text(px: list[int], w: int, text: str, ox: int, oy: int, color: int, shadow: int = 1) -> None:
+def blit_text(px: list[int], w: int, text: str, ox: int, oy: int, color: int, shadow: int = 1,
+              advance: int = 6) -> None:
     x = ox
     for ch in text:
         glyph = FONT.get(ch, FONT[" "])
@@ -262,12 +263,13 @@ def blit_text(px: list[int], w: int, text: str, ox: int, oy: int, color: int, sh
                 if bit == "1":
                     put(px, w, x + gx + 1, oy + gy + 1, shadow)
                     put(px, w, x + gx, oy + gy, color)
-        x += 6
+        x += advance
 
 
-def center_text(px: list[int], w: int, text: str, y: int, color: int, shadow: int = 1) -> None:
-    tw = len(text) * 6 - 1
-    blit_text(px, w, text, max(0, (w - tw) // 2), y, color, shadow)
+def center_text(px: list[int], w: int, text: str, y: int, color: int, shadow: int = 1,
+                 advance: int = 6) -> None:
+    tw = len(text) * advance - 1
+    blit_text(px, w, text, max(0, (w - tw) // 2), y, color, shadow, advance)
 
 
 # ---------------------------------------------------------------------------
@@ -1227,7 +1229,8 @@ def make_track_card() -> None:
         panel_box(px, w, 2, y0 + 2, 62, y0 + 30)
         rect(px, w, 4, y0 + 4, 60, y0 + 10, accent)
         center_text(px, w, num, y0 + 5, 7, 13)
-        center_text(px, w, title, y0 + 12, 1, 13)
+        title_advance = 5 if len(title) >= 9 else 6
+        center_text(px, w, title, y0 + 12, 1, 13, title_advance)
         center_text(px, w, sub, y0 + 22, 3, 1)
     write_indexed_bmp(os.path.join(GFX, "track_card.bmp"), w, fh * len(entries), px)
 

@@ -1,5 +1,11 @@
 # Changelog & project history
 
+## 2026-08-30 — Illustrated playtest chrome + readable track cards
+
+- Web playtest uses an illustrated paper/sky shell around the GBA canvas (the game remains the ROM)
+- Track cards pack long station names (VICARSTOWN, WELLSWORTH) so they fit the 64×32 sprite
+
+
 ## 2026-08-30 — Eight-track GBA campaign + SRAM v4
 
 - Eight data-driven tracks (Knapford through Sodor Summit) with distinct gaps, deck heights, and par costs
