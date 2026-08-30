@@ -6,6 +6,11 @@
 - 3★ pars updated so every reference still clears on budget
 - Materials stay independent of engine type (load vs capacity)
 
+## 2026-08-30 — Build HUD cost vs par
+
+- Build-mode HUD digits show live **cost** (nodes + timber + 2× rods) on the left and **par** on the right so ★ efficiency is visible while welding
+- Test-mode HUD still shows node/strut counts; engine load stays on the weight digits
+
 ## 2026-08-30 — Illustrated GBA presentation + chain-weld
 
 - Hold **A** and drag to chain-draw joints every 24 px (Poly Bridge-style weld); tap A still joins

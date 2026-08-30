@@ -28,7 +28,7 @@ Optional **PG lore** for friends: [Lore leak](lore-leak.md) (creepy copypasta ba
 | **Title** | Full splash artwork; hints for **HOLD A** and **A WELD**; Start / A → levels |
 | **Level select** | Up/Down (locked tracks skipped), A → engine pick, B back — track name shown in menu row |
 | **Engine select** | Up/Down (locked engines skipped), weight shown; A start, B back |
-| **Build** | Hold **A** and drag to weld; tap A to join joints; R cycles timber track / steel rod; Start tests; Select pause; B delete; L undo |
+| **Build** | **D-pad** cursor · **A** tap join / **hold-A drag** chain-weld · **B** undo last node · **L** undo last strut · **R** timber / rod · **Select** pause · **Start** send the train · HUD **cost vs par** |
 | **Test** | Train runs; B cancel |
 
 ## Onboarding
@@ -37,7 +37,7 @@ The ROM teaches controls directly:
 
 - **Title:** static hint labels (**HOLD A**, **A WELD**) above the dialog panel
 - **First build session:** rotating hints (`HOLD A` → `A WELD` → `PAUSE`) for a few seconds, dismissible with any button
-- **Build HUD:** **A WELD** while a joint is selected, **START** once a road links both banks
+- **Build HUD:** **A WELD** while a joint is selected, **START** once a road links both banks; digits show **cost vs par** (3★ if cost ≤ par)
 - **Hold A + drag:** plants joints every 24 px so a span can be chain-welded in one stroke; tap A still joins one joint at a time
 
 ## Engines and unlocks
