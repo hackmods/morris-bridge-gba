@@ -2,100 +2,108 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Thomas's Bridge — Web Playtest</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Thomas's Bridge</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Source+Sans+3:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
-    <div class="app" id="app-root">
-      <header class="header">
-        <div>
+    <div id="app">
+      <canvas id="world" aria-label="Bridge workshop"></canvas>
+
+      <div id="hud" class="overlay hidden">
+        <header class="hud-top">
+          <div>
+            <p class="eyebrow" id="hud-region">The Island of Sodor</p>
+            <h1 id="hud-title">Knapford Creek</h1>
+          </div>
+          <div class="hud-stats">
+            <div class="stat">
+              <span>Cost</span>
+              <strong id="hud-cost">£0</strong>
+            </div>
+            <div class="stat">
+              <span>Budget</span>
+              <strong id="hud-budget">£1,800</strong>
+            </div>
+            <div class="stat">
+              <span>Par</span>
+              <strong id="hud-par">£920</strong>
+            </div>
+          </div>
+        </header>
+
+        <div id="tutorial" class="tutorial hidden"></div>
+        <div id="toast" class="toast hidden"></div>
+
+        <footer class="hud-bottom">
+          <div class="tools" id="tools"></div>
+          <div class="hud-actions">
+            <button type="button" id="btn-undo" class="ghost">Undo</button>
+            <button type="button" id="btn-test" class="primary">Test crossing</button>
+            <button type="button" id="btn-cancel" class="ghost hidden">Stop test</button>
+            <button type="button" id="btn-menu" class="ghost">Tracks</button>
+          </div>
+        </footer>
+      </div>
+
+      <section id="screen-title" class="screen">
+        <div class="panel hero">
+          <p class="eyebrow">A railway workshop</p>
           <h1>Thomas's Bridge</h1>
-          <p class="subtitle">Sir Topham Hatt demands a really useful bridge. No confusion. No delay.</p>
-        </div>
-        <div class="header-actions">
-          <button id="btn-theater" type="button" class="toolbar-btn">Theater</button>
-          <button id="btn-fullscreen" type="button" class="toolbar-btn">Fullscreen</button>
-          <div id="status-bar" class="status-bar" role="status">Initializing…</div>
-        </div>
-      </header>
-
-      <main class="main">
-        <section class="game-panel">
-          <div id="canvas-wrap" class="canvas-wrap">
-            <canvas id="game-canvas" width="240" height="160"></canvas>
-            <div id="drop-overlay" class="drop-overlay hidden">
-              Drop a .gba ROM to load
-            </div>
+          <p class="lead">
+            Drag joints into a real crossing. Weld road for the train, timber and steel for the
+            structure. No pixel toy — a proper bridge builder.
+          </p>
+          <div class="row">
+            <button type="button" id="btn-play" class="primary">Open the workshop</button>
+            <a class="ghost" href="/legacy.html">GBA prototype</a>
           </div>
-          <div class="game-actions">
-            <button id="btn-reset" type="button" disabled>Soft reset</button>
-            <label class="file-upload">
-              <input id="rom-upload" type="file" accept=".gba" hidden />
-              Upload ROM
-            </label>
+        </div>
+      </section>
+
+      <section id="screen-levels" class="screen hidden">
+        <div class="panel wide">
+          <p class="eyebrow">Campaign</p>
+          <h2>Choose a crossing</h2>
+          <div id="level-grid" class="card-grid"></div>
+          <div class="row">
+            <button type="button" id="btn-levels-back" class="ghost">Back</button>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <aside class="side-panel" id="side-panel">
-          <section class="card">
-            <h2>How to play</h2>
-            <ul class="control-list">
-              <li><strong>Title:</strong> Start → pick a track</li>
-              <li><strong>Build:</strong> A places nodes, connect with A, Start sends Thomas</li>
-              <li><strong>Pause:</strong> Select during build; B deletes nodes</li>
-              <li><strong>Undo:</strong> L removes your last edit</li>
-              <li>Sir Topham Hatt judges your work — avoid <em>confusion and delay</em></li>
-            </ul>
-          </section>
+      <section id="screen-engines" class="screen hidden">
+        <div class="panel wide">
+          <p class="eyebrow" id="engine-level-name">Engine shed</p>
+          <h2>Who is crossing?</h2>
+          <p class="hint">Heavier engines need a stronger bridge. Percy is the lightest; Gordon is the exam.</p>
+          <div id="engine-grid" class="card-grid engines"></div>
+          <div class="row">
+            <button type="button" id="btn-engines-back" class="ghost">Tracks</button>
+            <button type="button" id="btn-engines-go" class="primary">Build</button>
+          </div>
+        </div>
+      </section>
 
-          <section class="card">
-            <h2>Keyboard</h2>
-            <ul class="control-list">
-              <li><kbd>↑↓←→</kbd> D-Pad</li>
-              <li><kbd>Z</kbd> / <kbd>X</kbd> A / B</li>
-              <li><kbd>Enter</kbd> Start</li>
-              <li><kbd>Backspace</kbd> Select</li>
-              <li><kbd>R</kbd> Faster cursor (build)</li>
-            </ul>
-          </section>
-
-          <section class="card">
-            <h2>Command queue</h2>
-            <p class="hint">
-              Type commands like <code>right a start</code> — processed in real time.
-            </p>
-            <form id="command-form" class="command-form">
-              <input
-                id="command-input"
-                type="text"
-                placeholder="up down left right a b start select r"
-                autocomplete="off"
-                disabled
-              />
-              <button id="btn-enqueue" type="submit" disabled>Enqueue</button>
-            </form>
-            <div class="queue-controls">
-              <button id="btn-pause-queue" type="button" disabled>Pause queue</button>
-              <button id="btn-clear-queue" type="button" disabled>Clear</button>
-              <label class="hold-slider">
-                Hold
-                <input id="hold-ms" type="range" min="50" max="200" value="100" />
-                <span id="hold-ms-label">100 ms</span>
-              </label>
-            </div>
-          </section>
-
-          <section class="card feed-card">
-            <h2>Live input feed</h2>
-            <ol id="input-feed" class="input-feed"></ol>
-          </section>
-        </aside>
-      </main>
-
-      <div id="error-banner" class="error-banner hidden" role="alert"></div>
+      <section id="screen-result" class="screen hidden">
+        <div class="panel">
+          <p class="eyebrow" id="result-eyebrow">Result</p>
+          <h2 id="result-title">The train is through</h2>
+          <p id="result-stars" class="stars">★★★</p>
+          <p id="result-copy" class="lead"></p>
+          <div class="row">
+            <button type="button" id="btn-retry" class="ghost">Rebuild</button>
+            <button type="button" id="btn-next" class="primary">Next crossing</button>
+          </div>
+        </div>
+      </section>
     </div>
-
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

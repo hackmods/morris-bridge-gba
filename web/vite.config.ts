@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
 const crossOriginIsolationHeaders = {
@@ -18,5 +19,13 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ['@thenick775/mgba-wasm'],
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        legacy: resolve(__dirname, 'legacy.html'),
+      },
+    },
   },
 });

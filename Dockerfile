@@ -1,6 +1,5 @@
 # syntax=docker/dockerfile:1
 
-# Build the static web playtest bundle (ROM must exist in web/public/rom/).
 FROM node:22-alpine AS web-build
 
 WORKDIR /app
@@ -9,10 +8,6 @@ COPY web/package.json web/package-lock.json ./
 RUN npm ci
 
 COPY web/ ./
-
-# CI copies rom/morris_bridge.gba here before docker build.
-RUN test -f public/rom/thomas_bridge.gba || (echo "Missing public/rom/thomas_bridge.gba — run scripts/sync_rom_to_web.sh" && exit 1)
-
 RUN npm run build
 
 FROM nginx:1.27-alpine AS runtime

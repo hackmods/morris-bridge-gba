@@ -1,5 +1,13 @@
 # Changelog & project history
 
+## 2026-08-30 — Modern workshop becomes the product
+
+- Replaced the GBA playtest as the primary game with a high-resolution canvas bridge builder
+- Drag-to-weld joints, road / timber / steel, stress coloring, budget, eight-level campaign
+- Illustrated (non-pixel) presentation: painted landscape, professional UI, tutorial
+- GBA ROM kept as optional `/legacy.html` prototype
+
+
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
 ## 2026-08-29 — Delta hardware QA import guide
