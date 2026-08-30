@@ -6,6 +6,7 @@
 - 32×32 Sir Topham Hatt (stern / furious) instead of the 16×16 color blob
 - Banded illustrated sky with painted clouds; splash canyon no longer shows magenta holes
 - Track/brace materials, 8-track campaign, and GBA ROM remain the product (web is the mGBA playtest shell)
+- Release ROM **354,548 bytes** (chain-weld + illustrated presentation)
 
 
 ## 2026-08-30 — Illustrated playtest chrome + readable track cards
