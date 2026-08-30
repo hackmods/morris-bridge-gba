@@ -130,4 +130,36 @@ test.describe('Thomas\'s Bridge workshop', () => {
     const after = await page.evaluate(() => Number(window.__GAME__?.snapshot().beams));
     expect(after).toBeGreaterThan(before);
   });
+
+  test('one long drag chain-welds across Knapford Creek', async ({ page }) => {
+    await enterBuild(page);
+    const canvas = page.locator('#world');
+    const box = await canvas.boundingBox();
+    expect(box).toBeTruthy();
+    if (!box) {
+      return;
+    }
+    const points = await page.evaluate(() => {
+      const game = window.__GAME__;
+      if (!game) {
+        return null;
+      }
+      return {
+        start: game.worldToScreen(262, 382),
+        end: game.worldToScreen(798, 382),
+      };
+    });
+    expect(points).toBeTruthy();
+    if (!points) {
+      return;
+    }
+    await page.mouse.move(box.x + points.start.x, box.y + points.start.y);
+    await page.mouse.down();
+    await page.mouse.move(box.x + points.end.x, box.y + points.end.y, { steps: 24 });
+    await page.mouse.up();
+    await page.waitForTimeout(300);
+    const snap = await page.evaluate(() => window.__GAME__?.snapshot());
+    expect(Number(snap?.beams)).toBeGreaterThanOrEqual(2);
+    expect(snap?.path).toBe(true);
+  });
 });

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { engineById } from './engines';
 import { loadLevel } from './level-io';
 import { LEVELS } from './levels';
+import { spanHeat, spanIsWeak } from './materials';
 import { World, runCrossing } from './physics';
 import { starsForCost } from './score';
 import { buildAllReferences, buildReference } from './solutions';
@@ -76,6 +77,28 @@ describe('reference bridges', () => {
     expect(buildReference(world, level)).toBe(true);
     const gordon = engineById('gordon');
     expect(runCrossing(world, gordon.weight, gordon.speed, gordon.coaches, 40)).toBe('success');
+  });
+});
+
+describe('build-mode stress preview', () => {
+  it('marks a near-max road as weak before the test run', () => {
+    const world = new World();
+    loadLevel(world, LEVELS[0]);
+    const start = world.node(world.startId);
+    expect(start).toBeTruthy();
+    if (!start) {
+      return;
+    }
+    const far = world.addNode(start.x + 210, start.y);
+    const preview = world.previewBeam(start.id, far.id, 'road');
+    expect(preview.ok).toBe(true);
+    expect(preview.weak).toBe(true);
+    expect(spanIsWeak(preview.length, 'road', 4)).toBe(true);
+  });
+
+  it('heats a long road more than a short timber brace', () => {
+    expect(spanHeat(250, 'road', 4)).toBeGreaterThan(spanHeat(80, 'wood', 4));
+    expect(spanHeat(120, 'road', 12.7)).toBeGreaterThan(spanHeat(120, 'road', 3));
   });
 });
 

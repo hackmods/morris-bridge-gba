@@ -61,3 +61,24 @@ export const MATERIALS: Record<MaterialId, Material> = {
 };
 
 export const MATERIAL_ORDER: MaterialId[] = ['road', 'wood', 'steel'];
+
+/** Spans at or above this fraction of max length paint hot before the test run. */
+export const WEAK_SPAN_RATIO = 0.72;
+
+const LOAD_CAPACITY: Record<MaterialId, number> = {
+  road: 9.5,
+  wood: 12,
+  steel: 18,
+};
+
+/** 0–1 heat for build-mode coloring: long spans and heavy engines go red. */
+export function spanHeat(length: number, material: MaterialId, engineLoad: number): number {
+  const mat = MATERIALS[material];
+  const lengthHeat = length / mat.maxLength;
+  const loadHeat = engineLoad / LOAD_CAPACITY[material];
+  return Math.max(0, Math.min(1, Math.max(lengthHeat, loadHeat * 0.42)));
+}
+
+export function spanIsWeak(length: number, material: MaterialId, engineLoad: number): boolean {
+  return spanHeat(length, material, engineLoad) >= WEAK_SPAN_RATIO;
+}

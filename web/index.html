@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Thomas's Bridge</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;700&family=Source+Sans+3:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
@@ -21,6 +27,10 @@
               <span>Cost</span>
               <strong id="hud-cost">£0</strong>
             </div>
+            <div class="stat hidden" id="stat-span">
+              <span>This span</span>
+              <strong id="hud-span">£0</strong>
+            </div>
             <div class="stat">
               <span>Budget</span>
               <strong id="hud-budget">£1,800</strong>
@@ -28,6 +38,10 @@
             <div class="stat">
               <span>Par</span>
               <strong id="hud-par">£920</strong>
+            </div>
+            <div class="stat">
+              <span>Engine</span>
+              <strong id="hud-engine">Thomas</strong>
             </div>
           </div>
         </header>
@@ -51,8 +65,8 @@
           <p class="eyebrow">A railway workshop</p>
           <h1>Thomas's Bridge</h1>
           <p class="lead">
-            Drag joints into a real crossing. Weld road for the train, timber and steel for the
-            structure. No pixel toy — a proper bridge builder.
+            Drag from a joint to weld. Long strokes plant extra joints. Road carries the train;
+            timber and steel hold the deck. Hot spans are too ambitious for the chosen engine.
           </p>
           <div class="row">
             <button type="button" id="btn-play" class="primary">Open the workshop</button>

@@ -1,4 +1,4 @@
-import { MATERIALS, type MaterialId } from './materials';
+import { MATERIALS, WEAK_SPAN_RATIO, type MaterialId } from './materials';
 import { dist, dist2, lerpVec, type Vec2 } from './vec';
 
 export const SNAP_RADIUS = 18;
@@ -244,7 +244,7 @@ export class World {
       by: b.y,
       length,
       cost: length * mat.costPerPx,
-      weak: false,
+      weak: length >= mat.maxLength * WEAK_SPAN_RATIO,
     };
   }
 

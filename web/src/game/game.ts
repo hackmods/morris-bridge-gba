@@ -2,8 +2,8 @@ import { AudioDirector } from './audio';
 import { engineById, type EngineId } from './engines';
 import { loadLevel } from './level-io';
 import { LEVELS, type LevelDef } from './levels';
-import { MATERIALS, type MaterialId } from './materials';
-import { World, type SimStatus } from './physics';
+import { MATERIALS, spanIsWeak, type MaterialId } from './materials';
+import { COACH_WEIGHT, World, type SimStatus } from './physics';
 import {
   isEngineUnlocked,
   isLevelUnlocked,
@@ -31,6 +31,7 @@ export interface GameHooks {
   getLevelId(): string;
   getStatus(): SimStatus;
   getCost(): number;
+  getPendingCost(): number;
   hasPath(): boolean;
   getStars(): number;
   getTool(): ToolId;
@@ -58,6 +59,7 @@ export class BridgeGame {
   lastStars = 0;
   lastStatus: SimStatus = 'idle';
   toast = '';
+  ghostCost = 0;
   tutorialStep = 0;
   camera: Camera = { x: 0, y: 0, zoom: 1 };
   viewW = 1280;
@@ -76,7 +78,13 @@ export class BridgeGame {
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
+    loadLevel(this.world, this.level);
     this.bind();
+  }
+
+  engineLoad(): number {
+    const engine = engineById(this.engineId);
+    return engine.weight + engine.coaches * COACH_WEIGHT;
   }
 
   get level(): LevelDef {
@@ -93,11 +101,15 @@ export class BridgeGame {
   }
 
   goTitle(): void {
-    this.screen = 'title';
     this.world.endTest();
+    this.levelIndex = 0;
+    loadLevel(this.world, this.level);
+    this.screen = 'title';
+    this.fit();
   }
 
   goLevels(): void {
+    this.world.endTest();
     this.screen = 'levels';
   }
 
@@ -107,10 +119,13 @@ export class BridgeGame {
       return;
     }
     this.levelIndex = index;
+    this.world.endTest();
+    loadLevel(this.world, this.level);
     this.screen = 'engines';
     if (!isEngineUnlocked(this.progress, this.engineId)) {
       this.engineId = 'thomas';
     }
+    this.fit();
   }
 
   goBuild(): void {
@@ -177,6 +192,7 @@ export class BridgeGame {
       getLevelId: () => this.level.id,
       getStatus: () => this.world.status,
       getCost: () => this.world.totalCost(),
+      getPendingCost: () => this.ghostCost,
       hasPath: () => this.world.hasRoadPath(),
       getStars: () => this.lastStars,
       getTool: () => this.tool,
@@ -195,6 +211,8 @@ export class BridgeGame {
         engine: this.engineId,
         status: this.world.status,
         cost: this.world.totalCost(),
+        pending: this.ghostCost,
+        load: this.engineLoad(),
         nodes: this.world.nodes.size,
         beams: this.world.liveBeams().length,
         path: this.world.hasRoadPath(),
@@ -277,6 +295,9 @@ export class BridgeGame {
     this.pointer = point;
     this.hoverNode = this.world.nearestNode(point)?.id ?? null;
     this.hoverBeam = this.world.nearestBeam(point)?.id ?? null;
+    if (this.dragging) {
+      this.chainToward(point);
+    }
   }
 
   private onUp(event: PointerEvent): void {
@@ -285,58 +306,103 @@ export class BridgeGame {
       return;
     }
     const point = this.worldPoint(event);
-    this.finishBeam(point);
+    this.chainToward(point);
+    this.finishBeam(point, true);
     this.dragging = false;
     this.fromId = null;
   }
 
-  private finishBeam(point: { x: number; y: number }): void {
+  private chainToward(point: { x: number; y: number }): void {
     if (this.fromId === null || this.tool === 'erase') {
       return;
+    }
+    const material = this.tool;
+    const plantAt = MATERIALS[material].maxLength * 0.78;
+    for (let guard = 0; guard < 8; guard += 1) {
+      const from = this.world.node(this.fromId);
+      if (!from) {
+        return;
+      }
+      const hover = this.world.nearestNode(point);
+      if (hover && hover.id !== this.fromId) {
+        const reach = Math.hypot(hover.x - from.x, hover.y - from.y);
+        if (reach <= MATERIALS[material].maxLength) {
+          return;
+        }
+      }
+      const length = Math.hypot(point.x - from.x, point.y - from.y);
+      if (length < plantAt) {
+        return;
+      }
+      const t = plantAt / length;
+      const planted = this.finishBeam(
+        { x: from.x + (point.x - from.x) * t, y: from.y + (point.y - from.y) * t },
+        false,
+      );
+      if (!planted) {
+        return;
+      }
+    }
+  }
+
+  private finishBeam(point: { x: number; y: number }, announce = true): boolean {
+    if (this.fromId === null || this.tool === 'erase') {
+      return false;
     }
     const material = this.tool;
     let target = this.world.nearestNode(point);
     if (!target) {
       const from = this.world.node(this.fromId);
       if (!from) {
-        return;
+        return false;
       }
       const length = Math.hypot(point.x - from.x, point.y - from.y);
       if (length < MATERIALS[material].minLength) {
-        this.showToast('Drag farther to weld a span.');
-        return;
+        if (announce) {
+          this.showToast('Drag farther to weld a span.');
+        }
+        return false;
       }
       if (length > MATERIALS[material].maxLength) {
-        this.showToast('That span is too long. Place a joint in between.');
-        this.audio.fail();
-        return;
+        if (announce) {
+          this.showToast('That span is too long. Place a joint in between.');
+          this.audio.fail();
+        }
+        return false;
       }
       target = this.world.addNode(point.x, point.y, false, false);
     }
     const preview = this.world.previewBeam(this.fromId, target.id, material);
     if (!preview.ok) {
-      this.showToast(this.humanReason(preview.reason));
+      if (announce) {
+        this.showToast(this.humanReason(preview.reason));
+      }
       if (target && !target.seeded && this.world.liveBeams().every((beam) => beam.a !== target.id && beam.b !== target.id)) {
         this.world.nodes.delete(target.id);
       }
-      return;
+      return false;
     }
     if (this.world.totalCost() + preview.cost > this.level.budget) {
-      this.showToast('That weld would blow the budget.');
+      if (announce) {
+        this.showToast('That weld would blow the budget.');
+      }
       if (target && !target.seeded && this.world.liveBeams().every((beam) => beam.a !== target.id && beam.b !== target.id)) {
         this.world.nodes.delete(target.id);
       }
-      return;
+      return false;
     }
     const beam = this.world.addBeam(this.fromId, target.id, material);
     if (beam) {
       this.audio.place();
+      this.fromId = target.id;
       if (this.world.hasRoadPath()) {
         this.advanceTutorial(3);
       } else {
         this.advanceTutorial(2);
       }
+      return true;
     }
+    return false;
   }
 
   private humanReason(reason: string): string {
@@ -429,13 +495,16 @@ export class BridgeGame {
 
     const ctx = this.canvas.getContext('2d');
     if (ctx) {
+      const preview = this.preview();
+      this.ghostCost = preview?.cost ?? 0;
       drawFrame(ctx, this.viewW, this.viewH, {
         world: this.world,
         level: this.level,
         camera: this.camera,
         time: this.time,
         engine: engineById(this.engineId),
-        preview: this.preview(),
+        load: this.engineLoad(),
+        preview,
         hoverNode: this.hoverNode,
         hoverBeam: this.hoverBeam,
         tool: this.tool,
@@ -471,6 +540,7 @@ export class BridgeGame {
             material: 'road',
             ok: true,
             weak: false,
+            cost: 0,
             selectedId: this.fromId,
           }
         : null;
@@ -481,6 +551,7 @@ export class BridgeGame {
     }
     const hover = this.world.nearestNode(this.pointer);
     const to = hover ?? this.pointer;
+    const length = Math.hypot(to.x - from.x, to.y - from.y);
     const preview = hover
       ? this.world.previewBeam(this.fromId, hover.id, this.tool)
       : {
@@ -490,9 +561,9 @@ export class BridgeGame {
           ay: from.y,
           bx: to.x,
           by: to.y,
-          length: Math.hypot(to.x - from.x, to.y - from.y),
-          cost: 0,
-          weak: !distOk(from, to, this.tool),
+          length,
+          cost: length * MATERIALS[this.tool].costPerPx,
+          weak: spanIsWeak(length, this.tool, this.engineLoad()) || !distOk(from, to, this.tool),
         };
     return {
       ax: from.x,
@@ -502,6 +573,7 @@ export class BridgeGame {
       material: this.tool,
       ok: preview.ok,
       weak: preview.weak || !preview.ok,
+      cost: preview.ok ? preview.cost : 0,
       selectedId: this.fromId,
     };
   }

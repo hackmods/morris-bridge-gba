@@ -1,6 +1,6 @@
 import { type EngineProfile } from './engines';
 import type { LevelDef } from './levels';
-import { MATERIALS, type MaterialId } from './materials';
+import { MATERIALS, spanHeat, type MaterialId } from './materials';
 import type { Beam, Node, TrainState, World } from './physics';
 import { clamp, dist, mixColor } from './vec';
 
@@ -23,6 +23,7 @@ export interface DrawPreview {
   material: MaterialId;
   ok: boolean;
   weak: boolean;
+  cost: number;
   selectedId: number | null;
 }
 
@@ -32,6 +33,7 @@ export interface RenderFrame {
   camera: Camera;
   time: number;
   engine: EngineProfile;
+  load: number;
   preview: DrawPreview | null;
   hoverNode: number | null;
   hoverBeam: number | null;
@@ -82,14 +84,18 @@ export function drawFrame(ctx: CanvasRenderingContext2D, viewW: number, viewH: n
   ctx.translate(-camera.x * camera.zoom, -camera.y * camera.zoom);
   ctx.scale(camera.zoom, camera.zoom);
   drawHills(ctx, level, time);
+  if (!frame.testing) {
+    drawGrid(ctx, level);
+  }
   drawWater(ctx, level, time);
   drawTerrain(ctx, level);
+  drawFoliage(ctx, level);
   if (!frame.testing) {
     drawGuide(ctx, world);
   }
   drawBeams(ctx, world, frame);
   if (frame.preview) {
-    drawPreview(ctx, frame.preview);
+    drawPreview(ctx, frame.preview, frame.load);
   }
   drawJoints(ctx, world, frame);
   drawSnap(ctx, world);
@@ -111,33 +117,38 @@ function drawSky(
 ): void {
   const g = ctx.createLinearGradient(0, 0, 0, h);
   g.addColorStop(0, level.theme.skyTop);
-  g.addColorStop(0.55, level.theme.skyHorizon);
+  g.addColorStop(0.42, level.theme.skyHorizon);
+  g.addColorStop(0.72, '#f4e4c4');
   g.addColorStop(1, '#f6efe2');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, w, h);
 
   const sunX = w * 0.78;
-  const sunY = h * 0.18 + Math.sin(time * 0.15) * 4;
-  const sun = ctx.createRadialGradient(sunX, sunY, 8, sunX, sunY, 140);
-  sun.addColorStop(0, level.theme.sun);
-  sun.addColorStop(1, 'rgba(255, 230, 180, 0)');
-  ctx.fillStyle = sun;
+  const sunY = h * 0.16 + Math.sin(time * 0.15) * 4;
+  const halo = ctx.createRadialGradient(sunX, sunY, 6, sunX, sunY, 180);
+  halo.addColorStop(0, '#fff6d0');
+  halo.addColorStop(0.18, level.theme.sun);
+  halo.addColorStop(1, 'rgba(255, 230, 180, 0)');
+  ctx.fillStyle = halo;
   ctx.beginPath();
-  ctx.arc(sunX, sunY, 140, 0, Math.PI * 2);
+  ctx.arc(sunX, sunY, 180, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.fillStyle = 'rgba(255,255,255,0.55)';
-  drawCloud(ctx, w * 0.18, h * 0.14, 46, time * 6);
-  ctx.fillStyle = 'rgba(255,255,255,0.4)';
-  drawCloud(ctx, w * 0.58, h * 0.1, 36, time * 4);
+  ctx.fillStyle = 'rgba(255,255,255,0.62)';
+  drawCloud(ctx, w * 0.16, h * 0.12, 52, time * 5);
+  ctx.fillStyle = 'rgba(255,255,255,0.48)';
+  drawCloud(ctx, w * 0.52, h * 0.09, 40, time * 3.4);
+  ctx.fillStyle = 'rgba(255,255,255,0.36)';
+  drawCloud(ctx, w * 0.86, h * 0.2, 28, time * 2.2);
 }
 
 function drawCloud(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, drift: number): void {
-  const dx = (drift % 800) - 40;
+  const dx = (drift % 900) - 60;
   ctx.beginPath();
-  ctx.ellipse(x + dx, y, r * 1.6, r * 0.55, 0, 0, Math.PI * 2);
-  ctx.ellipse(x + dx + r * 0.7, y - 8, r, r * 0.5, 0, 0, Math.PI * 2);
-  ctx.ellipse(x + dx - r * 0.6, y - 4, r * 0.9, r * 0.45, 0, 0, Math.PI * 2);
+  ctx.ellipse(x + dx, y, r * 1.7, r * 0.52, 0, 0, Math.PI * 2);
+  ctx.ellipse(x + dx + r * 0.75, y - 10, r * 1.05, r * 0.48, 0, 0, Math.PI * 2);
+  ctx.ellipse(x + dx - r * 0.7, y - 6, r * 0.95, r * 0.42, 0, 0, Math.PI * 2);
+  ctx.ellipse(x + dx + r * 0.15, y - 16, r * 0.7, r * 0.36, 0, 0, Math.PI * 2);
   ctx.fill();
 }
 
@@ -156,6 +167,16 @@ function drawHills(ctx: CanvasRenderingContext2D, level: LevelDef, time: number)
   ctx.closePath();
   ctx.fill();
 
+  ctx.fillStyle = 'rgba(40, 60, 40, 0.18)';
+  for (let x = 40; x < w; x += 70) {
+    const base = h * 0.52 + Math.sin(x * 0.006 + 0.4) * 28;
+    ctx.beginPath();
+    ctx.moveTo(x, base);
+    ctx.lineTo(x + 8, base - 22);
+    ctx.lineTo(x + 16, base);
+    ctx.fill();
+  }
+
   ctx.fillStyle = level.theme.midHill;
   ctx.beginPath();
   ctx.moveTo(-80, h);
@@ -169,22 +190,42 @@ function drawHills(ctx: CanvasRenderingContext2D, level: LevelDef, time: number)
   ctx.fill();
 }
 
+function drawGrid(ctx: CanvasRenderingContext2D, level: LevelDef): void {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= level.width; x += 40) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, level.height);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= level.height; y += 40) {
+    ctx.beginPath();
+    ctx.moveTo(-40, y);
+    ctx.lineTo(level.width + 40, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function drawWater(ctx: CanvasRenderingContext2D, level: LevelDef, time: number): void {
   const y = level.waterY;
   const w = level.width;
   const g = ctx.createLinearGradient(0, y - 30, 0, level.height);
   g.addColorStop(0, level.theme.water);
+  g.addColorStop(0.45, mixColor(level.theme.water, level.theme.waterDeep, 0.45));
   g.addColorStop(1, level.theme.waterDeep);
   ctx.fillStyle = g;
   ctx.fillRect(-100, y - 8, w + 200, level.height - y + 40);
 
-  ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.32)';
   ctx.lineWidth = 2;
-  for (let i = 0; i < 5; i += 1) {
+  for (let i = 0; i < 6; i += 1) {
     ctx.beginPath();
-    const yy = y + 10 + i * 14;
-    for (let x = 0; x <= w; x += 16) {
-      const wave = Math.sin(x * 0.02 + time * 1.4 + i) * 3;
+    const yy = y + 8 + i * 13;
+    for (let x = 0; x <= w; x += 14) {
+      const wave = Math.sin(x * 0.02 + time * 1.4 + i) * 3.2;
       if (x === 0) {
         ctx.moveTo(x, yy + wave);
       } else {
@@ -193,32 +234,110 @@ function drawWater(ctx: CanvasRenderingContext2D, level: LevelDef, time: number)
     }
     ctx.stroke();
   }
+
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  ctx.fillRect(-100, y - 10, w + 200, 10);
 }
 
 function drawTerrain(ctx: CanvasRenderingContext2D, level: LevelDef): void {
   for (const pad of level.terrain) {
+    if (pad.y > level.waterY + 30) {
+      continue;
+    }
     const width = pad.x1 - pad.x0;
     ctx.fillStyle = level.theme.dirtDark;
     ctx.fillRect(pad.x0, pad.y, width, level.height - pad.y + 40);
-    ctx.fillStyle = level.theme.dirt;
+
+    const face = ctx.createLinearGradient(pad.x0, pad.y, pad.x0, pad.y + 90);
+    face.addColorStop(0, level.theme.dirt);
+    face.addColorStop(1, level.theme.dirtDark);
+    ctx.fillStyle = face;
     ctx.beginPath();
-    ctx.moveTo(pad.x0, pad.y + 18);
+    ctx.moveTo(pad.x0, pad.y + 22);
     ctx.lineTo(pad.x0, pad.y);
     ctx.lineTo(pad.x1, pad.y);
-    ctx.lineTo(pad.x1, pad.y + 18);
+    ctx.lineTo(pad.x1, pad.y + 22);
     ctx.closePath();
     ctx.fill();
+
     ctx.fillStyle = level.theme.grass;
-    ctx.fillRect(pad.x0, pad.y - 10, width, 16);
+    ctx.beginPath();
+    ctx.moveTo(pad.x0 - 6, pad.y + 4);
+    ctx.quadraticCurveTo(pad.x0 + width / 2, pad.y - 16, pad.x1 + 6, pad.y + 4);
+    ctx.lineTo(pad.x1, pad.y + 8);
+    ctx.lineTo(pad.x0, pad.y + 8);
+    ctx.closePath();
+    ctx.fill();
+
     ctx.fillStyle = level.theme.grassDark;
-    for (let x = pad.x0 + 10; x < pad.x1; x += 18) {
+    for (let x = pad.x0 + 8; x < pad.x1; x += 16) {
       ctx.beginPath();
-      ctx.moveTo(x, pad.y - 8);
-      ctx.lineTo(x + 4, pad.y - 18);
-      ctx.lineTo(x + 8, pad.y - 8);
+      ctx.moveTo(x, pad.y - 4);
+      ctx.lineTo(x + 5, pad.y - 18 - ((x * 13) % 7));
+      ctx.lineTo(x + 10, pad.y - 4);
       ctx.fill();
     }
+
+    drawAbutment(ctx, pad.x1 - 18, pad.y, true, level);
+    drawAbutment(ctx, pad.x0, pad.y, false, level);
   }
+}
+
+function drawAbutment(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  leftBank: boolean,
+  level: LevelDef,
+): void {
+  const dir = leftBank ? 1 : -1;
+  ctx.fillStyle = '#8d8374';
+  ctx.fillRect(x, y, 18, 54);
+  ctx.fillStyle = '#6f6756';
+  ctx.fillRect(x + (leftBank ? 14 : 0), y, 4, 54);
+  ctx.fillStyle = '#c2b49a';
+  for (let row = 0; row < 4; row += 1) {
+    ctx.fillRect(x + 2 + (row % 2) * 3, y + 8 + row * 11, 12, 3);
+  }
+  ctx.fillStyle = level.theme.dirtDark;
+  ctx.beginPath();
+  ctx.moveTo(x + (leftBank ? 18 : 0), y + 54);
+  ctx.lineTo(x + (leftBank ? 18 : 0) + dir * 22, y + 86);
+  ctx.lineTo(x + (leftBank ? 18 : 0), y + 86);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawFoliage(ctx: CanvasRenderingContext2D, level: LevelDef): void {
+  for (const pad of level.terrain) {
+    if (pad.y > level.waterY + 30) {
+      continue;
+    }
+    for (let x = pad.x0 + 28; x < pad.x1 - 36; x += 54) {
+      const seed = ((x * 17) | 0) % 5;
+      if (seed === 0) {
+        continue;
+      }
+      drawTree(ctx, x + seed * 3, pad.y - 8, 16 + seed * 2, level.theme.grassDark);
+    }
+  }
+}
+
+function drawTree(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  r: number,
+  leaf: string,
+): void {
+  ctx.fillStyle = '#5a4630';
+  ctx.fillRect(x - 3, y - r * 0.2, 6, r * 0.7);
+  ctx.fillStyle = leaf;
+  ctx.beginPath();
+  ctx.ellipse(x, y - r * 0.7, r * 0.85, r * 0.7, 0, 0, Math.PI * 2);
+  ctx.ellipse(x - r * 0.45, y - r * 0.4, r * 0.55, r * 0.45, 0, 0, Math.PI * 2);
+  ctx.ellipse(x + r * 0.4, y - r * 0.45, r * 0.5, r * 0.42, 0, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 function drawGuide(ctx: CanvasRenderingContext2D, world: World): void {
@@ -255,7 +374,7 @@ function drawBeams(ctx: CanvasRenderingContext2D, world: World, frame: RenderFra
       continue;
     }
     const hover = frame.hoverBeam === beam.id;
-    drawBeam(ctx, a, b, beam, frame.testing || world.status === 'running', hover);
+    drawBeam(ctx, a, b, beam, frame.testing || world.status === 'running', hover, frame.load);
   }
 }
 
@@ -266,6 +385,7 @@ function drawBeam(
   beam: Beam,
   showStress: boolean,
   hover: boolean,
+  load: number,
 ): void {
   const mat = MATERIALS[beam.material];
   const angle = Math.atan2(b.y - a.y, b.x - a.x);
@@ -279,16 +399,16 @@ function drawBeam(
   ctx.fillStyle = 'rgba(20,24,30,0.18)';
   ctx.fillRect(0, 4, length, width);
 
-  let fill = mat.color;
-  if (showStress) {
-    fill = mixColor(mat.color, '#e23b2f', clamp(beam.stress * 1.15, 0, 1));
-  }
+  const heat = showStress
+    ? clamp(beam.stress * 1.15, 0, 1)
+    : spanHeat(length, beam.material, load);
+  const fill = heat < 0.58 ? mat.color : mixColor(mat.color, '#e23b2f', clamp((heat - 0.5) / 0.5, 0, 1));
   ctx.fillStyle = fill;
   roundedRect(ctx, 0, -width / 2, length, width, 4);
   ctx.fill();
 
   if (beam.material === 'road') {
-    ctx.fillStyle = mat.colorLight;
+    ctx.fillStyle = heat >= 0.72 ? '#f0c27a' : mat.colorLight;
     ctx.fillRect(8, -1.5, Math.max(0, length - 16), 3);
     ctx.fillStyle = 'rgba(0,0,0,0.25)';
     ctx.fillRect(0, -width / 2, length, 2);
@@ -323,14 +443,19 @@ function drawBeam(
   ctx.restore();
 }
 
-function drawPreview(ctx: CanvasRenderingContext2D, preview: DrawPreview): void {
+function drawPreview(ctx: CanvasRenderingContext2D, preview: DrawPreview, load: number): void {
+  if (preview.ax === 0 && preview.bx === 0 && preview.ay === 0 && preview.by === 0) {
+    return;
+  }
   const mat = MATERIALS[preview.material];
+  const length = Math.hypot(preview.bx - preview.ax, preview.by - preview.ay);
+  const heat = spanHeat(length, preview.material, load);
   ctx.save();
   ctx.setLineDash(preview.ok ? [] : [8, 6]);
-  ctx.strokeStyle = preview.weak || !preview.ok ? '#e35b4a' : mat.colorLight;
+  ctx.strokeStyle = preview.weak || !preview.ok || heat >= 0.72 ? '#e35b4a' : mixColor(mat.colorLight, '#e23b2f', clamp((heat - 0.5) / 0.5, 0, 1));
   ctx.lineWidth = preview.material === 'road' ? 10 : 7;
   ctx.lineCap = 'round';
-  ctx.globalAlpha = 0.8;
+  ctx.globalAlpha = 0.84;
   ctx.beginPath();
   ctx.moveTo(preview.ax, preview.ay);
   ctx.lineTo(preview.bx, preview.by);
@@ -404,46 +529,73 @@ function drawEngineAt(
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
-  ctx.fillStyle = 'rgba(20,24,30,0.2)';
+  ctx.fillStyle = 'rgba(20,24,30,0.22)';
   ctx.beginPath();
-  ctx.ellipse(6, 16, 28, 6, 0, 0, Math.PI * 2);
+  ctx.ellipse(8, 18, 34, 7, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  roundedRect(ctx, -28, -16, 62, 22, 6);
+  if (engine.id === 'gordon' || engine.id === 'edward' || engine.id === 'james') {
+    ctx.fillStyle = mixColor(engine.color, '#1a2430', 0.18);
+    roundedRect(ctx, -58, -14, 28, 18, 5);
+    ctx.fill();
+    ctx.fillStyle = '#d8c9a4';
+    ctx.fillRect(-56, -8, 24, 4);
+    drawWheel(ctx, -46, 10, 7, moving ? time * 8 : 0);
+  }
+
+  roundedRect(ctx, -30, -18, 68, 24, 7);
   ctx.fillStyle = engine.color;
   ctx.fill();
+  ctx.fillStyle = mixColor(engine.color, '#ffffff', 0.18);
+  roundedRect(ctx, -26, -16, 58, 8, 4);
+  ctx.fill();
+
   ctx.fillStyle = engine.cab;
-  roundedRect(ctx, 12, -26, 22, 18, 4);
+  roundedRect(ctx, 14, -30, 24, 20, 5);
   ctx.fill();
   ctx.fillStyle = '#f4f1e6';
-  ctx.fillRect(16, -22, 8, 7);
+  ctx.fillRect(18, -26, 8, 8);
+  ctx.fillStyle = 'rgba(40,70,110,0.35)';
+  ctx.fillRect(18, -26, 8, 8);
+
   ctx.fillStyle = '#2c333c';
-  ctx.fillRect(-18, -28, 10, 12);
-  ctx.fillRect(-8, -32, 6, 8);
+  ctx.fillRect(-16, -30, 12, 14);
+  ctx.fillRect(-6, -36, 7, 10);
+  ctx.fillStyle = '#c45c4a';
+  ctx.beginPath();
+  ctx.arc(-2, -38, 5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#f3e6c8';
+  ctx.beginPath();
+  ctx.arc(-22, -6, 9, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(40,36,30,0.45)';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+  ctx.fillStyle = '#1b1f24';
+  ctx.beginPath();
+  ctx.arc(-25, -8, 1.6, 0, Math.PI * 2);
+  ctx.arc(-19, -8, 1.6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#1b1f24';
+  ctx.beginPath();
+  ctx.arc(-22, -3, 3.2, 0.15, Math.PI - 0.15);
+  ctx.stroke();
+
+  ctx.fillStyle = '#d8c9a4';
+  ctx.fillRect(-30, 2, 66, 4);
+  ctx.fillStyle = '#8a6a3c';
+  ctx.fillRect(34, 0, 8, 5);
 
   const spin = moving ? time * 8 : 0;
   drawWheel(ctx, -12, 10, 8, spin);
-  drawWheel(ctx, 10, 10, 8, spin);
-  if (engine.id === 'gordon' || engine.id === 'edward' || engine.id === 'james') {
-    ctx.fillStyle = engine.color;
-    roundedRect(ctx, -52, -12, 26, 16, 4);
-    ctx.fill();
-    drawWheel(ctx, -42, 10, 7, spin);
-  }
-
-  ctx.fillStyle = '#1b1f24';
-  ctx.beginPath();
-  ctx.arc(-6, -8, 3.2, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#f2efe6';
-  ctx.beginPath();
-  ctx.arc(-7, -9, 1.3, 0, Math.PI * 2);
-  ctx.fill();
+  drawWheel(ctx, 12, 10, 8, spin);
 
   if (moving) {
     ctx.fillStyle = 'rgba(255,255,255,0.55)';
     ctx.beginPath();
-    ctx.ellipse(-4, -40 - (time * 18) % 16, 7, 5, 0, 0, Math.PI * 2);
+    ctx.ellipse(-4, -46 - (time * 18) % 16, 8, 6, 0, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.restore();
@@ -492,4 +644,3 @@ function roundedRect(
   ctx.arcTo(x, y, x + w, y, radius);
   ctx.closePath();
 }
-

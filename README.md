@@ -34,7 +34,7 @@ The workshop is drag-to-weld on a high-res canvas (road / timber / steel). The G
 
 ## Features
 
-- **Workshop** — Drag-to-weld road, timber, and steel; live stress; cost vs par; eight crossings
+- **Workshop** — Drag-to-weld road, timber, and steel; build-mode stress heat; cost vs par; eight crossings
 - **GBA ROM** — Hold **A** and drag to chain-weld; R swaps timber / rod; HUD cost vs par (optional `/legacy.html`)
 - **Eight tracks** — Knapford through Sodor Summit, with brace tools, par cost, and ★ ratings
 - **Five engines** — Thomas, Percy, Edward, James, Gordon with unlock progression + SRAM stars

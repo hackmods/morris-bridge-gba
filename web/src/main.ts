@@ -109,10 +109,10 @@ function tutorialText(): string {
     return '';
   }
   if (game.tutorialStep <= 0) {
-    return 'Click a bank joint, then drag to weld a road toward the far side.';
+    return 'Click a bank joint, then drag toward the far bank. Long strokes plant extra joints.';
   }
   if (game.tutorialStep === 1) {
-    return 'Release on the opposite bank or in mid-air to plant the next joint.';
+    return 'Release on the opposite bank or in mid-air to plant. Hot colour means the span is too ambitious.';
   }
   if (game.tutorialStep === 2) {
     return 'Keep welding road until START and END are linked. Timber braces stop sag.';
@@ -126,6 +126,10 @@ function renderHud(rebuildTools: boolean): void {
   $('hud-cost').textContent = formatCost(game.world.totalCost());
   $('hud-budget').textContent = formatCost(game.level.budget);
   $('hud-par').textContent = formatCost(game.level.parCost);
+  $('hud-engine').textContent = ENGINES.find((engine) => engine.id === game.engineId)?.name ?? 'Thomas';
+  const pending = game.ghostCost;
+  $('stat-span').classList.toggle('hidden', pending <= 0);
+  $('hud-span').textContent = formatCost(pending);
   $('hud-cost').style.color = game.world.totalCost() > game.level.budget ? 'var(--bad)' : '';
   const testing = game.world.status === 'running';
   $('btn-test').classList.toggle('hidden', testing);
