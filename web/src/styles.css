@@ -128,7 +128,7 @@ body.theater-mode .canvas-wrap {
 
 .main {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1.4fr) 300px;
   gap: 1.25rem;
 }
 
@@ -156,18 +156,19 @@ body.theater-mode .canvas-wrap {
 .canvas-wrap {
   position: relative;
   width: 100%;
-  min-height: 360px;
+  min-height: min(72vh, 720px);
   margin: 0 auto;
-  border: 10px solid var(--timber);
-  border-radius: 6px;
+  border: 12px solid var(--timber);
+  border-radius: 8px;
   overflow: hidden;
   background: #0d0a06;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow:
-    inset 0 0 0 2px var(--brass),
-    0 12px 0 rgba(42, 24, 10, 0.25);
+    inset 0 0 0 3px var(--brass),
+    0 16px 0 rgba(42, 24, 10, 0.28),
+    0 28px 48px rgba(42, 24, 10, 0.22);
 }
 
 #game-canvas {

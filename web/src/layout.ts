@@ -4,7 +4,7 @@ export const GBA_HEIGHT = 160;
 export function computeCanvasScale(
   containerWidth: number,
   containerHeight: number,
-  maxScale = 6,
+  maxScale = 8,
 ): number {
   if (containerWidth <= 0 || containerHeight <= 0) {
     return 3;

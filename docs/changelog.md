@@ -7,6 +7,11 @@
 - Closed PR **#70**, which had put a high-res workshop at `/` and the ROM on `/legacy.html`
 - Note in [AGENTS.md](../AGENTS.md)
 
+## 2026-08-30 — Larger illustrated playtest stage
+
+- Web playtest canvas stage is taller (up to 8× GBA pixels) with a thicker timber/brass bezel
+- Copy names the GBA game as the product; hold-A chain-weld and timber/rod in the how-to
+
 ## 2026-08-30 — Build-mode stress preview
 
 - Placed timber/rod spans glow hot while building if they cannot take the selected engine
