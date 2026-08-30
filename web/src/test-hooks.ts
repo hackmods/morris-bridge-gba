@@ -56,14 +56,19 @@ function decodeSaveProgress(save: Uint8Array | null): SaveProgressSnapshot | nul
     return null;
   }
 
+  const version = save[4]!;
+  const packedStars =
+    version >= 4 && save.length >= 32 ? save[8]! | (save[9]! << 8) : save[8]!;
+  const introSeenMask = version >= 4 && save.length >= 32 ? save[26]! : save[15]!;
+
   return {
     magic,
-    version: save[4]!,
+    version,
     maxUnlockedLevel: save[5]!,
     clearedLevels: save[6]!,
     unlockedEngines: save[7]!,
-    packedStars: save[8]!,
-    introSeenMask: save[15]!,
+    packedStars,
+    introSeenMask,
   };
 }
 
@@ -157,7 +162,7 @@ export function installTestHooks(
       if (saveName) {
         try {
           const raw = module.FS.readFile(saveName) as Uint8Array;
-          fsBytes = Array.from(raw.subarray(0, 20));
+          fsBytes = Array.from(raw.subarray(0, 32));
         } catch (error) {
           fsError = error instanceof Error ? error.message : String(error);
         }
@@ -170,7 +175,7 @@ export function installTestHooks(
         listSaves: module.listSaves(),
         fsBytes,
         fsError,
-        getSaveBytes: viaGetSave ? Array.from(viaGetSave.subarray(0, 20)) : null,
+        getSaveBytes: viaGetSave ? Array.from(viaGetSave.subarray(0, 32)) : null,
       };
     },
     sampleCanvas: () => sampleCanvas(document.getElementById('game-canvas') as HTMLCanvasElement),

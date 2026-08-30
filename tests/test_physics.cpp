@@ -298,7 +298,7 @@ int main()
         system.load_level(-1);
         assert(system.current_level() == 0);
         system.load_level(99);
-        assert(system.current_level() == 2);
+        assert(system.current_level() == level::COUNT - 1);
         std::cout << "  ok per-level seeding and clamping\n";
     }
 
@@ -373,12 +373,6 @@ int main()
 
     {
         bridge::BridgeSystem system;
-        assert(level_solutions::run_knapford_playthrough(system));
-        std::cout << "  ok documented Knapford playthrough succeeds\n";
-    }
-
-    {
-        bridge::BridgeSystem system;
         system.load_level(1);
         assert(system.add_strut(bridge::START_NODE, bridge::END_NODE, bridge::LinkRole::brace));
         assert(system.begin_test() == bridge::SimStatus::no_path);
@@ -386,25 +380,22 @@ int main()
     }
 
     {
-        bridge::BridgeSystem system;
-        assert(level_solutions::run_gordon_hill_playthrough(system));
-        const session::RunScore score =
-            session::compute_run_score(system, system.level_def());
-        assert(score.stars == 3);
-        assert(score.total_cost <= system.level_def().par_cost);
-        std::cout << "  ok Gordon's Hill reference scores 3 stars (cost=" << score.total_cost
-                  << " par=" << system.level_def().par_cost << ")\n";
-    }
+        const char* names[] = {
+            "Knapford", "Gordon's Hill", "Vicarstown", "Tidmouth",
+            "Wellsworth", "Crovan's Gate", "Callan Canal", "Sodor Summit",
+        };
 
-    {
-        bridge::BridgeSystem system;
-        assert(level_solutions::run_vicarstown_playthrough(system));
-        const session::RunScore score =
-            session::compute_run_score(system, system.level_def());
-        assert(score.stars == 3);
-        assert(score.total_cost <= system.level_def().par_cost);
-        std::cout << "  ok Vicarstown reference scores 3 stars (cost=" << score.total_cost
-                  << " par=" << system.level_def().par_cost << ")\n";
+        for(int level_index = 0; level_index < level::COUNT; ++level_index)
+        {
+            bridge::BridgeSystem system;
+            assert(level_solutions::run_level_playthrough(system, level_index));
+            const session::RunScore score =
+                session::compute_run_score(system, system.level_def());
+            assert(score.stars == 3);
+            assert(score.total_cost <= system.level_def().par_cost);
+            std::cout << "  ok " << names[level_index] << " reference scores 3 stars (cost="
+                      << score.total_cost << " par=" << system.level_def().par_cost << ")\n";
+        }
     }
 
     std::cout << "All host physics tests passed.\n";

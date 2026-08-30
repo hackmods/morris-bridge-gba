@@ -45,6 +45,20 @@ int main()
         std::cout << "  ok Gordon's Hill par and theme id\n";
     }
 
+    {
+        for(int level_index = 0; level_index < level::COUNT; ++level_index)
+        {
+            bridge::BridgeSystem system;
+            assert(level_solutions::build_reference(system, level_index));
+            const session::RunScore score =
+                session::compute_run_score(system, system.level_def());
+            assert(score.stars == 3);
+            assert(score.total_cost <= system.level_def().par_cost);
+        }
+
+        std::cout << "  ok every shipped track has a 3-star reference\n";
+    }
+
     std::cout << "All session tests passed.\n";
     return 0;
 }

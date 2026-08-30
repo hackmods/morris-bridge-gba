@@ -1,5 +1,14 @@
 # Changelog & project history
 
+## 2026-08-30 — Eight-track GBA campaign + SRAM v4
+
+- Eight data-driven tracks (Knapford through Sodor Summit) with distinct gaps, deck heights, and par costs
+- SRAM **v4** (32 bytes): 2-bit stars × 8, per-track best cost, intro flags; v1–v3 saves still migrate
+- Gordon unlocks after every track is cleared; Percy / Edward / James still reward the first three clears
+- Level-select **track cards** for all eight stations; intro panels for each first visit
+- Host playthrough + 3★ reference for every shipped level
+
+
 ## 2026-08-30 — GBA weld pass (still a GBA game)
 
 - Hold **A** and drag to weld a span from the selected joint; release to plant

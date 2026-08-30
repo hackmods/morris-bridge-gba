@@ -56,6 +56,10 @@ public:
                        uint8_t packed_stars, const uint16_t best_costs[level::COUNT],
                        uint8_t intro_seen_mask);
 
+    void apply_save_v4(int max_unlocked_level, unsigned cleared_levels, unsigned unlocked_engines,
+                       uint16_t packed_stars, const uint16_t best_costs[level::COUNT],
+                       uint8_t intro_seen_mask);
+
     [[nodiscard]] bool is_intro_seen(int level_index) const;
 
     void mark_intro_seen(int level_index);
@@ -75,7 +79,7 @@ public:
         return _unlocked_engines;
     }
 
-    [[nodiscard]] uint8_t packed_best_stars() const;
+    [[nodiscard]] uint16_t packed_best_stars() const;
 
     [[nodiscard]] const uint16_t* best_costs() const
     {

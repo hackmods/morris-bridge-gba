@@ -244,7 +244,24 @@ void Game::_sync_level_select_flavor()
                 label = (_lore_roll(11) & 1) ? game_ui::LABEL_THIN : game_ui::LABEL_TOOT;
                 break;
 
-            default:
+            case 3:
+                label = (_lore_roll(12) & 1) ? game_ui::LABEL_CHUFF : game_ui::LABEL_AGAIN;
+                break;
+
+            case 4:
+                label = (_lore_roll(13) & 1) ? game_ui::LABEL_WAIT : game_ui::LABEL_START;
+                break;
+
+            case 5:
+                label = (_lore_roll(14) & 1) ? game_ui::LABEL_THIN : game_ui::LABEL_LISTEN;
+                break;
+
+            case 6:
+                label = (_lore_roll(15) & 1) ? game_ui::LABEL_LOOP : game_ui::LABEL_TOOT;
+                break;
+
+            case 7:
+                label = (_lore_roll(16) & 1) ? game_ui::LABEL_CONFUS : game_ui::LABEL_PEEP;
                 break;
         }
 

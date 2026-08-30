@@ -16,7 +16,7 @@ Related: [Architecture](architecture.md) · [Future expansion](future-expansion.
 | One implicit strut type; train follows any link | **Track vs brace vs foundation** — explicit route vs structure |
 | Procedural placeholder pixels | **Authored Aseprite art** + BG parallax themes |
 | Generated MOD/WAV placeholders | **Polished score** per mode + sync’d SFX (chuff, snap, stings) |
-| 3 levels, unlock bits | **Data-driven levels**, stars, par cost, SRAM replay records |
+| 3 levels, unlock bits | **8 data-driven tracks**, stars, par cost, SRAM replay records |
 | ~1900-line `main.cpp` | **Thin main** + screens + view + testable session layer |
 | Meme HUD only | **Surface charm + optional PG lore** ([lore-leak.md](lore-leak.md)) woven into rare strings and level flavor |
 

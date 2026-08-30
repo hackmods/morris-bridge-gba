@@ -47,7 +47,7 @@ The ROM teaches controls directly:
 | Percy | 3 | First clear — Knapford Creek |
 | Edward | 5 | First clear — Gordon's Hill |
 | James | 6 | First clear — Vicarstown |
-| Gordon | 10 | All three tracks cleared |
+| Gordon | 10 | Every track cleared |
 
 Heavier engines snap struts sooner. Build-mode weak-strut warnings use the selected engine's load.
 
@@ -55,7 +55,8 @@ Code: [`include/engine.h`](../include/engine.h), [`include/progress.h`](../inclu
 
 ## Levels
 
-1. Knapford Creek · 2. Gordon's Hill · 3. Vicarstown
+1. Knapford Creek · 2. Gordon's Hill · 3. Vicarstown · 4. Tidmouth Yard
+5. Wellsworth Gap · 6. Crovan's Gate · 7. Callan Canal · 8. Sodor Summit
 
 ## Controls
 

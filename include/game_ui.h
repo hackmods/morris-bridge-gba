@@ -79,10 +79,10 @@ constexpr int LABEL_TRACK = 17;
 constexpr int LABEL_ROD = 18;
 constexpr int LABEL_INTRO_BASE = 19;
 
-constexpr int LABEL_LISTEN = 25;
-constexpr int LABEL_CONFUS = 26;
-constexpr int LABEL_LOOP = 27;
-constexpr int LABEL_THIN = 28;
+constexpr int LABEL_LISTEN = 35;
+constexpr int LABEL_CONFUS = 36;
+constexpr int LABEL_LOOP = 37;
+constexpr int LABEL_THIN = 38;
 
 constexpr int BANNER_LEVEL_SELECT = 0;
 constexpr int BANNER_HATT_OK = 1;

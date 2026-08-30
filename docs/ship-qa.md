@@ -13,7 +13,7 @@ This document records master-plan **M1–M5** screen-flow QA and related ship ga
 | Gate | Command / job | Status |
 |------|----------------|--------|
 | Host physics + session | `make -C tests` | Green on `main` |
-| All-level playthroughs | `test_physics` Knapford / Gordon / Vicarstown 3★ | Green |
+| All-level playthroughs | `test_physics` 3★ reference on all 8 tracks | Green |
 | Web unit tests | `cd web && npm test` | Green |
 | Web E2E (all-level wins, M1–M2, M3–M5, Gordon save) | `npm run test:e2e` | Green on `main` (34 tests) |
 | GBA ROM build | Release workflow `build-rom` | Green |

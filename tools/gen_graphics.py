@@ -223,6 +223,7 @@ FONT = {
     "G": ["01111", "10000", "10111", "10001", "01110"],
     "H": ["10001", "10001", "11111", "10001", "10001"],
     "I": ["11111", "00100", "00100", "00100", "11111"],
+    "J": ["11111", "00100", "00100", "10100", "01100"],
     "K": ["10001", "10010", "11100", "10010", "10001"],
     "L": ["10000", "10000", "10000", "10000", "11111"],
     "M": ["10001", "11011", "10101", "10001", "10001"],
@@ -235,6 +236,7 @@ FONT = {
     "U": ["10001", "10001", "10001", "10001", "01110"],
     "V": ["10001", "10001", "10001", "01010", "01010"],
     "W": ["10001", "10001", "10101", "10101", "01010"],
+    "Y": ["10001", "01010", "00100", "00100", "00100"],
     "'": ["00100", "00100", "01000", "00000", "00000"],
     "!": ["00100", "00100", "00100", "00000", "00100"],
     " ": ["00000", "00000", "00000", "00000", "00000"],
@@ -1126,8 +1128,8 @@ def make_water() -> None:
 
 def make_labels() -> None:
     # Indices 0-7: core HUD. 8-10: onboarding hints. 11-16: rare PG lore alternates.
-    # 17-18: build tool indicators. 19-24: level intro dialog pairs.
-    # 25-28: extra rare strings from docs/lore-leak.md phrase book.
+    # 17-18: build tool indicators. 19-34: eight level intro dialog pairs.
+    # 35-38: extra rare strings from docs/lore-leak.md phrase book.
     texts = (
         "BUILD",
         "TEST!",
@@ -1154,6 +1156,16 @@ def make_labels() -> None:
         "BRACE",
         "LONG!",
         "RODS!",
+        "YARD!",
+        "SHORT",
+        "GAP!",
+        "SPAN",
+        "GATE!",
+        "HIGH",
+        "CANAL",
+        "TIGHT",
+        "PEAK!",
+        "HARD",
         "LISTEN",
         "CONFUS",
         "LOOP!",
@@ -1163,6 +1175,7 @@ def make_labels() -> None:
     px = fill(w, fh * len(texts))
     colors = (
         2, 2, 2, 3, 2, 3, 2, 3, 2, 2, 2, 3, 3, 2, 3, 3, 3, 2, 2, 2, 2, 3, 3, 2, 3,
+        2, 3, 2, 3, 2, 3, 2, 3, 2, 3,
         3, 9, 3, 3,
     )
     for i, text in enumerate(texts):
@@ -1202,6 +1215,11 @@ def make_track_card() -> None:
         ("1", "KNAPFORD", "FLAT!", 11),
         ("2", "GORDON", "HILL!", 3),
         ("3", "VICARSTOWN", "LONG!", 9),
+        ("4", "TIDMOUTH", "YARD!", 11),
+        ("5", "WELLSWORTH", "GAP!", 3),
+        ("6", "CROVAN", "GATE!", 9),
+        ("7", "CALLAN", "CANAL", 11),
+        ("8", "SODOR", "PEAK!", 3),
     )
     px = fill(w, fh * len(entries))
     for i, (num, title, sub, accent) in enumerate(entries):

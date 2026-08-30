@@ -44,12 +44,27 @@ int main()
     unlocked = engine::none;
     assert(progress.on_level_cleared(2, unlocked));
     assert(unlocked == engine::Id::james);
-    assert(progress.is_engine_unlocked(engine::Id::gordon));
-    std::cout << "  ok clearing level 2 unlocks James and Gordon (all tracks)\n";
+    assert(progress.is_level_unlocked(3));
+    assert(! progress.is_engine_unlocked(engine::Id::gordon));
+    std::cout << "  ok clearing level 2 unlocks James and Tidmouth\n";
 
     unlocked = engine::none;
     assert(! progress.on_level_cleared(2, unlocked));
     std::cout << "  ok repeat clear of level 2 does not re-unlock\n";
+
+    for(int level_index = 3; level_index < level::COUNT - 1; ++level_index)
+    {
+        unlocked = engine::none;
+        assert(! progress.on_level_cleared(level_index, unlocked));
+        assert(unlocked == engine::none);
+        assert(progress.is_level_unlocked(level_index + 1));
+    }
+
+    unlocked = engine::none;
+    assert(progress.on_level_cleared(level::COUNT - 1, unlocked));
+    assert(unlocked == engine::Id::gordon);
+    assert(progress.is_engine_unlocked(engine::Id::gordon));
+    std::cout << "  ok clearing every track unlocks Gordon\n";
 
     progress.reset();
     assert(progress.is_engine_unlocked(engine::Id::thomas));

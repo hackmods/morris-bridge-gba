@@ -16,7 +16,7 @@ make -C tests
 | Tension | Midspan, endpoints, zero-length edge case |
 | Simulation | Two-span success, three-span success, overlong span failure, `no_path` |
 | Rating | `max_tension_for_length` at 48 px, 96 px, and 176 px |
-| Levels | Per-level seed counts, START/END positions, invalid index clamping |
+| Levels | Per-level seed counts, START/END positions, invalid index clamping, 8-track 3★ playthroughs |
 | Build helpers | Preview statuses, undo chain, player node budget |
 
 ### Mock layer
