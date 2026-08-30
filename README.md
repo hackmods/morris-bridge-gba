@@ -63,4 +63,4 @@ Full wiki: [`docs/README.md`](docs/README.md)
 | **Git repo** | [`hackmods/morris-bridge-gba`](https://github.com/hackmods/morris-bridge-gba) (historical folder name) |
 | **License** | zlib (same as Butano) |
 
-Pre-built ROM (~341 KB) is committed for clone-and-play. Rebuild with `./scripts/build_rom.sh` after gameplay or asset changes.
+Pre-built ROM (~355 KB) is committed for clone-and-play. Rebuild with `./scripts/build_rom.sh` after gameplay or asset changes.
