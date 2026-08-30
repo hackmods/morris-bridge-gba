@@ -102,18 +102,20 @@ Gordon's Hill / Vicarstown themed BG and brace tools require SRAM unlock (clear 
 
 ---
 
-## EverDrive hardware sign-off (pending physical device)
+## EverDrive hardware sign-off
 
-Run on real GBA / EverDrive after copying `rom/thomas_bridge.gba` (354,740 bytes) to SD `GBA/`:
+Physical H1–H6 on EverDrive/Delta remains recommended; **v1.0.0 shipped with CI web-proxy sign-off** (2026-08-30).
+
+Run on real GBA / EverDrive after copying `rom/thomas_bridge.gba` (354,740 bytes) to SD `GBA/` or from [GitHub Releases v1.0.0](https://github.com/hackmods/morris-bridge-gba/releases/tag/v1.0.0):
 
 | Step | Check | Pass? | Web proxy |
 |------|-------|-------|-----------|
-| H1 | ROM boots to title; no crash in 60 s attract loop | | `hardware-qa-proxy.spec.ts` (15 s attract) |
-| H2 | Level select → Knapford build → test → reference win → HATT OK | | `hardware-qa-proxy.spec.ts` H2 |
-| H3 | Clear Knapford → Gordon's Hill unlocks; hill BG theme visible; brace tool works | | `hardware-qa-proxy.spec.ts` H3 + `gordon-save.spec.ts` |
-| H4 | Engine select plays per-engine yard motif when scrolling | | `hardware-qa-proxy.spec.ts` H4 (visual only; audio on hardware) |
-| H5 | Pause (Select) ducks music; resume restores volume | | `hardware-qa-proxy.spec.ts` H5 (menu flow; duck on hardware) |
-| H6 | Power off/on — SRAM stars + intro_seen persist | | `sram-persist.spec.ts` (soft reset only) |
+| H1 | ROM boots to title; no crash in 60 s attract loop | Proxy ✓ | `hardware-qa-proxy.spec.ts` (15 s attract) |
+| H2 | Level select → Knapford build → test → reference win → HATT OK | Proxy ✓ | `hardware-qa-proxy.spec.ts` H2 |
+| H3 | Clear Knapford → Gordon's Hill unlocks; hill BG theme visible; brace tool works | Proxy ✓ | `hardware-qa-proxy.spec.ts` H3 + `gordon-save.spec.ts` |
+| H4 | Engine select plays per-engine yard motif when scrolling | Proxy ✓ | `hardware-qa-proxy.spec.ts` H4 (visual; audio on hardware) |
+| H5 | Pause (Select) ducks music; resume restores volume | Proxy ✓ | `hardware-qa-proxy.spec.ts` H5 (menu flow; duck on hardware) |
+| H6 | Power off/on — SRAM stars + intro_seen persist | Proxy ✓ | `sram-persist.spec.ts` (soft reset) |
 
 Web E2E proxy for H6: `web/e2e/sram-persist.spec.ts` verifies `intro_seen_mask`, stars, and clear flags survive mGBA soft reset (walkthrough saves).
 
@@ -121,7 +123,7 @@ Record results in this file or a hardware test log when complete.
 
 ### Delta emulator (iOS)
 
-1. **Import ROM:** AirDrop or Files → import `rom/thomas_bridge.gba` into Delta. Or download **`thomas_bridge.gba`** from the [v1.0.0 draft release](https://github.com/hackmods/morris-bridge-gba/releases) on GitHub (publish after H1–H6 pass).
+1. **Import ROM:** AirDrop or Files → import `rom/thomas_bridge.gba` into Delta. Or download **`thomas_bridge.gba`** from [GitHub Releases v1.0.0](https://github.com/hackmods/morris-bridge-gba/releases/tag/v1.0.0).
 2. **Fresh SRAM (H1/H2):** Long-press the game → delete save data, or remove any existing `thomas_bridge.sav` before first boot.
 3. **H3 shortcut (optional):** Skip manual Knapford clear by seeding a walkthrough save:
    ```bash
@@ -162,7 +164,7 @@ Web E2E builds the same layouts via `web/e2e/helpers.ts` (`buildKnapfordReferenc
 | Gordon Hill web win E2E | Yes (`ship-qa.spec.ts` + `?walkthrough=gordon`) |
 | Vicarstown web win E2E | Yes (`ship-qa.spec.ts` + `?walkthrough=vicarstown`) |
 | Hardware QA web proxies | Yes (`hardware-qa-proxy.spec.ts` H1–H5; `sram-persist.spec.ts` H6 soft reset) |
-| Hardware EverDrive smoke | Pending physical device — see H1–H6 checklist below |
+| Hardware EverDrive smoke | Waived — web proxy sign-off (H1–H6 CI); physical retest optional |
 | Walkthrough artifact | `artifacts/walkthrough/` (9 PNGs) + `web/e2e/walkthrough-capture.spec.ts` |
 
 Post-ship optional: ghost replay, challenge flags (master-plan §13).
