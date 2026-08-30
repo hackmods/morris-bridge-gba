@@ -62,6 +62,12 @@ cd web && npx playwright install chromium && npm run test:e2e
 
 ## Known pitfalls (do not re-learn)
 
+### Product
+
+| Pitfall | Fix |
+|---------|-----|
+| Treat a high-res canvas workshop as the game | **The whole point is Game Boy Advance.** Product is `rom/thomas_bridge.gba`. Web is mGBA playtest only. Closed PR **#70**. See [AGENTS.md](../AGENTS.md). |
+
 ### Web / E2E
 
 | Pitfall | Fix |

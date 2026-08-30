@@ -1,5 +1,12 @@
 # Changelog & project history
 
+## 2026-08-30 — GBA is the product (not a web workshop)
+
+- The whole point of this repository is a **Game Boy Advance** game
+- Web remains the mGBA playtest of `rom/thomas_bridge.gba`
+- Closed PR **#70**, which had put a high-res workshop at `/` and the ROM on `/legacy.html`
+- Note in [AGENTS.md](../AGENTS.md)
+
 ## 2026-08-30 — Illustrated GBA presentation + chain-weld
 
 - Hold **A** and drag to chain-draw joints every 24 px (Poly Bridge-style weld); tap A still joins

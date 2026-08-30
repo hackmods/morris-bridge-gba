@@ -1,6 +1,6 @@
 # Thomas's Bridge — Documentation
 
-Knowledge base for **Thomas's Bridge** (ROM codename `thomas_bridge`): a Game Boy Advance bridge-building prototype built with [Butano](https://github.com/GValiente/butano).
+Knowledge base for **Thomas's Bridge** (ROM codename `thomas_bridge`): a Game Boy Advance bridge-building game built with [Butano](https://github.com/GValiente/butano). The whole point is the GBA ROM; the browser is an mGBA playtest. See [AGENTS.md](../AGENTS.md).
 
 ## Quick links
 

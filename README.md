@@ -14,6 +14,8 @@
        (_)  (_)         chuff~
 ```
 
+**The whole point of this project is a Game Boy Advance game.** The playable product is the ROM. The browser page is an mGBA playtest of that ROM, not a high-res replacement.
+
 **Thomas's Bridge** — a meme-forward GBA bridge-building game (Butano / C++20).
 
 Help a cheeky blue tank engine cross Sodor gaps while **Sir Topham Hatt** watches for confusion and delay. Original pixel art — a playful Thomas homage, **not** a licensed product.

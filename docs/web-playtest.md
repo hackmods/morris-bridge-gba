@@ -1,6 +1,6 @@
 # Web playtest
 
-Browser-based verification using **mGBA-WASM** (`@thenick775/mgba-wasm`) — the same core family as [gbajs3](https://gba.nicholas-vancise.dev).
+Browser-based verification using **mGBA-WASM** (`@thenick775/mgba-wasm`) — the same core family as [gbajs3](https://gba.nicholas-vancise.dev). This is **not** the game. The game is the Game Boy Advance ROM.
 
 ## Why not open `index.html` directly?
 

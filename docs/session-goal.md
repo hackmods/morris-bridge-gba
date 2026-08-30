@@ -6,7 +6,9 @@ Copy everything inside the **GOAL** block below into a new Cloud Agent session (
 
 ## GOAL
 
-**Finish Thomas's Bridge as a shippable Game Boy Advance product** — not a prototype. Implement [master-plan.md](master-plan.md) Phases 1–7 in order. Merge or build on PR #13 (backdrop/level/playthrough fixes) if not yet on `main`.
+**Finish Thomas's Bridge as a shippable Game Boy Advance product** — not a prototype, and not a browser workshop. The whole point of this repository is the GBA ROM. Implement [master-plan.md](master-plan.md) Phases 1–7 in order. Merge or build on PR #13 (backdrop/level/playthrough fixes) if not yet on `main`.
+
+Do **not** ship a high-resolution web builder as the product, or demote the ROM to “legacy.” Web stays the mGBA playtest. See [AGENTS.md](../AGENTS.md).
 
 ### Definition of done
 
