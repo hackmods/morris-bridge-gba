@@ -327,18 +327,25 @@ void Game::_update_build()
         const bn::fixed dx = _cursor_pos.x() - _weld_press_pos.x();
         const bn::fixed dy = _cursor_pos.y() - _weld_press_pos.y();
 
-        if(dx * dx + dy * dy > bn::fixed(36))
+        if(dx * dx + dy * dy > bn::fixed(game_ui::WELD_DRAG_SQ))
         {
             _weld_dragged = true;
+        }
+
+        if(_weld_dragged)
+        {
+            _try_chain_weld(hovered, draw_at);
         }
     }
 
     if(_weld_holding && !bn::keypad::a_held())
     {
+        const bool already_on_selected =
+            hovered && _selected && hovered.value() == _selected.value();
         const bool connect = _weld_dragged || !hovered ||
             (_selected && hovered.value() != _selected.value());
 
-        if(_selected && connect)
+        if(_selected && connect && !already_on_selected)
         {
             _handle_confirm(hovered, draw_at);
         }
@@ -464,6 +471,68 @@ void Game::_handle_confirm(bn::optional<int> hovered, bn::fixed_point place_at)
     }
 
     _selected = node_id;
+}
+
+void Game::_try_chain_weld(bn::optional<int> hovered, bn::fixed_point draw_at)
+{
+    if(!_selected)
+    {
+        return;
+    }
+
+    const int from = _selected.value();
+
+    if(hovered && hovered.value() == from)
+    {
+        return;
+    }
+
+    const bn::fixed_point from_pos = _bridge.nodes()[from].position;
+
+    if(hovered)
+    {
+        const bridge::StrutPreview preview =
+            _bridge.preview_strut(from, hovered.value(), _connect_role);
+
+        if(preview.status == bridge::StrutPreviewStatus::ok)
+        {
+            _handle_confirm(hovered, draw_at);
+            _weld_press_pos = _cursor_pos;
+        }
+
+        return;
+    }
+
+    bn::fixed_point to = game::snap_point(draw_at);
+    const bn::fixed span2 = physics::squared_distance(from_pos, to);
+
+    if(span2 < bn::fixed(game_ui::CHAIN_WELD_MIN_SQ))
+    {
+        return;
+    }
+
+    const bn::fixed span = physics::distance(from_pos, to);
+
+    if(span >= game::CHAIN_WELD_MIN * 2)
+    {
+        const bn::fixed t = game::CHAIN_WELD_MIN.safe_division(span);
+        to = game::snap_point(physics::lerp(from_pos, to, t));
+    }
+
+    if(to.x() == from_pos.x() && to.y() == from_pos.y())
+    {
+        return;
+    }
+
+    const bn::optional<int> near_joint = _bridge.find_node_near(to);
+
+    if(near_joint && near_joint.value() == from)
+    {
+        return;
+    }
+
+    _handle_confirm(near_joint, to);
+    _weld_press_pos = _cursor_pos;
 }
 
 void Game::_cycle_connect_role()

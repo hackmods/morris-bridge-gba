@@ -27,6 +27,9 @@ inline constexpr bn::fixed UNDERGROUND_Y = 64;
 /// 4 px build grid (matches cursor snap in main.cpp).
 inline constexpr bn::fixed GRID_STEP = 4;
 
+/// Hold-A chain-draw plants the next joint at least this far from the last.
+inline constexpr bn::fixed CHAIN_WELD_MIN = 24;
+
 /// Train sprite center sits above node joints so wheels rest on the rail.
 inline constexpr bn::fixed TRAIN_Y_OFFSET = -6;
 

@@ -69,6 +69,11 @@ constexpr int LABEL_HINT_TEST = 9;
 
 constexpr int BUILD_HINT_FRAMES = 240;
 
+/// Squared pixels of cursor travel before hold-A counts as a weld drag.
+constexpr int WELD_DRAG_SQ = 36;
+/// Minimum squared length before hold-A plants the next joint (24 px).
+constexpr int CHAIN_WELD_MIN_SQ = 576;
+
 constexpr int LABEL_CHUFF = 11;
 constexpr int LABEL_TOOT = 12;
 constexpr int LABEL_OOPS = 13;
