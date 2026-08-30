@@ -38,7 +38,7 @@ Recommended before hardware testing:
 
 ## ROM details
 
-- Size: ~341 KB (349,092 bytes as of 2026-08-30 eight-track release)
+- Size: ~347 KB (354,740 bytes as of 2026-08-30 timber/rod + cost HUD)
 - Title: `THOMASBRIDGE`
 - Code: `THOM01`
 - Resolution: 240×160 @ 60 Hz target

@@ -5,6 +5,7 @@
 - Track welds are **timber** (cost 1); braces are **rod** (cost 2, 1.25× strength)
 - 3★ pars updated so every reference still clears on budget
 - Materials stay independent of engine type (load vs capacity)
+- Clone-and-play ROM **354,740 bytes** (timber/rod costs + live cost HUD)
 
 ## 2026-08-30 — Build HUD cost vs par
 
