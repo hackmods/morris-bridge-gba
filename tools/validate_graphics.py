@@ -20,7 +20,7 @@ EXPECTED = {
     "node.bmp": {"width": 16, "height": 16, "max_colors": 16},
     "anchor.bmp": {"width": 16, "height": 16, "max_colors": 16},
     "strut.bmp": {"width": 16, "height": 112, "max_colors": 16},
-    "scenery_far.bmp": {"width": 64, "height": 32, "max_colors": 16},
+    "hatt.bmp": {"width": 32, "height": 64, "max_colors": 16},
 }
 
 THEME_BG_LAYERS = ("bg_sky", "bg_hills", "bg_ground", "bg_water")

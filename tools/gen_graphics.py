@@ -116,14 +116,124 @@ def blit_map(px: list[int], w: int, ox: int, oy: int, art: str) -> None:
 
 def sky_gradient(px: list[int], w: int, h: int, y0: int, y1: int,
                  colors: tuple[int, int, int] = (15, 8, 7)) -> None:
-    """Ordered dither sky ramp."""
+    """Banded illustrated sky — solid ramps, Bayer only on thin horizons."""
     light, mid, dark = colors
+    span = max(1, y1 - y0 - 1)
     for y in range(y0, y1):
-        t = (y - y0) / max(1, y1 - y0 - 1)
-        base = light if t < 0.45 else (mid if t < 0.75 else dark)
-        alt = mid if base == light else (dark if base == mid else dark)
+        t = (y - y0) / span
+        if t < 0.40:
+            color, alt = light, None
+        elif t < 0.50:
+            color, alt = light, mid
+        elif t < 0.72:
+            color, alt = mid, None
+        elif t < 0.82:
+            color, alt = mid, dark
+        else:
+            color, alt = dark, None
         for x in range(w):
-            put(px, w, x, y, base if (x + y) % 3 else alt)
+            if alt is not None and ((x + y * 2) & 3) == 0:
+                put(px, w, x, y, alt)
+            else:
+                put(px, w, x, y, color)
+
+
+def blit_ellipse(px: list[int], w: int, cx: int, cy: int, rx: int, ry: int, color: int) -> None:
+    if rx <= 0 or ry <= 0:
+        return
+    for dy in range(-ry, ry + 1):
+        for dx in range(-rx, rx + 1):
+            if (dx / rx) ** 2 + (dy / ry) ** 2 <= 1.0:
+                put(px, w, cx + dx, cy + dy, color)
+
+
+def blit_painted_cloud(px: list[int], w: int, cx: int, cy: int, scale: int = 1) -> None:
+    """Layered cloud mass — white puffs with a thin blue underside, not a punched hole."""
+    rx, ry = 10 * scale, 5 * scale
+    blit_ellipse(px, w, cx, cy, rx, ry, 2)
+    blit_ellipse(px, w, cx - 6 * scale, cy + 1, 7 * scale, 4 * scale, 2)
+    blit_ellipse(px, w, cx + 6 * scale, cy + 1, 6 * scale, 4 * scale, 2)
+    blit_ellipse(px, w, cx, cy - 2 * scale, 5 * scale, 3 * scale, 2)
+    for dx in range(-rx + 2, rx - 1):
+        put(px, w, cx + dx, cy + ry, 8)
+        if abs(dx) < rx - 3:
+            put(px, w, cx + dx, cy + ry - 1, 8)
+
+
+def blit_sun(px: list[int], w: int, cx: int, cy: int, radius: int = 8) -> None:
+    for dy in range(-radius - 3, radius + 4):
+        for dx in range(-radius - 3, radius + 4):
+            d2 = dx * dx + dy * dy
+            if d2 <= radius * radius:
+                put(px, w, cx + dx, cy + dy, 3)
+            elif d2 <= (radius + 2) * (radius + 2):
+                put(px, w, cx + dx, cy + dy, 2)
+
+
+def draw_hatt_figure(px: list[int], w: int, ox: int, oy: int, angry: bool = False) -> None:
+    """32×32 Sir Topham Hatt — top hat, face, coat, not a color blob."""
+    band = 9 if angry else 3
+    coat = 1
+    coat_hi = 10
+    skin = 12
+    skin_hi = 3
+
+    # Top hat crown
+    rect(px, w, ox + 10, oy + 1, ox + 22, oy + 11, 1)
+    rect(px, w, ox + 11, oy + 2, ox + 21, oy + 10, coat_hi)
+    hline(px, w, ox + 11, ox + 21, oy + 2, 2)
+    rect(px, w, ox + 11, oy + 7, ox + 21, oy + 10, band)
+    hline(px, w, ox + 11, ox + 21, oy + 7, 1)
+    # Brim
+    rect(px, w, ox + 6, oy + 10, ox + 26, oy + 13, 1)
+    rect(px, w, ox + 7, oy + 11, ox + 25, oy + 12, coat_hi)
+
+    # Head
+    rect(px, w, ox + 9, oy + 13, ox + 23, oy + 23, 1)
+    rect(px, w, ox + 10, oy + 14, ox + 22, oy + 22, skin)
+    rect(px, w, ox + 11, oy + 14, ox + 21, oy + 16, skin_hi)
+    # Eyes
+    put(px, w, ox + 13, oy + 16, 1)
+    put(px, w, ox + 18, oy + 16, 1)
+    put(px, w, ox + 14, oy + 16, 2)
+    put(px, w, ox + 19, oy + 16, 2)
+    if angry:
+        hline(px, w, ox + 12, ox + 15, oy + 15, 1)
+        hline(px, w, ox + 17, ox + 20, oy + 15, 1)
+        put(px, w, ox + 12, oy + 16, 1)
+        put(px, w, ox + 19, oy + 16, 1)
+        hline(px, w, ox + 14, ox + 18, oy + 20, 1)
+        put(px, w, ox + 13, oy + 19, 1)
+        put(px, w, ox + 18, oy + 19, 1)
+        put(px, w, ox + 12, oy + 18, 4)
+        put(px, w, ox + 19, oy + 18, 4)
+    else:
+        put(px, w, ox + 12, oy + 18, 4)
+        put(px, w, ox + 19, oy + 18, 4)
+        hline(px, w, ox + 14, ox + 18, oy + 19, 1)
+        put(px, w, ox + 13, oy + 20, 1)
+        put(px, w, ox + 18, oy + 20, 1)
+
+    # Mustache
+    hline(px, w, ox + 13, ox + 19, oy + 18, 1)
+    put(px, w, ox + 12, oy + 17, 1)
+    put(px, w, ox + 19, oy + 17, 1)
+
+    # Coat + shirt + tie
+    rect(px, w, ox + 8, oy + 22, ox + 24, oy + 30, coat)
+    rect(px, w, ox + 9, oy + 23, ox + 23, oy + 29, coat_hi)
+    rect(px, w, ox + 14, oy + 22, ox + 18, oy + 28, 2)
+    vline(px, w, ox + 15, oy + 23, oy + 27, 6 if not angry else 9)
+    vline(px, w, ox + 16, oy + 23, oy + 27, 6 if not angry else 9)
+    put(px, w, ox + 15, oy + 23, 7)
+    # Collar
+    put(px, w, ox + 13, oy + 22, 2)
+    put(px, w, ox + 18, oy + 22, 2)
+    # Trousers / shoes
+    rect(px, w, ox + 10, oy + 29, ox + 15, oy + 32, coat_hi)
+    rect(px, w, ox + 17, oy + 29, ox + 22, oy + 32, coat_hi)
+    hline(px, w, ox + 10, ox + 15, oy + 31, 1)
+    hline(px, w, ox + 17, ox + 22, oy + 31, 1)
 
 
 def horizon_haze(px: list[int], w: int, y0: int, y1: int, color: int, strength: int = 2) -> None:
@@ -625,26 +735,13 @@ def draw_cliff_mass(px: list[int], w: int, x0: int, x1: int, top: int, bottom: i
 def make_splash() -> None:
     """128×128 illustration — four 64×64 tiles. No baked title text."""
     W = H = 128
-    px = fill(W, H)
+    px = fill(W, H, 15)
 
     sky_gradient(px, W, H, 0, 58)
-
-    # Sun glow
-    for dy in range(-10, 11):
-        for dx in range(-10, 11):
-            d2 = dx * dx + dy * dy
-            if d2 <= 100:
-                c = 3 if d2 < 36 else (2 if d2 < 64 else 15)
-                put(px, W, 102 + dx, 14 + dy, c)
-
-    # Clouds — soft layered puffs
-    for cx, cy, scale in ((18, 20, 1), (54, 12, 1), (82, 24, 1)):
-        for dy in range(-4 * scale, 5 * scale):
-            for dx in range(-6 * scale, 7 * scale):
-                if (dx / (6 * scale)) ** 2 + (dy / (4 * scale)) ** 2 <= 1:
-                    put(px, W, cx + dx, cy + dy, 2)
-                if (dx / (5 * scale)) ** 2 + (dy / (3 * scale)) ** 2 <= 1:
-                    put(px, W, cx + dx, cy + dy, 15)
+    blit_sun(px, W, 102, 16, 8)
+    blit_painted_cloud(px, W, 22, 18, 1)
+    blit_painted_cloud(px, W, 56, 12, 1)
+    blit_painted_cloud(px, W, 84, 22, 1)
 
     # Distant tree line
     for x in range(W):
@@ -654,6 +751,11 @@ def make_splash() -> None:
 
     draw_cliff_mass(px, W, 0, 46, 56, 88)
     draw_cliff_mass(px, W, 82, W, 56, 88)
+
+    # Canyon air stays sky, not magenta
+    rect(px, W, 46, 58, 82, 88, 8)
+    for y in range(58, 72):
+        hline(px, W, 46, 82, y, 15 if y < 64 else 8)
 
     draw_water_band(px, W, 88, H)
 
@@ -671,7 +773,7 @@ def make_splash() -> None:
                 put(px, W, bx, y, 5)
 
     blit_map(px, W, 4, 52, TRAIN_32)
-    blit_map(px, W, 92, 50, HATT_16)
+    draw_hatt_figure(px, W, 90, 48, angry=False)
 
     tile = 64
     out: list[int] = []
@@ -724,6 +826,17 @@ def make_bg_sky_theme(theme_id: int) -> None:
     haze_y = 150 if theme_id == 0 else (148 if theme_id == 1 else 146)
     haze_color = theme["sky"][1] if theme_id != 2 else 10
     horizon_haze(px, w, haze_y, haze_y + 8, haze_color)
+    if theme_id == 0:
+        blit_sun(px, w, 210, 28, 10)
+        blit_painted_cloud(px, w, 48, 36, 2)
+        blit_painted_cloud(px, w, 120, 22, 2)
+        blit_painted_cloud(px, w, 188, 44, 1)
+    elif theme_id == 1:
+        blit_painted_cloud(px, w, 40, 28, 1)
+        blit_painted_cloud(px, w, 160, 40, 2)
+    else:
+        blit_painted_cloud(px, w, 72, 30, 1)
+        blit_painted_cloud(px, w, 200, 24, 1)
     name = f"bg_sky_{theme_id}.bmp"
     write_indexed_bmp(os.path.join(GFX, name), w, h, px)
     if theme_id == 0:
@@ -738,16 +851,10 @@ def make_bg_sky() -> None:
 def make_cloud() -> None:
     w = h = 16
     px = fill(w, h)
-    blit_map(px, w, 1, 4, """
-....2222....
-...222222...
-..22222222..
-.2222222222.
-.2222112222.
-..22111122..
-...111111...
-....1111....
-""".replace("2", "2"))
+    blit_ellipse(px, w, 8, 9, 6, 4, 2)
+    blit_ellipse(px, w, 5, 10, 4, 3, 2)
+    blit_ellipse(px, w, 11, 10, 4, 3, 2)
+    blit_ellipse(px, w, 8, 11, 5, 2, 15)
     write_indexed_bmp(os.path.join(GFX, "cloud.bmp"), w, h, px)
 
 
@@ -767,11 +874,11 @@ def make_panel() -> None:
 
 
 def make_hatt() -> None:
-    w, h = 16, 32
-    px = fill(w, h)
-    blit_map(px, w, 0, 0, HATT_16)
-    blit_map(px, w, 0, 16, HATT_16_ANGRY)
-    write_indexed_bmp(os.path.join(GFX, "hatt.bmp"), w, h, px)
+    w, fh = 32, 32
+    px = fill(w, fh * 2)
+    draw_hatt_figure(px, w, 0, 0, angry=False)
+    draw_hatt_figure(px, w, 0, 32, angry=True)
+    write_indexed_bmp(os.path.join(GFX, "hatt.bmp"), w, fh * 2, px)
 
 
 def make_cursor() -> None:
@@ -1004,6 +1111,12 @@ def make_bg_hills_theme(theme_id: int) -> None:
     w = h = 256
     px = fill(w, h, 0)
     hill_base = 168 if theme_id == 0 else (172 if theme_id == 1 else 176)
+    far_base = hill_base - 18
+    for x in range(w):
+        far_wave = abs((x + 40) // 9) % 22
+        far = far_base + far_wave
+        for y in range(far, h):
+            put(px, w, x, y, theme["hill_shadow"])
     for x in range(w):
         wave = abs((x - 128) // (6 if theme_id != 2 else 5)) % 28
         hill = hill_base + wave
@@ -1347,6 +1460,21 @@ def validate() -> int:
     return 0
 
 
+def generate_presentation() -> None:
+    """Regenerate illustrated presentation assets without touching train/strut BMPs."""
+    os.makedirs(GFX, exist_ok=True)
+    make_splash()
+    make_logo()
+    make_sky()
+    make_bg_sky()
+    make_cloud()
+    make_hatt()
+    make_scenery_far()
+    make_bg_hills()
+    write_json("hatt.json", {"height": 32})
+    print(f"presentation sprites written to {GFX}")
+
+
 def generate() -> None:
     os.makedirs(GFX, exist_ok=True)
     make_splash()
@@ -1387,7 +1515,7 @@ def generate() -> None:
         ("bg_water.json", {"type": "regular_bg", "height": 256}),
         ("cloud.json", None),
         ("panel.json", {"height": 32}),
-        ("hatt.json", {"height": 16}),
+        ("hatt.json", {"height": 32}),
         ("cursor.json", None),
         ("node.json", None),
         ("anchor.json", None),
@@ -1424,10 +1552,19 @@ def main() -> int:
         action="store_true",
         help="validate committed BMPs and JSON sidecars only (do not overwrite art)",
     )
+    parser.add_argument(
+        "--presentation",
+        action="store_true",
+        help="regenerate splash/sky/hills/hatt only (does not overwrite train or strut BMPs)",
+    )
     args = parser.parse_args()
 
-    if not args.check:
-        generate()
+    if args.check:
+        return validate()
+    if args.presentation:
+        generate_presentation()
+        return validate()
+    generate()
     return validate()
 
 

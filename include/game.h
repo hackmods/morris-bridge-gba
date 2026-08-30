@@ -95,6 +95,7 @@ private:
     void _update_build_hints();
     void _update_build();
     void _handle_confirm(bn::optional<int> hovered, bn::fixed_point place_at);
+    void _try_chain_weld(bn::optional<int> hovered, bn::fixed_point draw_at);
     void _cycle_connect_role();
     [[nodiscard]] int _build_tool_label() const;
     void _enter_test();
