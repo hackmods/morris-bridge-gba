@@ -52,6 +52,54 @@ test.describe('Thomas\'s Bridge workshop', () => {
     expect(stars).toBeGreaterThanOrEqual(1);
   });
 
+  test('every official crossing has a reference that wins', async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.goto('/');
+    await page.evaluate(() => {
+      localStorage.setItem(
+        'thomas-bridge-progress-v1',
+        JSON.stringify({
+          version: 1,
+          maxUnlockedLevel: 7,
+          stars: [3, 3, 3, 3, 3, 3, 3, 3],
+          bestCost: [1, 1, 1, 1, 1, 1, 1, 1],
+          seenTutorial: true,
+        }),
+      );
+    });
+    await page.reload();
+    await expect(page.locator('#btn-play')).toBeVisible();
+    await page.locator('#btn-play').click();
+
+    const ids = await page.evaluate(async () => {
+      const game = window.__GAME__;
+      if (!game) {
+        return [];
+      }
+      const results: string[] = [];
+      for (let index = 0; index < 8; index += 1) {
+        game.selectLevel(index);
+        game.goBuild();
+        if (!game.buildReference()) {
+          results.push(`build-fail:${index}`);
+          continue;
+        }
+        game.startTest();
+        const started = Date.now();
+        while (game.getScreen() !== 'result' && Date.now() - started < 25_000) {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+        results.push(`${game.getLevelId()}:${game.getScreen()}:${game.getStars()}`);
+      }
+      return results;
+    });
+
+    expect(ids).toHaveLength(8);
+    for (const row of ids) {
+      expect(row, row).toMatch(/:result:[1-3]$/);
+    }
+  });
+
   test('drag-weld from the left bank creates a beam', async ({ page }) => {
     await enterBuild(page);
     const before = await page.evaluate(() => Number(window.__GAME__?.snapshot().beams));

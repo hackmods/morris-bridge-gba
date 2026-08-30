@@ -37,6 +37,46 @@ describe('reference bridges', () => {
       expect(status, id).toBe('success');
     },
   );
+
+  it('loads Gordon harder than Percy on the same two-span deck', () => {
+    const level = LEVELS[0];
+    const percyWorld = new World();
+    const gordonWorld = new World();
+    loadLevel(percyWorld, level);
+    loadLevel(gordonWorld, level);
+    const start = percyWorld.node(percyWorld.startId);
+    const end = percyWorld.node(percyWorld.endId);
+    expect(start && end).toBeTruthy();
+    if (!start || !end) {
+      return;
+    }
+    const midX = (start.x + end.x) / 2;
+    const midPercy = percyWorld.addNode(midX, start.y);
+    const midGordon = gordonWorld.addNode(midX, start.y);
+    expect(percyWorld.addBeam(start.id, midPercy.id, 'road')).toBeTruthy();
+    expect(percyWorld.addBeam(midPercy.id, end.id, 'road')).toBeTruthy();
+    expect(gordonWorld.addBeam(start.id, midGordon.id, 'road')).toBeTruthy();
+    expect(gordonWorld.addBeam(midGordon.id, end.id, 'road')).toBeTruthy();
+    const percy = engineById('percy');
+    const gordon = engineById('gordon');
+    percyWorld.beginTest(percy.weight, percy.speed, percy.coaches);
+    gordonWorld.beginTest(gordon.weight, gordon.speed, gordon.coaches);
+    for (let i = 0; i < 90; i += 1) {
+      percyWorld.step(1 / 60);
+      gordonWorld.step(1 / 60);
+    }
+    const peak = (world: World) =>
+      Math.max(0, ...[...world.beams.values()].map((beam) => beam.stress));
+    expect(peak(gordonWorld)).toBeGreaterThan(peak(percyWorld));
+  });
+
+  it('carries Gordon across the Express prestige run', () => {
+    const level = LEVELS[7];
+    const world = new World();
+    expect(buildReference(world, level)).toBe(true);
+    const gordon = engineById('gordon');
+    expect(runCrossing(world, gordon.weight, gordon.speed, gordon.coaches, 40)).toBe('success');
+  });
 });
 
 describe('welding rules', () => {
