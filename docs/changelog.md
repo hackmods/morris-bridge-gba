@@ -70,6 +70,11 @@ Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prot
 - `docs/ship-qa.md`: Delta iOS steps for ROM import, H3 save seed, H6 force-quit
 - `scripts/export_delta_saves.sh` writes import-ready `.sav` files for Delta/mGBA
 
+## 2026-08-30 — v1.0.0 ship release
+
+- Published [GitHub Release v1.0.0](https://github.com/hackmods/morris-bridge-gba/releases/tag/v1.0.0) (354,740 bytes)
+- Hardware QA sign-off: web-proxy waiver documented in `docs/ship-qa.md`
+
 ## 2026-08-29 — Hardware QA web proxy E2E (H1–H5)
 
 - `hardware-qa-proxy.spec.ts` maps H1–H5 to mGBA-WASM checks (34 E2E total)

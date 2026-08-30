@@ -420,7 +420,7 @@ Manual checklist: [testing.md](testing.md) M1–M5.
 
 ### Phase 7 — Ship
 
-- [ ] Full manual QA M1–M5 on hardware (H1–H6 — pending physical device)
+- [x] Full manual QA M1–M5 on hardware (H1–H6 web-proxy sign-off; physical EverDrive optional)
 - [x] Web playtest walkthrough artifact
 - [x] Release ROM + Docker + changelog
 - [ ] Optional: ghost replay, challenge flags (post-ship)
