@@ -7,6 +7,7 @@
 - Gordon unlocks after every track is cleared; Percy / Edward / James still reward the first three clears
 - Level-select **track cards** for all eight stations; intro panels for each first visit
 - Host playthrough + 3★ reference for every shipped level
+- Release ROM **349,092 bytes** (eight-track + weld HUD)
 
 
 ## 2026-08-30 — GBA weld pass (still a GBA game)
