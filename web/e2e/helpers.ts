@@ -1,10 +1,12 @@
 import { expect, type Page } from '@playwright/test';
 
+export const GBA_PLAYTEST_URL = '/legacy.html';
+
 export async function waitForPlaytestReady(page: Page, url?: string): Promise<void> {
   if (url !== undefined) {
     await page.goto(url);
-  } else if (new URL(page.url()).search === '') {
-    await page.goto('/');
+  } else if (!page.url().includes('legacy.html')) {
+    await page.goto(GBA_PLAYTEST_URL);
   }
 
   await expect(page.locator('#error-banner')).toHaveClass(/hidden/);
@@ -127,7 +129,7 @@ function createInputHelpers(page: Page) {
 
 /** Gordon's Hill build with ?walkthrough=gordon save (intro skipped). */
 export async function navigateToGordonBuildMode(page: Page): Promise<void> {
-  await page.goto('/?walkthrough=gordon');
+  await page.goto('/legacy.html?walkthrough=gordon');
   await waitForRenderSettle(page, 3_000);
 
   const { tap } = createInputHelpers(page);
@@ -222,7 +224,7 @@ export async function buildGordonHillReferenceBridge(page: Page): Promise<void> 
 
 /** Vicarstown build with ?walkthrough=vicarstown (all_unlocked save). */
 export async function navigateToVicarstownBuildMode(page: Page): Promise<void> {
-  await page.goto('/?walkthrough=vicarstown');
+  await page.goto('/legacy.html?walkthrough=vicarstown');
   await waitForRenderSettle(page, 3_000);
 
   const { tap } = createInputHelpers(page);

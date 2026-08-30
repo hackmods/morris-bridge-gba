@@ -11,7 +11,7 @@ test.describe('ROM boot', () => {
   });
 
   test('reports cross-origin isolation (required for mGBA threads)', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/legacy.html');
 
     const isolated = await page.evaluate(() => crossOriginIsolated);
     expect(isolated).toBe(true);

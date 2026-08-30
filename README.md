@@ -14,9 +14,9 @@
        (_)  (_)         chuff~
 ```
 
-**Thomas's Bridge** — a meme-forward GBA bridge-building game (Butano / C++20).
+**Thomas's Bridge** — a high-resolution bridge workshop in the browser, plus an optional Game Boy Advance ROM.
 
-Help a cheeky blue tank engine cross Sodor gaps while **Sir Topham Hatt** watches for confusion and delay. Original pixel art — a playful Thomas homage, **not** a licensed product.
+Help a cheeky blue tank engine cross Sodor gaps while **Sir Topham Hatt** watches for confusion and delay. Original art — a playful Thomas homage, **not** a licensed product.
 
 [![Release](https://github.com/hackmods/morris-bridge-gba/actions/workflows/release.yml/badge.svg)](https://github.com/hackmods/morris-bridge-gba/actions/workflows/release.yml)
 [![ROM](https://img.shields.io/badge/ROM-thomas__bridge.gba-blue)](rom/thomas_bridge.gba)
@@ -26,15 +26,16 @@ Help a cheeky blue tank engine cross Sodor gaps while **Sir Topham Hatt** watche
 
 | Method | Command / file |
 |--------|----------------|
-| **ROM** | [`rom/thomas_bridge.gba`](rom/thomas_bridge.gba) → mGBA or EverDrive **GBA** |
-| **Browser** | `./scripts/sync_rom_to_web.sh && cd web && npm install && npm run dev` |
+| **Browser (product)** | `cd web && npm install && npm run dev` → **http://127.0.0.1:4317** |
+| **GBA ROM (optional)** | [`rom/thomas_bridge.gba`](rom/thomas_bridge.gba) or **http://127.0.0.1:4317/legacy.html** |
 | **Docker** | `./scripts/sync_rom_to_web.sh && docker build -t morris-bridge-gba . && docker run --rm -p 8080:80 morris-bridge-gba` |
 
-Open the web playtest at **http://127.0.0.1:4317** — arrow keys + Z/X, or the command queue (`right a start`).
+The workshop is drag-to-weld on a high-res canvas (road / timber / steel). The GBA ROM remains at `/legacy.html`.
 
 ## Features
 
-- **Build** — Hold **A** and drag to chain-weld spans; R swaps timber / rod; HUD shows cost vs par; Start sends the train
+- **Workshop** — Drag-to-weld road, timber, and steel; live stress; cost vs par; eight crossings
+- **GBA ROM** — Hold **A** and drag to chain-weld; R swaps timber / rod; HUD cost vs par (optional `/legacy.html`)
 - **Eight tracks** — Knapford through Sodor Summit, with brace tools, par cost, and ★ ratings
 - **Five engines** — Thomas, Percy, Edward, James, Gordon with unlock progression + SRAM stars
 - **BG parallax** — sky, hills, bank ground, and animated water on regular backgrounds

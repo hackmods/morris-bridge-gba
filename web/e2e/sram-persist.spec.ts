@@ -19,7 +19,7 @@ test('intro_seen persists across soft reset', async ({ page }) => {
 });
 
 test('walkthrough save intro_seen mask survives soft reset', async ({ page }) => {
-  await page.goto('/?walkthrough=gordon');
+  await page.goto('/legacy.html?walkthrough=gordon');
   await page.waitForTimeout(3_000);
   await expect(page.locator('#status-bar')).toHaveClass(/ready/, { timeout: 60_000 });
 
@@ -36,7 +36,7 @@ test('walkthrough save intro_seen mask survives soft reset', async ({ page }) =>
 
 /** H6 proxy: stars + clear flags from all_unlocked walkthrough save survive soft reset. */
 test('walkthrough save stars and clear flags survive soft reset', async ({ page }) => {
-  await page.goto('/?walkthrough=vicarstown');
+  await page.goto('/legacy.html?walkthrough=vicarstown');
   await page.waitForTimeout(3_000);
   await expect(page.locator('#status-bar')).toHaveClass(/ready/, { timeout: 60_000 });
 

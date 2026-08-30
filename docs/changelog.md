@@ -1,5 +1,11 @@
 # Changelog & project history
 
+## 2026-08-30 — High-res workshop is the product
+
+- Browser `/` is a high-resolution drag-to-weld workshop (road, timber, steel, stress, campaign)
+- GBA ROM and mGBA-WASM live at `/legacy.html`
+- Playwright covers the workshop plus the GBA playtest on the legacy route
+
 ## 2026-08-30 — Timber vs rod materials
 
 - Track welds are **timber** (cost 1); braces are **rod** (cost 2, 1.25× strength)

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { waitForRenderSettle } from './helpers';
 
 test('walkthrough=gordon seeds Gordon Hill on level select', async ({ page }) => {
-  await page.goto('/?walkthrough=gordon');
+  await page.goto('/legacy.html?walkthrough=gordon');
   await waitForRenderSettle(page, 3_000);
 
   const level = await page.evaluate(() => window.__TEST__!.readWalkthroughSaveLevel());
