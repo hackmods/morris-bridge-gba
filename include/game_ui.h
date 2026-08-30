@@ -63,8 +63,9 @@ constexpr int LABEL_PEEP = 5;
 constexpr int LABEL_ASHES = 6;
 constexpr int LABEL_START = 7;
 constexpr int LABEL_HINT_NODE = 8;
-constexpr int LABEL_HINT_TEST = 9;
+constexpr int LABEL_HINT_WELD = 9;
 constexpr int LABEL_HINT_PAUSE = 10;
+constexpr int LABEL_HINT_TEST = 9;
 
 constexpr int BUILD_HINT_FRAMES = 240;
 

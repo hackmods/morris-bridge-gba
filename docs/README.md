@@ -1,12 +1,12 @@
 # Thomas's Bridge — Documentation
 
-Knowledge base for **Thomas's Bridge**. The **product** is the modern browser workshop ([workshop.md](workshop.md)). The GBA ROM is a retained prototype.
+Knowledge base for **Thomas's Bridge** (ROM codename `thomas_bridge`): a Game Boy Advance bridge-building prototype built with [Butano](https://github.com/GValiente/butano).
 
 ## Quick links
 
 | I want to… | Start here |
 |------------|------------|
-| Play the game | [Workshop](workshop.md) |
+| Play the ROM right now | [Getting started](getting-started.md) |
 | Understand the game | [Game design](game-design.md) |
 | Optional creepy lore (PG, friends-only) | [Lore leak](lore-leak.md) |
 | Full game + graphics roadmap | [Future expansion](future-expansion.md) |

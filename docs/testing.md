@@ -90,11 +90,11 @@ See [CI/CD](ci-cd.md).
 
 ### GBA / emulator
 
-- [ ] Title shows **A NOD**, **START**, and blinking **START**
+- [ ] Title shows **HOLD A**, **A WELD**, and blinking **START**
 - [ ] Level select shows track names without overlapping labels
 - [ ] First build shows rotating hints, then **PAUSE**
 - [ ] D-Pad moves cursor; R speeds it up
-- [ ] A places nodes and connects chain
+- [ ] A places nodes and welds (hold A and drag, or tap between joints)
 - [ ] Start runs train; short bridge succeeds
 - [ ] Long single span snaps; train falls
 - [ ] No struts → "NO GO" / no path

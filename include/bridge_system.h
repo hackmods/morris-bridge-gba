@@ -199,6 +199,8 @@ public:
 
     [[nodiscard]] bool is_player_node(int node_id) const;
 
+    [[nodiscard]] bool has_track_path() const;
+
     /**
      * @brief Begin test mode: snapshot struts, BFS a path, spawn the train.
      */

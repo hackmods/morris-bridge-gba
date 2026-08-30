@@ -364,6 +364,15 @@ int main()
 
     {
         bridge::BridgeSystem system;
+        system.load_level(0);
+        assert(!system.has_track_path());
+        assert(level_solutions::build_knapford_reference(system));
+        assert(system.has_track_path());
+        std::cout << "  ok track path is required before a test run\n";
+    }
+
+    {
+        bridge::BridgeSystem system;
         assert(level_solutions::run_knapford_playthrough(system));
         std::cout << "  ok documented Knapford playthrough succeeds\n";
     }

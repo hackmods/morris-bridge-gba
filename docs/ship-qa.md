@@ -46,7 +46,7 @@ Use [testing.md](testing.md) for the full GBA and web checklist. Recommended ord
 
 ### GBA / emulator spot checks
 
-- [x] Title hints (A NOD, START) — implemented (`LABEL_HINT_*`)
+- [x] Title hints (HOLD A, A WELD) — implemented (`LABEL_HINT_*`)
 - [x] Level select track names + subtitles (FLAT!/HILL!/LONG!)
 - [x] Build hints rotate → PAUSE
 - [x] Track vs brace tools (Gordon's Hill+)

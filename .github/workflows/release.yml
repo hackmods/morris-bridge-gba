@@ -72,10 +72,23 @@ jobs:
           npm test
 
   web-e2e:
-    name: Workshop E2E
+    name: Web playtest E2E
     runs-on: ubuntu-latest
+    needs: [build-rom]
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: thomas-bridge-gba
+          path: rom
+
+      - name: Stage ROM for playtest
+        run: |
+          mkdir -p web/public/rom
+          cp rom/thomas_bridge.gba web/public/rom/thomas_bridge.gba
+          python3 tools/gen_playtest_save.py
+          ls -la web/public/rom/ web/public/saves/
 
       - uses: actions/setup-node@v4
         with:

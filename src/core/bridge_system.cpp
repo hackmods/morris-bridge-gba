@@ -442,6 +442,60 @@ bool BridgeSystem::is_player_node(int node_id) const
     return node_id >= 0 && node_id < _nodes.size() && !_nodes[node_id].is_anchored;
 }
 
+bool BridgeSystem::has_track_path() const
+{
+    bool visited[MAX_NODES];
+
+    for(int i = 0; i < MAX_NODES; ++i)
+    {
+        visited[i] = false;
+    }
+
+    bn::vector<int, MAX_NODES> queue;
+    queue.push_back(START_NODE);
+    visited[START_NODE] = true;
+
+    while(!queue.empty())
+    {
+        const int current = queue[0];
+        queue.erase(queue.begin());
+
+        if(current == END_NODE)
+        {
+            return true;
+        }
+
+        for(int s = 0; s < _struts.size(); ++s)
+        {
+            const Strut& strut = _struts[s];
+
+            if(!is_routable(strut.role))
+            {
+                continue;
+            }
+
+            int next = -1;
+
+            if(strut.node_a == current)
+            {
+                next = strut.node_b;
+            }
+            else if(strut.node_b == current)
+            {
+                next = strut.node_a;
+            }
+
+            if(next >= 0 && !visited[next])
+            {
+                visited[next] = true;
+                queue.push_back(next);
+            }
+        }
+    }
+
+    return false;
+}
+
 void BridgeSystem::_record_node_edit(int node_id)
 {
     _last_edit = LastEdit::node;

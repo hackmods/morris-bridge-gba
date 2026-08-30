@@ -1,11 +1,12 @@
 # Changelog & project history
 
-## 2026-08-30 — Modern workshop becomes the product
+## 2026-08-30 — GBA weld pass (still a GBA game)
 
-- Replaced the GBA playtest as the primary game with a high-resolution canvas bridge builder
-- Drag-to-weld joints, road / timber / steel, stress coloring, budget, eight-level campaign
-- Illustrated (non-pixel) presentation: painted landscape, professional UI, tutorial
-- GBA ROM kept as optional `/legacy.html` prototype
+- Hold **A** and drag to weld a span from the selected joint; release to plant
+- Build starts with the left bank selected so the first weld has a from-joint
+- HUD reads HOLD A / A WELD / START instead of the old A NOD cycle
+- Track path is queried before a test run (`has_track_path`)
+
 
 
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
