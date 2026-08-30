@@ -29,6 +29,7 @@
 #include "graph_view.h"
 #include "level.h"
 #include "physics.h"
+#include "run_score.h"
 #include "save_data.h"
 
 
@@ -702,7 +703,19 @@ void Game::_update_hud()
     }
 
     _label.set_item(bn::sprite_items::label, frame);
-    _set_counter(_node_count_digits, _bridge.player_node_count(), -20);
-    _set_counter(_strut_count_digits, _bridge.struts().size(), 12);
+
+    if(_play_mode == PlayMode::build)
+    {
+        const session::RunScore live =
+            session::compute_run_score(_bridge, _bridge.level_def());
+        _set_counter(_node_count_digits, live.total_cost, -20);
+        _set_counter(_strut_count_digits, _bridge.level_def().par_cost, 12);
+    }
+    else
+    {
+        _set_counter(_node_count_digits, _bridge.player_node_count(), -20);
+        _set_counter(_strut_count_digits, _bridge.struts().size(), 12);
+    }
+
     _set_weight_digits(_max_train_load().integer(), true);
 }

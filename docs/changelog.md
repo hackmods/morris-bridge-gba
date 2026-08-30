@@ -1,5 +1,11 @@
 # Changelog & project history
 
+## 2026-08-30 — Build HUD cost vs par
+
+- Build-mode HUD digits show live **cost** (nodes + links) on the left and **par** on the right so ★ efficiency is visible while welding
+- Test-mode HUD still shows node/strut counts; engine load stays on the weight digits
+
+
 ## 2026-08-30 — Illustrated GBA presentation + chain-weld
 
 - Hold **A** and drag to chain-draw joints every 24 px (Poly Bridge-style weld); tap A still joins
