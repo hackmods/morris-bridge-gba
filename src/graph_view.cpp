@@ -134,7 +134,7 @@ void GraphView::sync_nodes(const bridge::BridgeSystem& bridge, const bool visibl
 }
 
 void GraphView::sync_struts(const bridge::BridgeSystem& bridge, const bool visible,
-                            const bool test_mode, const int frame)
+                            const bool test_mode, const int frame, const bn::fixed preview_load)
 {
     const auto& nodes = bridge.nodes();
     const auto& struts = bridge.struts();
@@ -154,8 +154,8 @@ void GraphView::sync_struts(const bridge::BridgeSystem& bridge, const bool visib
         const bridge::Strut& strut = struts[i];
         const bn::fixed_point a = nodes[strut.node_a].position;
         const bn::fixed_point b = nodes[strut.node_b].position;
-        const bool hot =
-            test_mode && strut.current_tension * 2 > strut.max_tension;
+        const bool hot = test_mode ? (strut.current_tension * 2 > strut.max_tension)
+                                    : bridge::strut_warns_for_load(strut, preview_load);
         bn::sprite_ptr& sprite = _strut_sprites[i];
         int strut_frame = STRUT_IDLE;
 

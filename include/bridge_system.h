@@ -145,6 +145,11 @@ struct Strut
     bool triangulated = false;
 };
 
+[[nodiscard]] inline bool strut_warns_for_load(const Strut& strut, const bn::fixed load)
+{
+    return strut.max_tension < load;
+}
+
 class BridgeSystem
 {
 public:
@@ -203,6 +208,9 @@ public:
 
     [[nodiscard]] StrutPreview preview_strut(int node_a, int node_b,
                                                LinkRole role = LinkRole::track) const;
+
+    /// Capacity used by the weld ghost when the cursor is not over a joint.
+    [[nodiscard]] bn::fixed span_preview_capacity(bn::fixed length, LinkRole role) const;
 
     [[nodiscard]] UndoResult undo_last_edit();
 

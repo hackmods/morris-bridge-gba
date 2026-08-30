@@ -132,7 +132,7 @@ void Game::_sync_graph_sprites()
         visible && _play_mode == PlayMode::build ? _selected : bn::optional<int>();
 
     _graph.sync_nodes(_bridge, visible, _frame, selected, _ring);
-    _graph.sync_struts(_bridge, visible, _play_mode == PlayMode::test, _frame);
+    _graph.sync_struts(_bridge, visible, _play_mode == PlayMode::test, _frame, _max_train_load());
 }
 
 int Game::_lore_roll(int salt) const

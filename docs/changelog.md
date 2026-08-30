@@ -1,5 +1,10 @@
 # Changelog & project history
 
+## 2026-08-30 — Build-mode stress preview
+
+- Placed timber/rod spans glow hot while building if they cannot take the selected engine
+- Weld ghost uses rod strength (not timber-only) when drawing a brace
+
 ## 2026-08-30 — Timber vs rod materials
 
 - Track welds are **timber** (cost 1); braces are **rod** (cost 2, 1.25× strength)

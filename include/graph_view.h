@@ -6,6 +6,7 @@
  * Diff-synced node and strut sprites for the build/test graph.
  */
 
+#include "bn_fixed.h"
 #include "bn_fixed_point.h"
 #include "bn_optional.h"
 #include "bn_sprite_ptr.h"
@@ -33,7 +34,8 @@ public:
     void sync_nodes(const bridge::BridgeSystem& bridge, bool visible, int frame,
                     const bn::optional<int>& selected, bn::sprite_ptr& ring);
 
-    void sync_struts(const bridge::BridgeSystem& bridge, bool visible, bool test_mode, int frame);
+    void sync_struts(const bridge::BridgeSystem& bridge, bool visible, bool test_mode, int frame,
+                     bn::fixed preview_load = 0);
 
 private:
     bn::vector<bn::sprite_ptr, bridge::MAX_NODES> _node_sprites;
