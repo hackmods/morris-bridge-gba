@@ -10,6 +10,7 @@ describe('computeCanvasScale', () => {
 
   it('caps scale at the configured maximum', () => {
     expect(computeCanvasScale(2000, 2000, 4)).toBe(4);
+    expect(computeCanvasScale(3000, 2000)).toBe(8);
   });
 
   it('falls back to a minimum scale for empty containers', () => {

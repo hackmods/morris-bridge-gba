@@ -1,5 +1,10 @@
 # Changelog & project history
 
+## 2026-08-30 — Larger illustrated playtest stage
+
+- Web playtest canvas stage is taller (up to 8× GBA pixels) with a thicker timber/brass bezel
+- Copy names the GBA game as the product; hold-A chain-weld and timber/rod in the how-to
+
 ## 2026-08-30 — Illustrated GBA presentation + chain-weld
 
 - Hold **A** and drag to chain-draw joints every 24 px (Poly Bridge-style weld); tap A still joins
