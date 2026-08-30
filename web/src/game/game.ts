@@ -44,6 +44,8 @@ export interface GameHooks {
   goLevels(): void;
   goBuild(): void;
   snapshot(): Record<string, unknown>;
+  worldToScreen(x: number, y: number): { x: number; y: number };
+  weld(ax: number, ay: number, bx: number, by: number): boolean;
 }
 
 export class BridgeGame {
@@ -149,6 +151,7 @@ export class BridgeGame {
       return 'no_path';
     }
     const engine = engineById(this.engineId);
+    this.resultDelay = 0;
     const status = this.world.beginTest(engine.weight, engine.speed, engine.coaches);
     this.lastStatus = status;
     if (status === 'running') {
@@ -197,6 +200,20 @@ export class BridgeGame {
         path: this.world.hasRoadPath(),
         stars: this.lastStars,
       }),
+      worldToScreen: (x, y) => ({
+        x: (x - this.camera.x) * this.camera.zoom,
+        y: (y - this.camera.y) * this.camera.zoom,
+      }),
+      weld: (ax, ay, bx, by) => {
+        const from = this.world.nearestNode({ x: ax, y: ay }, 24);
+        if (!from || this.tool === 'erase') {
+          return false;
+        }
+        this.fromId = from.id;
+        this.finishBeam({ x: bx, y: by });
+        this.fromId = null;
+        return this.world.liveBeams().length > 0;
+      },
     };
   }
 
@@ -394,15 +411,17 @@ export class BridgeGame {
   private loop = (now: number): void => {
     const dt = Math.min(0.033, (now - (this.time || now)) / 1000 || 0.016);
     this.time = now / 1000;
-    if (this.screen === 'build' && this.world.status === 'running') {
-      const before = this.world.snapEvents.length;
-      const status = this.world.step(dt);
-      if (this.world.snapEvents.length > before) {
-        this.audio.snap();
+    if (this.screen === 'build') {
+      if (this.world.status === 'running') {
+        const before = this.world.snapEvents.length;
+        this.world.step(dt);
+        if (this.world.snapEvents.length > before) {
+          this.audio.snap();
+        }
       }
-      if (status === 'success' || status === 'failed') {
+      if (this.world.status === 'success' || this.world.status === 'failed') {
         this.resultDelay += dt;
-        if (this.resultDelay > 0.7) {
+        if (this.resultDelay > 0.55) {
           this.finishRun();
         }
       }

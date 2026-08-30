@@ -45,7 +45,7 @@ test.describe('Thomas\'s Bridge workshop', () => {
     expect(built).toBe(true);
     await page.evaluate(() => window.__GAME__?.startTest());
     await page.waitForFunction(() => window.__GAME__?.getScreen() === 'result', null, {
-      timeout: 30_000,
+      timeout: 20_000,
     });
     await expect(page.locator('#result-title')).toContainText('The train is through');
     const stars = await page.evaluate(() => window.__GAME__?.getStars());
@@ -54,21 +54,32 @@ test.describe('Thomas\'s Bridge workshop', () => {
 
   test('drag-weld from the left bank creates a beam', async ({ page }) => {
     await enterBuild(page);
-    const before = await page.evaluate(() => window.__GAME__?.snapshot().beams);
+    const before = await page.evaluate(() => Number(window.__GAME__?.snapshot().beams));
     const canvas = page.locator('#world');
     const box = await canvas.boundingBox();
     expect(box).toBeTruthy();
     if (!box) {
       return;
     }
-    const start = { x: box.x + box.width * 0.27, y: box.y + box.height * 0.58 };
-    const mid = { x: box.x + box.width * 0.42, y: box.y + box.height * 0.58 };
-    await page.mouse.move(start.x, start.y);
+    const points = await page.evaluate(() => {
+      const game = window.__GAME__;
+      if (!game) {
+        return null;
+      }
+      const start = game.worldToScreen(262, 382);
+      const mid = game.worldToScreen(440, 382);
+      return { start, mid };
+    });
+    expect(points).toBeTruthy();
+    if (!points) {
+      return;
+    }
+    await page.mouse.move(box.x + points.start.x, box.y + points.start.y);
     await page.mouse.down();
-    await page.mouse.move(mid.x, mid.y, { steps: 12 });
+    await page.mouse.move(box.x + points.mid.x, box.y + points.mid.y, { steps: 12 });
     await page.mouse.up();
-    await page.waitForTimeout(200);
-    const after = await page.evaluate(() => window.__GAME__?.snapshot().beams);
-    expect(Number(after)).toBeGreaterThan(Number(before));
+    await page.waitForTimeout(250);
+    const after = await page.evaluate(() => Number(window.__GAME__?.snapshot().beams));
+    expect(after).toBeGreaterThan(before);
   });
 });

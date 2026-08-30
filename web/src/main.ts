@@ -120,7 +120,7 @@ function tutorialText(): string {
   return 'Press Test crossing when the road is complete.';
 }
 
-function renderHud(): void {
+function renderHud(rebuildTools: boolean): void {
   $('hud-region').textContent = game.level.region;
   $('hud-title').textContent = game.level.name;
   $('hud-cost').textContent = formatCost(game.world.totalCost());
@@ -139,7 +139,9 @@ function renderHud(): void {
   } else {
     $('toast').classList.add('hidden');
   }
-  renderTools();
+  if (rebuildTools) {
+    renderTools();
+  }
 }
 
 function renderResult(): void {
@@ -153,23 +155,31 @@ function renderResult(): void {
   $('btn-next').classList.toggle('hidden', !win || game.levelIndex >= LEVELS.length - 1);
 }
 
+window.__GAME__ = hooks;
+
+let lastScreen = '';
+let lastEngine = '';
+let lastTool = '';
+
 function tick(): void {
   showScreen(game.screen);
-  if (game.screen === 'levels') {
+  if (game.screen === 'levels' && lastScreen !== 'levels') {
     renderLevels();
   }
-  if (game.screen === 'engines') {
+  if (game.screen === 'engines' && (lastScreen !== 'engines' || lastEngine !== game.engineId)) {
     renderEngines();
   }
   if (game.screen === 'build') {
-    renderHud();
+    renderHud(lastTool !== game.tool || lastScreen !== 'build');
   }
-  if (game.screen === 'result') {
+  if (game.screen === 'result' && lastScreen !== 'result') {
     renderResult();
   }
+  lastScreen = game.screen;
+  lastEngine = game.engineId;
+  lastTool = game.tool;
   requestAnimationFrame(tick);
 }
 
-window.__GAME__ = hooks;
 game.start();
 tick();
