@@ -4,6 +4,7 @@
 
 - Placed timber/rod spans glow hot while building if they cannot take the selected engine
 - Weld ghost uses rod strength (not timber-only) when drawing a brace
+- Stress palette uses GBA 5-bit colors (8-bit RGB crashed Butano when a span first went hot)
 
 ## 2026-08-30 — Timber vs rod materials
 

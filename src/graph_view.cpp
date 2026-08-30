@@ -34,9 +34,10 @@ const bn::sprite_palette_ptr& stress_strut_palette()
     {
         palette = bn::sprite_items::strut.palette_item().create_new_palette();
         bn::sprite_palette_ptr& pal = palette.value();
-        pal.set_color(5, bn::color(176, 48, 40));
-        pal.set_color(6, bn::color(208, 56, 48));
-        pal.set_color(12, bn::color(220, 88, 56));
+        // bn::color channels are 0–31 (BGR555), not 8-bit sRGB.
+        pal.set_color(5, bn::color(22, 6, 5));
+        pal.set_color(6, bn::color(26, 7, 6));
+        pal.set_color(12, bn::color(27, 11, 7));
     }
 
     return palette.value();
