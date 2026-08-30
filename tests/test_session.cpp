@@ -38,9 +38,20 @@ int main()
 
     {
         bridge::BridgeSystem system;
+        assert(level_solutions::build_gordon_hill_reference(system));
+        const session::RunScore score =
+            session::compute_run_score(system, system.level_def());
+        assert(score.brace_links == 2);
+        assert(score.total_cost == 13);
+        assert(score.stars == 3);
+        std::cout << "  ok rod braces cost 2 each on Gordon's Hill\n";
+    }
+
+    {
+        bridge::BridgeSystem system;
         system.load_level(1);
         const level::Def& def = system.level_def();
-        assert(def.par_cost == 11);
+        assert(def.par_cost == 13);
         assert(def.bg_theme_id == 1);
         std::cout << "  ok Gordon's Hill par and theme id\n";
     }

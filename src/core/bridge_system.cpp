@@ -161,6 +161,7 @@ bn::optional<int> BridgeSystem::add_strut(int node_a, int node_b, const LinkRole
     strut.node_a = lo;
     strut.node_b = hi;
     strut.role = role;
+    strut.material = material_for_role(role);
     strut.length = length;
     strut.current_tension = 0;
     strut.triangulated = false;
@@ -218,7 +219,8 @@ void BridgeSystem::_recompute_strut_ratings()
         strut.triangulated = _strut_is_triangulated(i);
         strut.max_tension = physics::effective_max_tension(strut.length, connections_a,
                                                            connections_b, strut.triangulated,
-                                                           _safe_length);
+                                                           _safe_length)
+                                .safe_multiplication(material_strength(strut.material));
     }
 }
 
@@ -310,7 +312,8 @@ StrutPreview BridgeSystem::preview_strut(int node_a, int node_b, const LinkRole 
     }
 
     preview.max_tension = physics::effective_max_tension(length, connections_a, connections_b,
-                                                           triangulated, _safe_length);
+                                                           triangulated, _safe_length)
+                               .safe_multiplication(material_strength(material_for_role(role)));
     return preview;
 }
 

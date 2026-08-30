@@ -380,6 +380,19 @@ int main()
     }
 
     {
+        bridge::BridgeSystem system;
+        system.load_level(1);
+        const bridge::StrutPreview timber =
+            system.preview_strut(bridge::START_NODE, 3, bridge::LinkRole::track);
+        const bridge::StrutPreview rod =
+            system.preview_strut(bridge::START_NODE, 3, bridge::LinkRole::brace);
+        assert(timber.status == bridge::StrutPreviewStatus::ok);
+        assert(rod.status == bridge::StrutPreviewStatus::ok);
+        assert(rod.max_tension > timber.max_tension);
+        std::cout << "  ok rod material is stronger than timber at the same span\n";
+    }
+
+    {
         const char* names[] = {
             "Knapford", "Gordon's Hill", "Vicarstown", "Tidmouth",
             "Wellsworth", "Crovan's Gate", "Callan Canal", "Sodor Summit",

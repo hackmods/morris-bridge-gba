@@ -40,7 +40,7 @@ struct Def
     bn::fixed parallax_front; ///< Near layer scroll factor.
     uint8_t allowed_roles;  ///< ALLOW_* bitmask for connect tools on this level.
     uint8_t intro_dialog_id; ///< 0 = none; 1..N index into intro label pairs.
-    int par_cost;           ///< Target nodes+links for 3★; 0 = stars disabled.
+    int par_cost;           ///< Target cost (nodes + timber + 2× rods) for 3★; 0 = stars disabled.
 };
 
 [[nodiscard]] const Def& get(int level_index);

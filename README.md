@@ -36,7 +36,7 @@ Open the web playtest at **http://127.0.0.1:4317** — arrow keys + Z/X, or the 
 
 ## Features
 
-- **Build** — Hold **A** and drag to chain-weld spans; tap A to join a joint; Start sends the train
+- **Build** — Hold **A** and drag to chain-weld spans; R swaps timber / rod; HUD shows cost vs par; Start sends the train
 - **Eight tracks** — Knapford through Sodor Summit, with brace tools, par cost, and ★ ratings
 - **Five engines** — Thomas, Percy, Edward, James, Gordon with unlock progression + SRAM stars
 - **BG parallax** — sky, hills, bank ground, and animated water on regular backgrounds
@@ -65,4 +65,4 @@ Full wiki: [`docs/README.md`](docs/README.md)
 | **Git repo** | [`hackmods/morris-bridge-gba`](https://github.com/hackmods/morris-bridge-gba) (historical folder name) |
 | **License** | zlib (same as Butano) |
 
-Pre-built ROM (~341 KB) is committed for clone-and-play. Rebuild with `./scripts/build_rom.sh` after gameplay or asset changes.
+Pre-built ROM (~347 KB) is committed for clone-and-play. Rebuild with `./scripts/build_rom.sh` after gameplay or asset changes.

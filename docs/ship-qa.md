@@ -1,7 +1,7 @@
 # Ship QA — Phase 7 verification
 
 **Product:** Thomas's Bridge (`thomas_bridge.gba`)  
-**ROM:** `THOMASBRIDGE` / `THOM01` · ~341 KB (349,092 bytes) as of 2026-08-30  
+**ROM:** `THOMASBRIDGE` / `THOM01` · ~347 KB (354,740 bytes) as of 2026-08-30  
 **Release branch:** `main`
 
 This document records master-plan **M1–M5** screen-flow QA and related ship gates. Physical GBA hardware was not available in the Cloud Agent environment; **mGBA-WASM web playtest** and **host playthrough tests** provide equivalent coverage where noted.
@@ -104,7 +104,7 @@ Gordon's Hill / Vicarstown themed BG and brace tools require SRAM unlock (clear 
 
 ## EverDrive hardware sign-off (pending physical device)
 
-Run on real GBA / EverDrive after copying `rom/thomas_bridge.gba` (349,092 bytes) to SD `GBA/`:
+Run on real GBA / EverDrive after copying `rom/thomas_bridge.gba` (354,740 bytes) to SD `GBA/`:
 
 | Step | Check | Pass? | Web proxy |
 |------|-------|-------|-----------|
