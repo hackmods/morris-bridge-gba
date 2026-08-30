@@ -317,6 +317,17 @@ StrutPreview BridgeSystem::preview_strut(int node_a, int node_b, const LinkRole 
     return preview;
 }
 
+bn::fixed BridgeSystem::span_preview_capacity(const bn::fixed length, const LinkRole role) const
+{
+    if(length <= 0 || !allows_link_role(role))
+    {
+        return 0;
+    }
+
+    return physics::max_tension_for_length(length, _safe_length)
+        .safe_multiplication(material_strength(material_for_role(role)));
+}
+
 UndoResult BridgeSystem::undo_last_edit()
 {
     if(_status != SimStatus::idle)

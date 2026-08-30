@@ -159,7 +159,7 @@ void Game::_update_preview()
 
         if(length > 0)
         {
-            max_tension = physics::max_tension_for_length(length);
+            max_tension = _bridge.span_preview_capacity(length, _connect_role);
             show = true;
         }
     }

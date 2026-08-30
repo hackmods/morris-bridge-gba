@@ -7,6 +7,12 @@
 - Closed PR **#70**, which had put a high-res workshop at `/` and the ROM on `/legacy.html`
 - Note in [AGENTS.md](../AGENTS.md)
 
+## 2026-08-30 — Build-mode stress preview
+
+- Placed timber/rod spans glow hot while building if they cannot take the selected engine
+- Weld ghost uses rod strength (not timber-only) when drawing a brace
+- Stress palette uses GBA 5-bit colors (8-bit RGB crashed Butano when a span first went hot)
+
 ## 2026-08-30 — Timber vs rod materials
 
 - Track welds are **timber** (cost 1); braces are **rod** (cost 2, 1.25× strength)

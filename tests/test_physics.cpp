@@ -393,6 +393,31 @@ int main()
     }
 
     {
+        bridge::BridgeSystem system;
+        system.load_level(0);
+        system.set_engine(engine::Id::thomas);
+        const bn::fixed thomas_load = system.effective_weight_at(bn::fixed(256), bn::fixed(256));
+        assert(system.add_strut(bridge::START_NODE, bridge::END_NODE).has_value());
+        assert(bridge::strut_warns_for_load(system.struts()[0], thomas_load));
+
+        const bn::optional<int> near_a = system.add_node(-8, 52, false);
+        const bn::optional<int> near_b = system.add_node(16, 52, false);
+        assert(near_a.has_value());
+        assert(near_b.has_value());
+        assert(system.add_strut(near_a.value(), near_b.value()).has_value());
+        assert(!bridge::strut_warns_for_load(system.struts()[1], thomas_load));
+
+        bridge::BridgeSystem hill;
+        hill.load_level(1);
+        const bn::fixed timber_ghost =
+            hill.span_preview_capacity(physics::SAFE_LENGTH * 4, bridge::LinkRole::track);
+        const bn::fixed rod_ghost =
+            hill.span_preview_capacity(physics::SAFE_LENGTH * 4, bridge::LinkRole::brace);
+        assert(rod_ghost > timber_ghost);
+        std::cout << "  ok build-mode stress preview warns on overlong timber\n";
+    }
+
+    {
         const char* names[] = {
             "Knapford", "Gordon's Hill", "Vicarstown", "Tidmouth",
             "Wellsworth", "Crovan's Gate", "Callan Canal", "Sodor Summit",

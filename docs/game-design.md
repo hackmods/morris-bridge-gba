@@ -37,7 +37,7 @@ The ROM teaches controls directly:
 
 - **Title:** static hint labels (**HOLD A**, **A WELD**) above the dialog panel
 - **First build session:** rotating hints (`HOLD A` → `A WELD` → `PAUSE`) for a few seconds, dismissible with any button
-- **Build HUD:** **A WELD** while a joint is selected, **START** once a road links both banks; digits show **cost vs par** (3★ if cost ≤ par)
+- **Build HUD:** **A WELD** while a joint is selected, **START** once a road links both banks; digits show **cost vs par** (3★ if cost ≤ par). Placed spans glow **hot** if they cannot take the selected engine.
 - **Hold A + drag:** plants joints every 24 px so a span can be chain-welded in one stroke; tap A still joins one joint at a time
 
 ## Engines and unlocks
