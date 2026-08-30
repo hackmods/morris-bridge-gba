@@ -16,7 +16,7 @@ make -C tests
 | Tension | Midspan, endpoints, zero-length edge case |
 | Simulation | Two-span success, three-span success, overlong span failure, `no_path` |
 | Rating | `max_tension_for_length` at 48 px, 96 px, and 176 px |
-| Levels | Per-level seed counts, START/END positions, invalid index clamping |
+| Levels | Per-level seed counts, START/END positions, invalid index clamping, 8-track 3★ playthroughs |
 | Build helpers | Preview statuses, undo chain, player node budget |
 
 ### Mock layer
@@ -90,11 +90,11 @@ See [CI/CD](ci-cd.md).
 
 ### GBA / emulator
 
-- [ ] Title shows **A NOD**, **START**, and blinking **START**
+- [ ] Title shows **HOLD A**, **A WELD**, and blinking **START**
 - [ ] Level select shows track names without overlapping labels
 - [ ] First build shows rotating hints, then **PAUSE**
 - [ ] D-Pad moves cursor; R speeds it up
-- [ ] A places nodes and connects chain
+- [ ] A places nodes and welds (hold A and drag, or tap between joints)
 - [ ] Start runs train; short bridge succeeds
 - [ ] Long single span snaps; train falls
 - [ ] No struts → "NO GO" / no path

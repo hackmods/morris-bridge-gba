@@ -15,6 +15,11 @@ PLAYTHROUGHS = (
     "run_knapford_playthrough",
     "run_gordon_hill_playthrough",
     "run_vicarstown_playthrough",
+    "run_tidmouth_playthrough",
+    "run_wellsworth_playthrough",
+    "run_crovan_playthrough",
+    "run_callan_playthrough",
+    "run_summit_playthrough",
 )
 
 

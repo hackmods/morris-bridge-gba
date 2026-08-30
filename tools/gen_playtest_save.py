@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate mGBA save files for web playtest walkthroughs.
 
-Embeds save_data v3 (20 bytes) in a 32 KiB GBA SRAM image.
+Embeds save_data v4 (32 bytes) in a 32 KiB GBA SRAM image.
 """
 
 from __future__ import annotations
@@ -15,38 +15,47 @@ ROOT = Path(__file__).resolve().parent.parent
 SAVES_DIR = ROOT / "web" / "public" / "saves"
 
 MAGIC = 0x47425254
-VERSION = 3
+VERSION = 4
 SRAM_SIZE = 32768
+SAVE_SIZE = 32
+LEVEL_COUNT = 8
 
 
 def checksum(data: bytes) -> int:
     return sum(data) & 0xFF
 
 
-def encode_v3(
+def pack_stars(stars: tuple[int, ...]) -> int:
+    packed = 0
+    for index, value in enumerate(stars):
+        packed |= (value & 3) << (index * 2)
+    return packed
+
+
+def encode_v4(
     max_unlocked_level: int,
     cleared_levels: int,
     unlocked_engines: int,
     packed_stars: int = 0,
-    best_costs: tuple[int, int, int] = (0, 0, 0),
+    best_costs: tuple[int, ...] = (),
     intro_seen_mask: int = 0,
 ) -> bytes:
-    out = bytearray(20)
+    out = bytearray(SAVE_SIZE)
     struct.pack_into("<I", out, 0, MAGIC)
     out[4] = VERSION
     out[5] = max_unlocked_level & 0xFF
     out[6] = cleared_levels & 0xFF
     out[7] = unlocked_engines & 0xFF
     out[8] = packed_stars & 0xFF
-    for index, cost in enumerate(best_costs):
-        base = 9 + index * 2
+    out[9] = (packed_stars >> 8) & 0xFF
+    costs = list(best_costs) + [0] * LEVEL_COUNT
+    for index in range(LEVEL_COUNT):
+        base = 10 + index * 2
+        cost = costs[index]
         out[base] = cost & 0xFF
         out[base + 1] = (cost >> 8) & 0xFF
-    out[15] = intro_seen_mask & 0xFF
-    out[16] = 0
-    out[17] = 0
-    out[18] = 0
-    out[19] = checksum(bytes(out[:19]))
+    out[26] = intro_seen_mask & 0xFF
+    out[31] = checksum(bytes(out[:31]))
     return bytes(out)
 
 
@@ -58,7 +67,7 @@ def wrap_sram(save_data: bytes) -> bytes:
 
 def gordon_hill_walkthrough_save() -> bytes:
     """Knapford cleared → Gordon's Hill unlocked; skip level intros 0–1."""
-    return encode_v3(
+    return encode_v4(
         max_unlocked_level=1,
         cleared_levels=0b001,
         unlocked_engines=0b0111,  # Thomas + Percy + Edward (reference playthrough engine)
@@ -67,13 +76,14 @@ def gordon_hill_walkthrough_save() -> bytes:
 
 
 def all_unlocked_save() -> bytes:
-    return encode_v3(
-        max_unlocked_level=2,
-        cleared_levels=0b111,
-        unlocked_engines=0b111111,
-        packed_stars=0b111011,  # 3★ on level 0, etc.
-        best_costs=(5, 11, 12),
-        intro_seen_mask=0b111,
+    stars = (3, 3, 3, 3, 3, 3, 3, 3)
+    return encode_v4(
+        max_unlocked_level=LEVEL_COUNT - 1,
+        cleared_levels=0xFF,
+        unlocked_engines=0b11111,
+        packed_stars=pack_stars(stars),
+        best_costs=(5, 11, 12, 5, 10, 12, 14, 16),
+        intro_seen_mask=0xFF,
     )
 
 
@@ -105,7 +115,7 @@ def validate() -> int:
             errors.append(f"{name}: expected {SRAM_SIZE} bytes, got {len(data)}")
         if data[: len(payload)] != payload:
             errors.append(f"{name}: save_data mismatch")
-        if payload[19] != checksum(payload[:19]):
+        if payload[31] != checksum(payload[:31]):
             errors.append(f"{name}: bad checksum")
     if errors:
         for err in errors:

@@ -10,7 +10,7 @@ Related: [Game design](game-design.md) · [Lore leak](lore-leak.md) · [Graphics
 
 | Layer | Today | Target |
 |-------|-------|--------|
-| **Gameplay** | One train, one weight, 3 levels, meme HUD | Pick engine → build → test → unlock next character/track |
+| **Gameplay** | 8 tracks, 5 engines, SRAM v4 stars | Pick engine → weld → test → unlock next character/track |
 | **Physics** | Global `BASE_WEIGHT = 4` | Per-engine weight + optional speed/coach count |
 | **Progression** | All levels open, no saves | Level gates + engine unlocks + optional SRAM |
 | **Graphics** | Python blit templates, 16×16 train blob | Hand-authored GBA art, BG parallax, juice |
@@ -36,7 +36,7 @@ Starter code lives in [`include/engine.h`](../include/engine.h) and [`include/pr
 | **Percy** | 3 | 1.0 | Beat Knapford | Light engine | Buffer-overflow scout |
 | **Edward** | 5 | 1.0 | Beat Gordon's Hill | Old and careful | Remembers off-map routes |
 | **James** | 6 | 1.0 | Beat Vicarstown | Shiny red | Wrong reflection |
-| **Gordon** | 10 | 1.0 | Clear all 3 tracks | Big express | Escape needs momentum |
+| **Gordon** | 10 | 1.0 | Clear all 8 tracks | Big express | Escape needs momentum |
 
 **Design rule:** Percy is the *reward* engine (easier). Gordon is the *prestige* engine (hard mode).
 
@@ -93,7 +93,7 @@ flowchart TB
 
 | Responsibility | Detail |
 |----------------|--------|
-| Level unlock | Sequential: Knapford → Gordon's Hill → Vicarstown |
+| Level unlock | Sequential: Knapford → … → Sodor Summit (8 tracks) |
 | Engine unlock | Reward on first clear per level + Gordon when all cleared |
 | Session vs save | **v1:** RAM session (resets on power off). **v2:** Butano SRAM 256 B save block |
 | Cleared bitmask | Track replays, star ratings, lore flags |

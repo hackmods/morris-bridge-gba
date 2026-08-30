@@ -1,5 +1,30 @@
 # Changelog & project history
 
+## 2026-08-30 — Illustrated playtest chrome + readable track cards
+
+- Web playtest uses an illustrated paper/sky shell around the GBA canvas (the game remains the ROM)
+- Track cards pack long station names (VICARSTOWN, WELLSWORTH) so they fit the 64×32 sprite
+
+
+## 2026-08-30 — Eight-track GBA campaign + SRAM v4
+
+- Eight data-driven tracks (Knapford through Sodor Summit) with distinct gaps, deck heights, and par costs
+- SRAM **v4** (32 bytes): 2-bit stars × 8, per-track best cost, intro flags; v1–v3 saves still migrate
+- Gordon unlocks after every track is cleared; Percy / Edward / James still reward the first three clears
+- Level-select **track cards** for all eight stations; intro panels for each first visit
+- Host playthrough + 3★ reference for every shipped level
+- Release ROM **349,092 bytes** (eight-track + weld HUD)
+
+
+## 2026-08-30 — GBA weld pass (still a GBA game)
+
+- Hold **A** and drag to weld a span from the selected joint; release to plant
+- Build starts with the left bank selected so the first weld has a from-joint
+- HUD reads HOLD A / A WELD / START instead of the old A NOD cycle
+- Track path is queried before a test run (`has_track_path`)
+
+
+
 Session knowledge captured from the morris-bridge-gba / **Thomas's Bridge** prototype build.
 
 ## 2026-08-29 — Delta hardware QA import guide

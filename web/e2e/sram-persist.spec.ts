@@ -7,7 +7,7 @@ test('intro_seen persists across soft reset', async ({ page }) => {
 
   const beforeReset = await page.evaluate(() => window.__TEST__!.readSaveProgress());
   expect(beforeReset).not.toBeNull();
-  expect(beforeReset!.version).toBe(3);
+  expect(beforeReset!.version).toBe(4);
   expect(beforeReset!.introSeenMask & 0b001).toBe(0b001);
 
   await page.locator('#btn-reset').click();
@@ -41,10 +41,10 @@ test('walkthrough save stars and clear flags survive soft reset', async ({ page 
   await expect(page.locator('#status-bar')).toHaveClass(/ready/, { timeout: 60_000 });
 
   const beforeReset = await page.evaluate(() => window.__TEST__!.readSaveProgress());
-  expect(beforeReset?.clearedLevels).toBe(0b111);
-  expect(beforeReset?.packedStars).toBe(0b111011);
-  expect(beforeReset?.maxUnlockedLevel).toBe(2);
-  expect(beforeReset?.introSeenMask).toBe(0b111);
+  expect(beforeReset?.clearedLevels).toBe(0xFF);
+  expect(beforeReset?.packedStars).toBe(0xFFFF);
+  expect(beforeReset?.maxUnlockedLevel).toBe(7);
+  expect(beforeReset?.introSeenMask).toBe(0xFF);
 
   await page.locator('#btn-reset').click();
   await page.waitForTimeout(2_500);

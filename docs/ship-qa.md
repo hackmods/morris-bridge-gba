@@ -1,7 +1,7 @@
 # Ship QA — Phase 7 verification
 
 **Product:** Thomas's Bridge (`thomas_bridge.gba`)  
-**ROM:** `THOMASBRIDGE` / `THOM01` · ~333 KB (340,892 bytes) as of 2026-08-29  
+**ROM:** `THOMASBRIDGE` / `THOM01` · ~341 KB (349,092 bytes) as of 2026-08-30  
 **Release branch:** `main`
 
 This document records master-plan **M1–M5** screen-flow QA and related ship gates. Physical GBA hardware was not available in the Cloud Agent environment; **mGBA-WASM web playtest** and **host playthrough tests** provide equivalent coverage where noted.
@@ -13,7 +13,7 @@ This document records master-plan **M1–M5** screen-flow QA and related ship ga
 | Gate | Command / job | Status |
 |------|----------------|--------|
 | Host physics + session | `make -C tests` | Green on `main` |
-| All-level playthroughs | `test_physics` Knapford / Gordon / Vicarstown 3★ | Green |
+| All-level playthroughs | `test_physics` 3★ reference on all 8 tracks | Green |
 | Web unit tests | `cd web && npm test` | Green |
 | Web E2E (all-level wins, M1–M2, M3–M5, Gordon save) | `npm run test:e2e` | Green on `main` (34 tests) |
 | GBA ROM build | Release workflow `build-rom` | Green |
@@ -46,7 +46,7 @@ Use [testing.md](testing.md) for the full GBA and web checklist. Recommended ord
 
 ### GBA / emulator spot checks
 
-- [x] Title hints (A NOD, START) — implemented (`LABEL_HINT_*`)
+- [x] Title hints (HOLD A, A WELD) — implemented (`LABEL_HINT_*`)
 - [x] Level select track names + subtitles (FLAT!/HILL!/LONG!)
 - [x] Build hints rotate → PAUSE
 - [x] Track vs brace tools (Gordon's Hill+)
@@ -104,7 +104,7 @@ Gordon's Hill / Vicarstown themed BG and brace tools require SRAM unlock (clear 
 
 ## EverDrive hardware sign-off (pending physical device)
 
-Run on real GBA / EverDrive after copying `rom/thomas_bridge.gba` (340,892 bytes) to SD `GBA/`:
+Run on real GBA / EverDrive after copying `rom/thomas_bridge.gba` (349,092 bytes) to SD `GBA/`:
 
 | Step | Check | Pass? | Web proxy |
 |------|-------|-------|-----------|

@@ -141,13 +141,13 @@ uint16_t Progress::best_cost(const int level_index) const
     return _best_cost[level_index];
 }
 
-uint8_t Progress::packed_best_stars() const
+uint16_t Progress::packed_best_stars() const
 {
-    uint8_t packed = 0;
+    uint16_t packed = 0;
 
     for(int i = 0; i < level::COUNT; ++i)
     {
-        packed |= uint8_t((_best_stars[i] & 3) << (i * 2));
+        packed |= uint16_t((_best_stars[i] & 3) << (i * 2));
     }
 
     return packed;
@@ -161,7 +161,7 @@ void Progress::apply_save_v2(const int max_unlocked_level, const unsigned cleare
 
     for(int i = 0; i < level::COUNT; ++i)
     {
-        _best_stars[i] = uint8_t((packed_stars >> (i * 2)) & 3);
+        _best_stars[i] = i < 4 ? uint8_t((packed_stars >> (i * 2)) & 3) : 0;
         _best_cost[i] = best_costs[i];
     }
 }
@@ -171,6 +171,21 @@ void Progress::apply_save_v3(const int max_unlocked_level, const unsigned cleare
                              const uint16_t best_costs[level::COUNT], const uint8_t intro_seen_mask)
 {
     apply_save_v2(max_unlocked_level, cleared_levels, unlocked_engines, packed_stars, best_costs);
+    _intro_seen = intro_seen_mask;
+}
+
+void Progress::apply_save_v4(const int max_unlocked_level, const unsigned cleared_levels,
+                             const unsigned unlocked_engines, const uint16_t packed_stars,
+                             const uint16_t best_costs[level::COUNT], const uint8_t intro_seen_mask)
+{
+    apply_save(max_unlocked_level, cleared_levels, unlocked_engines);
+
+    for(int i = 0; i < level::COUNT; ++i)
+    {
+        _best_stars[i] = uint8_t((packed_stars >> (i * 2)) & 3);
+        _best_cost[i] = best_costs[i];
+    }
+
     _intro_seen = intro_seen_mask;
 }
 

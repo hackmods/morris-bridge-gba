@@ -133,6 +133,9 @@ private:
     int _build_hint_timer = 0;
     int _no_go_timer = 0;
     int _fail_reveal_timer = 0;
+    bool _weld_holding = false;
+    bool _weld_dragged = false;
+    bn::fixed_point _weld_press_pos;
     session::RunScore _last_run_score;
 
     bn::sprite_ptr _cursor;

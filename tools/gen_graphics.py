@@ -223,6 +223,7 @@ FONT = {
     "G": ["01111", "10000", "10111", "10001", "01110"],
     "H": ["10001", "10001", "11111", "10001", "10001"],
     "I": ["11111", "00100", "00100", "00100", "11111"],
+    "J": ["11111", "00100", "00100", "10100", "01100"],
     "K": ["10001", "10010", "11100", "10010", "10001"],
     "L": ["10000", "10000", "10000", "10000", "11111"],
     "M": ["10001", "11011", "10101", "10001", "10001"],
@@ -235,6 +236,7 @@ FONT = {
     "U": ["10001", "10001", "10001", "10001", "01110"],
     "V": ["10001", "10001", "10001", "01010", "01010"],
     "W": ["10001", "10001", "10101", "10101", "01010"],
+    "Y": ["10001", "01010", "00100", "00100", "00100"],
     "'": ["00100", "00100", "01000", "00000", "00000"],
     "!": ["00100", "00100", "00100", "00000", "00100"],
     " ": ["00000", "00000", "00000", "00000", "00000"],
@@ -251,7 +253,8 @@ FONT = {
 }
 
 
-def blit_text(px: list[int], w: int, text: str, ox: int, oy: int, color: int, shadow: int = 1) -> None:
+def blit_text(px: list[int], w: int, text: str, ox: int, oy: int, color: int, shadow: int = 1,
+              advance: int = 6) -> None:
     x = ox
     for ch in text:
         glyph = FONT.get(ch, FONT[" "])
@@ -260,12 +263,13 @@ def blit_text(px: list[int], w: int, text: str, ox: int, oy: int, color: int, sh
                 if bit == "1":
                     put(px, w, x + gx + 1, oy + gy + 1, shadow)
                     put(px, w, x + gx, oy + gy, color)
-        x += 6
+        x += advance
 
 
-def center_text(px: list[int], w: int, text: str, y: int, color: int, shadow: int = 1) -> None:
-    tw = len(text) * 6 - 1
-    blit_text(px, w, text, max(0, (w - tw) // 2), y, color, shadow)
+def center_text(px: list[int], w: int, text: str, y: int, color: int, shadow: int = 1,
+                 advance: int = 6) -> None:
+    tw = len(text) * advance - 1
+    blit_text(px, w, text, max(0, (w - tw) // 2), y, color, shadow, advance)
 
 
 # ---------------------------------------------------------------------------
@@ -1126,8 +1130,8 @@ def make_water() -> None:
 
 def make_labels() -> None:
     # Indices 0-7: core HUD. 8-10: onboarding hints. 11-16: rare PG lore alternates.
-    # 17-18: build tool indicators. 19-24: level intro dialog pairs.
-    # 25-28: extra rare strings from docs/lore-leak.md phrase book.
+    # 17-18: build tool indicators. 19-34: eight level intro dialog pairs.
+    # 35-38: extra rare strings from docs/lore-leak.md phrase book.
     texts = (
         "BUILD",
         "TEST!",
@@ -1137,8 +1141,8 @@ def make_labels() -> None:
         "PEEP!",
         "ASHES!",
         "START",
-        "A NOD",
-        "START",
+        "HOLD A",
+        "A WELD",
         "PAUSE",
         "CHUFF!",
         "TOOT!",
@@ -1154,6 +1158,16 @@ def make_labels() -> None:
         "BRACE",
         "LONG!",
         "RODS!",
+        "YARD!",
+        "SHORT",
+        "GAP!",
+        "SPAN",
+        "GATE!",
+        "HIGH",
+        "CANAL",
+        "TIGHT",
+        "PEAK!",
+        "HARD",
         "LISTEN",
         "CONFUS",
         "LOOP!",
@@ -1163,6 +1177,7 @@ def make_labels() -> None:
     px = fill(w, fh * len(texts))
     colors = (
         2, 2, 2, 3, 2, 3, 2, 3, 2, 2, 2, 3, 3, 2, 3, 3, 3, 2, 2, 2, 2, 3, 3, 2, 3,
+        2, 3, 2, 3, 2, 3, 2, 3, 2, 3,
         3, 9, 3, 3,
     )
     for i, text in enumerate(texts):
@@ -1202,6 +1217,11 @@ def make_track_card() -> None:
         ("1", "KNAPFORD", "FLAT!", 11),
         ("2", "GORDON", "HILL!", 3),
         ("3", "VICARSTOWN", "LONG!", 9),
+        ("4", "TIDMOUTH", "YARD!", 11),
+        ("5", "WELLSWORTH", "GAP!", 3),
+        ("6", "CROVAN", "GATE!", 9),
+        ("7", "CALLAN", "CANAL", 11),
+        ("8", "SODOR", "PEAK!", 3),
     )
     px = fill(w, fh * len(entries))
     for i, (num, title, sub, accent) in enumerate(entries):
@@ -1209,7 +1229,8 @@ def make_track_card() -> None:
         panel_box(px, w, 2, y0 + 2, 62, y0 + 30)
         rect(px, w, 4, y0 + 4, 60, y0 + 10, accent)
         center_text(px, w, num, y0 + 5, 7, 13)
-        center_text(px, w, title, y0 + 12, 1, 13)
+        title_advance = 5 if len(title) >= 9 else 6
+        center_text(px, w, title, y0 + 12, 1, 13, title_advance)
         center_text(px, w, sub, y0 + 22, 3, 1)
     write_indexed_bmp(os.path.join(GFX, "track_card.bmp"), w, fh * len(entries), px)
 

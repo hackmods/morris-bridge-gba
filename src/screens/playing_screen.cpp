@@ -208,7 +208,7 @@ void Game::_update_build_hints()
 
         if(phase == 1)
         {
-            frame = game_ui::LABEL_HINT_TEST;
+            frame = game_ui::LABEL_HINT_WELD;
         }
         else if(phase == 2)
         {
@@ -221,9 +221,21 @@ void Game::_update_build_hints()
         return;
     }
 
+    if(_bridge.has_track_path())
+    {
+        _hint_label.set_item(bn::sprite_items::label, game_ui::LABEL_START);
+    }
+    else if(_selected)
+    {
+        _hint_label.set_item(bn::sprite_items::label, game_ui::LABEL_HINT_WELD);
+    }
+    else
+    {
+        _hint_label.set_item(bn::sprite_items::label, game_ui::LABEL_HINT_NODE);
+    }
+
     _hint_label.set_visible(true);
     _hint_label.set_position(0, 52);
-    _hint_label.set_item(bn::sprite_items::label, game_ui::LABEL_HINT_PAUSE);
 }
 
 void Game::_update_build()
@@ -288,7 +300,51 @@ void Game::_update_build()
 
     if(bn::keypad::a_pressed())
     {
-        _handle_confirm(hovered, draw_at);
+        _weld_holding = true;
+        _weld_dragged = false;
+        _weld_press_pos = _cursor_pos;
+
+        if(!_selected)
+        {
+            if(hovered)
+            {
+                _selected = hovered;
+            }
+            else
+            {
+                _handle_confirm(hovered, draw_at);
+            }
+        }
+        else if(hovered && hovered.value() == _selected.value())
+        {
+            _selected.reset();
+            _weld_holding = false;
+        }
+    }
+
+    if(_weld_holding && bn::keypad::a_held())
+    {
+        const bn::fixed dx = _cursor_pos.x() - _weld_press_pos.x();
+        const bn::fixed dy = _cursor_pos.y() - _weld_press_pos.y();
+
+        if(dx * dx + dy * dy > bn::fixed(36))
+        {
+            _weld_dragged = true;
+        }
+    }
+
+    if(_weld_holding && !bn::keypad::a_held())
+    {
+        const bool connect = _weld_dragged || !hovered ||
+            (_selected && hovered.value() != _selected.value());
+
+        if(_selected && connect)
+        {
+            _handle_confirm(hovered, draw_at);
+        }
+
+        _weld_holding = false;
+        _weld_dragged = false;
     }
 
     if(bn::keypad::b_pressed())
@@ -315,8 +371,8 @@ void Game::_update_build()
         }
     }
 
-    if(bn::keypad::r_pressed() && !bn::keypad::left_held() && !bn::keypad::right_held() &&
-       !bn::keypad::up_held() && !bn::keypad::down_held())
+    if(bn::keypad::r_pressed() && !bn::keypad::a_held() && !bn::keypad::left_held() &&
+       !bn::keypad::right_held() && !bn::keypad::up_held() && !bn::keypad::down_held())
     {
         _cycle_connect_role();
     }
@@ -336,7 +392,7 @@ void Game::_update_build()
         _enter_pause();
     }
 
-    if(bn::keypad::start_pressed())
+    if(bn::keypad::start_pressed() && !bn::keypad::a_held())
     {
         _enter_test();
     }
@@ -399,6 +455,7 @@ void Game::_handle_confirm(bn::optional<int> hovered, bn::fixed_point place_at)
                 }
 
                 (void)_bridge.add_strut(_selected.value(), node_id, _connect_role);
+                bn::sound_items::ui.play();
                 break;
 
             default:
@@ -470,6 +527,8 @@ void Game::_leave_test()
     _train.set_visible(false);
     _cursor.set_visible(true);
     _cursor.set_position(_cursor_pos);
+    _weld_holding = false;
+    _weld_dragged = false;
     _audio.play(audio::MusicCue::workshop);
 }
 

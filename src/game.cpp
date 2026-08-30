@@ -498,6 +498,8 @@ void Game::_start_level(int level_index)
     _connect_role = bridge::LinkRole::track;
     _pause_option = PauseOption::resume;
     _build_hint_timer = 0;
+    _weld_holding = false;
+    _weld_dragged = false;
     _cursor_pos = _bridge.nodes()[bridge::START_NODE].position;
     _cursor_pos.set_x(_cursor_pos.x() + 16);
     _backdrop.layout_for_level(_bridge.level_def());

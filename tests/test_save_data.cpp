@@ -24,15 +24,16 @@ int main()
     std::cout << "  ok round-trip fresh progress\n";
 
     engine::Id unlocked = engine::none;
-    (void)progress.on_level_cleared(0, unlocked);
-    (void)progress.on_level_cleared(1, unlocked);
-    (void)progress.on_level_cleared(2, unlocked);
+    for(int level_index = 0; level_index < level::COUNT; ++level_index)
+    {
+        (void)progress.on_level_cleared(level_index, unlocked);
+    }
     assert(progress.is_engine_unlocked(engine::Id::gordon));
     assert(save_data::encode(progress, buffer));
     loaded.reset();
     assert(save_data::decode(loaded, buffer));
     assert(loaded.is_engine_unlocked(engine::Id::gordon));
-    assert(loaded.is_level_unlocked(2));
+    assert(loaded.is_level_unlocked(level::COUNT - 1));
     std::cout << "  ok round-trip full unlock state\n";
 
     buffer[8] ^= 0xFF;
@@ -43,6 +44,7 @@ int main()
     progress.record_level_result(0, 3, 5);
     progress.record_level_result(1, 2, 11);
     progress.record_level_result(2, 1, 15);
+    progress.record_level_result(7, 3, 16);
     assert(save_data::encode(progress, buffer));
     loaded.reset();
     assert(save_data::decode(loaded, buffer));
@@ -52,7 +54,9 @@ int main()
     assert(loaded.best_cost(1) == 11);
     assert(loaded.best_stars(2) == 1);
     assert(loaded.best_cost(2) == 15);
-    std::cout << "  ok v2 round-trip best stars and cost\n";
+    assert(loaded.best_stars(7) == 3);
+    assert(loaded.best_cost(7) == 16);
+    std::cout << "  ok v4 round-trip best stars and cost\n";
 
     progress.record_level_result(0, 2, 4);
     assert(progress.best_stars(0) == 3);
@@ -99,6 +103,42 @@ int main()
     assert(! loaded.is_intro_seen(1));
     assert(loaded.is_intro_seen(2));
     std::cout << "  ok v3 round-trip intro seen flags\n";
+
+    {
+        std::uint8_t v3[save_data::SIZE] = {};
+        v3[0] = std::uint8_t(save_data::MAGIC & 0xFF);
+        v3[1] = std::uint8_t((save_data::MAGIC >> 8) & 0xFF);
+        v3[2] = std::uint8_t((save_data::MAGIC >> 16) & 0xFF);
+        v3[3] = std::uint8_t((save_data::MAGIC >> 24) & 0xFF);
+        v3[4] = save_data::VERSION_V3;
+        v3[5] = 2;
+        v3[6] = 0b111;
+        v3[7] = 0b00111;
+        v3[8] = 0b111011;
+        v3[9] = 5;
+        v3[10] = 0;
+        v3[11] = 11;
+        v3[12] = 0;
+        v3[13] = 12;
+        v3[14] = 0;
+        v3[15] = 0b111;
+        std::uint8_t v3_sum = 0;
+
+        for(int i = 0; i < 19; ++i)
+        {
+            v3_sum = std::uint8_t(v3_sum + v3[i]);
+        }
+
+        v3[19] = v3_sum;
+        loaded.reset();
+        assert(save_data::decode(loaded, v3));
+        assert(loaded.max_unlocked_level() == 2);
+        assert(loaded.best_stars(0) == 3);
+        assert(loaded.best_cost(0) == 5);
+        assert(loaded.best_stars(7) == 0);
+        assert(loaded.is_intro_seen(2));
+        std::cout << "  ok v3 save migrates into eight-track progress\n";
+    }
 
     {
         std::ifstream file("../web/public/saves/gordon_hill_walkthrough.sav", std::ios::binary);

@@ -14,7 +14,7 @@
 namespace level
 {
 
-constexpr int COUNT = 3;
+constexpr int COUNT = 8;
 
 /// Bit flags — align with bridge::LinkRole order (track = bit 0, brace = bit 1).
 inline constexpr uint8_t ALLOW_TRACK = 1;
