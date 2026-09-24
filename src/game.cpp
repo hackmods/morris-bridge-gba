@@ -72,8 +72,10 @@ Game::Game() :
     _label.set_z_order(-18);
     _hint_label.set_z_order(-18);
     _hint_secondary.set_z_order(-18);
+    _legend.set_z_order(-18);
     _hint_label.set_visible(false);
     _hint_secondary.set_visible(false);
+    _legend.set_visible(false);
     _panel.set_z_order(-19);
     _top_bar.set_z_order(-20);
     _top_bar.set_vertical_scale(bn::fixed(1) / 4);
@@ -528,6 +530,7 @@ void Game::_enter_pause()
     _label.set_visible(false);
     _hint_label.set_visible(false);
     _hint_secondary.set_visible(false);
+    _legend.set_visible(false);
     _menu_row.set_visible(true);
     _menu_row.set_item(bn::sprite_items::menu, game_ui::MENU_PAUSE_BASE + int(_pause_option));
     _menu_row.set_position(0, 0);

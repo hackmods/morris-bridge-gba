@@ -46,7 +46,7 @@ void Game::_show_gameplay()
     _top_bar.set_visible(false);
     _panel.set_visible(true);
     _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_HUD);
-    _panel.set_position(0, 60);
+    _panel.set_position(0, 48);
     _panel.set_vertical_scale(bn::fixed(1) / 2);
     _label.set_visible(true);
     _label.set_position(-96, game_ui::HUD_TOP_Y);
