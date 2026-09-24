@@ -29,10 +29,10 @@ platform     Game + screens + GraphView (heatmap) + BGView
 
 ## Remaining vision polish (not blocking usable loop)
 
-- Right-side vertical material icon strip (OAM); L/R cycles WOOD/IRON/STONE/CABLE labels today.
+- Fuller right-edge material *stack* (all four icons); selected material label sits at `HUD_MAT_X` today.
 - Clearer mid-SIM stress-heatmap capture when 8×8 strut helpers land consistently in playwright.
 - Full dense FEM matrix — intentionally replaced by documented load-path truss (GBA frame budget).
 
-**Top chrome now shows** EDIT + BUDGT + 4-digit £ + target load. **Bottom strip** shows material + A DRAW/START.
+**Top chrome** EDIT + BUDGT + £ + target. **Sky strip** (`HUD_STRIP_Y`) A DRAW/START + onboarding; **right** selected material. Bottom ground scanlines are too busy for OAM chrome (GBA ≤10 sprites/line) — chrome uses `Z_HUD` and sky rows.
 
 See [physics.md](physics.md) for tuneable yield / cascade knobs.

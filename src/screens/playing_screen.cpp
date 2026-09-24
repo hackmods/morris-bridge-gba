@@ -44,15 +44,14 @@ void Game::_show_gameplay()
     _hatt.set_visible(false);
     // Skip scaled white panel — status/budget/target sit as discrete labels on the sky.
     _top_bar.set_visible(false);
-    _panel.set_visible(true);
-    _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_HUD);
-    _panel.set_position(0, 48);
-    _panel.set_vertical_scale(bn::fixed(1) / 2);
+    _panel.set_visible(false);
     _label.set_visible(true);
     _label.set_position(-96, game_ui::HUD_TOP_Y);
     _label.set_item(bn::sprite_items::label, game_ui::LABEL_EDIT);
     _hint_secondary.set_visible(false);
+    _legend.set_visible(false);
     _update_build_hints();
+    _update_hud();
     _cursor.set_visible(true);
     _train.set_visible(false);
     _backdrop.set_backdrop_visible(true);
@@ -631,22 +630,35 @@ void Game::_update_hud()
         _set_counter(_node_count_digits, hi, -8);
         _set_counter(_strut_count_digits, lo, 12);
 
-        _panel.set_visible(true);
-        _panel.set_position(0, 48);
+        // Material on the right-edge strip; A DRAW / START (or onboarding) on sky row 2.
+        _panel.set_visible(false);
         _hint_secondary.set_item(bn::sprite_items::label, _build_tool_label());
-        _hint_secondary.set_position(-40, 48);
+        _hint_secondary.set_position(game_ui::HUD_MAT_X, game_ui::HUD_STRIP_Y);
         _hint_secondary.set_visible(true);
+
+        int prompt = game_ui::LABEL_A_DRAW;
 
         if(_bridge.has_track_path())
         {
-            _legend.set_item(bn::sprite_items::label, game_ui::LABEL_START);
-        }
-        else
-        {
-            _legend.set_item(bn::sprite_items::label, game_ui::LABEL_A_DRAW);
+            prompt = game_ui::LABEL_START;
         }
 
-        _legend.set_position(40, 48);
+        if(!_build_hints_seen)
+        {
+            const int phase = (_build_hint_timer / 60) % 3;
+
+            if(phase == 1)
+            {
+                prompt = game_ui::LABEL_B_DEL;
+            }
+            else if(phase == 2)
+            {
+                prompt = game_ui::LABEL_LR_CY;
+            }
+        }
+
+        _legend.set_item(bn::sprite_items::label, prompt);
+        _legend.set_position(-40, game_ui::HUD_STRIP_Y);
         _legend.set_visible(true);
     }
 
@@ -666,38 +678,17 @@ void Game::_update_hud()
 
 void Game::_update_build_hints()
 {
-    // Vision bottom strip is driven by `_update_hud` (material + A DRAW / START).
-    // Keep the first-time onboarding cycle on the secondary line only.
-    if(_screen != Screen::playing || _play_mode != PlayMode::build)
+    // Timer only — prompt frames are applied in `_update_hud`.
+    if(_screen != Screen::playing || _play_mode != PlayMode::build || _build_hints_seen)
     {
         return;
     }
 
-    if(!_build_hints_seen)
+    ++_build_hint_timer;
+
+    if(_build_hint_timer >= game_ui::BUILD_HINT_FRAMES || bn::keypad::any_pressed())
     {
-        ++_build_hint_timer;
-
-        if(_build_hint_timer >= game_ui::BUILD_HINT_FRAMES || bn::keypad::any_pressed())
-        {
-            _build_hints_seen = true;
-            return;
-        }
-
-        const int phase = (_build_hint_timer / 60) % 3;
-        int frame = game_ui::LABEL_A_DRAW;
-
-        if(phase == 1)
-        {
-            frame = game_ui::LABEL_B_DEL;
-        }
-        else if(phase == 2)
-        {
-            frame = game_ui::LABEL_LR_CY;
-        }
-
-        _hint_secondary.set_visible(true);
-        _hint_secondary.set_position(48, game_ui::HUD_BOTTOM_Y);
-        _hint_secondary.set_item(bn::sprite_items::label, frame);
+        _build_hints_seen = true;
     }
 }
 

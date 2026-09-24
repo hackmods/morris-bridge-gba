@@ -31,16 +31,23 @@ constexpr int TOAST_WEAK = 1;
 constexpr int TOAST_DEL = 2;
 
 constexpr int Z_CURSOR = -32767;
+/// HUD chrome must beat scenery on the same scanline (GBA ≤10 sprites/line).
+constexpr int Z_HUD = -200;
+constexpr int Z_HUD_PANEL = -199;
 constexpr int Z_TOAST = -17;
-constexpr int Z_DIGIT = -19;
+constexpr int Z_DIGIT = -201;
 constexpr int Z_RING = 4;
 constexpr int Z_GHOST = 6;
 constexpr int Z_STRUT_PREVIEW = 9;
 
 /// Vision top chrome (8px bar) — digits / target load sit near screen top.
 inline constexpr bn::fixed HUD_TOP_Y = -72;
-/// Vision bottom chrome (controls / material legend).
-inline constexpr bn::fixed HUD_BOTTOM_Y = 68;
+/// Second chrome row (material + A DRAW / START) — above dense ground OAM.
+inline constexpr bn::fixed HUD_STRIP_Y = -56;
+/// Legacy bottom hint row (kept clear of ground-tile scanlines).
+inline constexpr bn::fixed HUD_BOTTOM_Y = 40;
+/// Right-edge material stack (vision select strip).
+inline constexpr bn::fixed HUD_MAT_X = 96;
 
 enum class ToastKind
 {
