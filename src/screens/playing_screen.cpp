@@ -212,7 +212,7 @@ void Game::_update_build_hints()
         }
 
         _hint_label.set_visible(true);
-        _hint_label.set_position(0, 52);
+        _hint_label.set_position(0, game_ui::HUD_BOTTOM_Y - 16);
         _hint_label.set_item(bn::sprite_items::label, frame);
         return;
     }
