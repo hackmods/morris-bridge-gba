@@ -632,9 +632,9 @@ void Game::_update_hud()
         _set_counter(_strut_count_digits, lo, 12);
 
         _panel.set_visible(true);
-        _panel.set_position(0, 60);
+        _panel.set_position(0, 48);
         _hint_secondary.set_item(bn::sprite_items::label, _build_tool_label());
-        _hint_secondary.set_position(-40, 60);
+        _hint_secondary.set_position(-40, 48);
         _hint_secondary.set_visible(true);
 
         if(_bridge.has_track_path())
@@ -646,7 +646,7 @@ void Game::_update_hud()
             _legend.set_item(bn::sprite_items::label, game_ui::LABEL_A_DRAW);
         }
 
-        _legend.set_position(40, 60);
+        _legend.set_position(40, 48);
         _legend.set_visible(true);
     }
 
