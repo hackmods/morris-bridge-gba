@@ -97,6 +97,7 @@ private:
     void _handle_confirm(bn::optional<int> hovered, bn::fixed_point place_at);
     void _try_chain_weld(bn::optional<int> hovered, bn::fixed_point draw_at);
     void _cycle_connect_role();
+    void _cycle_material(int direction);
     [[nodiscard]] int _build_tool_label() const;
     void _enter_test();
     void _leave_test();
@@ -116,6 +117,7 @@ private:
     PlayMode _play_mode = PlayMode::build;
     screen::Manager _screen_manager;
     bridge::LinkRole _connect_role = bridge::LinkRole::track;
+    bridge::MaterialId _connect_material = bridge::MaterialId::wood;
     bn::fixed_point _cursor_pos;
     bn::optional<int> _selected;
     int _selected_level = 0;

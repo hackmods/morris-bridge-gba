@@ -24,8 +24,8 @@ inline constexpr bn::fixed TRACK_Y = 52;
 /// Deepest build-grid row for pier foundations below the deck.
 inline constexpr bn::fixed UNDERGROUND_Y = 64;
 
-/// 4 px build grid (matches cursor snap in main.cpp).
-inline constexpr bn::fixed GRID_STEP = 4;
+/// 8 px build grid (vision: 8×8 GBA snap).
+inline constexpr bn::fixed GRID_STEP = 8;
 
 /// Hold-A chain-draw plants the next joint at least this far from the last.
 inline constexpr bn::fixed CHAIN_WELD_MIN = 24;

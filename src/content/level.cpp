@@ -80,6 +80,7 @@ constexpr Seed SodorSummit[] = {
     { 120, game::TRACK_Y, true },
 };
 
+// par_cost / budget_pounds are in £ (wood £10, iron £25, stone £50, cable £15, joint £10).
 constexpr Def DEFINITIONS[COUNT] = {
     {
         Knapford,
@@ -92,7 +93,9 @@ constexpr Def DEFINITIONS[COUNT] = {
         bn::fixed(1) / 2,
         ALLOW_TRACK,
         1,
-        5,
+        50,
+        1450,
+        ALLOW_WOOD,
     },
     {
         GordonHill,
@@ -105,7 +108,9 @@ constexpr Def DEFINITIONS[COUNT] = {
         bn::fixed(3) / 5,
         ALLOW_TRACK_AND_BRACE,
         2,
-        13,
+        140,
+        1200,
+        ALLOW_WOOD_IRON,
     },
     {
         Vicarstown,
@@ -116,9 +121,11 @@ constexpr Def DEFINITIONS[COUNT] = {
         bn::fixed(40),
         bn::fixed(1) / 3,
         bn::fixed(2) / 3,
-        ALLOW_TRACK_AND_BRACE,
+        ALLOW_ALL_ROLES,
         3,
-        13,
+        135,
+        1100,
+        ALLOW_WOOD | ALLOW_IRON | ALLOW_CABLE,
     },
     {
         Tidmouth,
@@ -131,7 +138,9 @@ constexpr Def DEFINITIONS[COUNT] = {
         bn::fixed(1) / 2,
         ALLOW_TRACK,
         4,
-        5,
+        50,
+        900,
+        ALLOW_WOOD,
     },
     {
         Wellsworth,
@@ -144,7 +153,9 @@ constexpr Def DEFINITIONS[COUNT] = {
         bn::fixed(3) / 5,
         ALLOW_TRACK_AND_BRACE,
         5,
-        11,
+        120,
+        1000,
+        ALLOW_WOOD_IRON,
     },
     {
         CrovanGate,
@@ -155,9 +166,11 @@ constexpr Def DEFINITIONS[COUNT] = {
         bn::fixed(40),
         bn::fixed(1) / 4,
         bn::fixed(3) / 5,
-        ALLOW_TRACK_AND_BRACE,
+        ALLOW_ALL_ROLES,
         6,
-        13,
+        140,
+        1000,
+        ALLOW_ALL_MATERIALS,
     },
     {
         CallanCanal,
@@ -168,9 +181,11 @@ constexpr Def DEFINITIONS[COUNT] = {
         bn::fixed(36),
         bn::fixed(1) / 3,
         bn::fixed(2) / 3,
-        ALLOW_TRACK_AND_BRACE,
+        ALLOW_ALL_ROLES,
         7,
-        15,
+        160,
+        950,
+        ALLOW_ALL_MATERIALS,
     },
     {
         SodorSummit,
@@ -181,9 +196,11 @@ constexpr Def DEFINITIONS[COUNT] = {
         bn::fixed(36),
         bn::fixed(1) / 3,
         bn::fixed(2) / 3,
-        ALLOW_TRACK_AND_BRACE,
+        ALLOW_ALL_ROLES,
         8,
-        17,
+        180,
+        900,
+        ALLOW_ALL_MATERIALS,
     },
 };
 

@@ -5,6 +5,78 @@
 namespace physics
 {
 
+bn::fixed stress_ratio(bn::fixed force, bn::fixed yield_strength)
+{
+    if(yield_strength <= 0)
+    {
+        return 0;
+    }
+
+    return abs(force).safe_division(yield_strength);
+}
+
+StressBand stress_band(bn::fixed stress)
+{
+    if(stress >= bn::fixed(1))
+    {
+        return StressBand::breaking;
+    }
+
+    if(stress >= bn::fixed(81) / 100)
+    {
+        return StressBand::red;
+    }
+
+    if(stress >= bn::fixed(51) / 100)
+    {
+        return StressBand::yellow;
+    }
+
+    return StressBand::green;
+}
+
+bn::fixed member_stiffness(material::Id mat, bn::fixed length)
+{
+    if(length <= 0)
+    {
+        return material::get(mat).stiffness_mul;
+    }
+
+    return material::get(mat).stiffness_mul.safe_division(length);
+}
+
+bn::fixed rated_yield(material::Id mat, bn::fixed length, int connections_a,
+                      int connections_b, bool triangulated, bn::fixed safe_length)
+{
+    if(material::is_pier(mat))
+    {
+        return material::yield(mat);
+    }
+
+    bn::fixed rated = material::yield(mat);
+    const bn::fixed rating_base = safe_length > 0 ? safe_length : SAFE_LENGTH;
+
+    if(length > 0)
+    {
+        rated = rated.safe_multiplication(rating_base).safe_division(length);
+    }
+
+    rated = rated.safe_multiplication(reinforcement_multiplier(connections_a, connections_b));
+
+    if(triangulated)
+    {
+        rated = rated.safe_multiplication(TRIANGLE_BONUS);
+    }
+
+    if(rated < 1)
+    {
+        rated = 1;
+    }
+
+    return rated;
+}
+
+
 int isqrt64(int64_t value)
 {
     if(value <= 0)

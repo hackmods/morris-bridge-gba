@@ -170,28 +170,13 @@ int Game::_pick_win_label() const
 
 int Game::_pick_fail_label() const
 {
-    if(! _lore_rare(3))
+    // Vision RESULT_MODE: Sir Topham Hatt — "confusion and delay".
+    if(_lore_rare(3))
     {
-        return game_ui::LABEL_ASHES;
+        return game_ui::LABEL_CONFUS;
     }
 
-    switch(_lore_roll(4) % 5)
-    {
-        case 0:
-            return game_ui::LABEL_OOPS;
-
-        case 1:
-            return game_ui::LABEL_WAIT;
-
-        case 2:
-            return game_ui::LABEL_AGAIN;
-
-        case 3:
-            return game_ui::LABEL_LISTEN;
-
-        default:
-            return game_ui::LABEL_CONFUS;
-    }
+    return game_ui::LABEL_DELAY;
 }
 
 int Game::_pick_win_banner() const
@@ -496,6 +481,7 @@ void Game::_start_level(int level_index)
     _play_mode = PlayMode::build;
     _selected.reset();
     _connect_role = bridge::LinkRole::track;
+    _connect_material = bridge::MaterialId::wood;
     _pause_option = PauseOption::resume;
     _build_hint_timer = 0;
     _weld_holding = false;

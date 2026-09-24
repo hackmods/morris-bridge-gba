@@ -13,6 +13,7 @@
 #include "bn_vector.h"
 
 #include "bridge_system.h"
+#include "physics.h"
 
 namespace view
 {
@@ -27,6 +28,8 @@ inline constexpr int STRUT_BRACE_HOT = 5;
 inline constexpr int STRUT_SNAP = 6;
 
 void position_strut_sprite(bn::sprite_ptr& sprite, bn::fixed_point a, bn::fixed_point b, int frame);
+
+[[nodiscard]] int strut_frame_for_stress(bridge::LinkRole role, physics::StressBand band, bool preview);
 
 class GraphView
 {

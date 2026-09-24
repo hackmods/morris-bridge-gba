@@ -28,6 +28,7 @@
 #include "game_constants.h"
 #include "graph_view.h"
 #include "level.h"
+#include "material.h"
 #include "physics.h"
 #include "run_score.h"
 #include "save_data.h"
@@ -143,7 +144,8 @@ void Game::_update_preview()
     if(hovered && hovered.value() != _selected.value())
     {
         const bridge::StrutPreview preview =
-            _bridge.preview_strut(_selected.value(), hovered.value(), _connect_role);
+            _bridge.preview_strut(_selected.value(), hovered.value(), _connect_role,
+                                 _connect_material);
 
         if(preview.status == bridge::StrutPreviewStatus::ok)
         {
@@ -159,7 +161,7 @@ void Game::_update_preview()
 
         if(length > 0)
         {
-            max_tension = _bridge.span_preview_capacity(length, _connect_role);
+            max_tension = _bridge.span_preview_capacity(length, _connect_role, _connect_material);
             show = true;
         }
     }
@@ -168,17 +170,9 @@ void Game::_update_preview()
     {
         const bn::fixed load = _max_train_load();
         const bool weak = max_tension < load;
-        int frame = view::STRUT_PREVIEW_OK;
-
-        if(_connect_role == bridge::LinkRole::brace)
-        {
-            frame = weak ? view::STRUT_BRACE_HOT : view::STRUT_BRACE_IDLE;
-        }
-        else
-        {
-            frame = weak ? view::STRUT_PREVIEW_WEAK : view::STRUT_PREVIEW_OK;
-        }
-
+        const physics::StressBand band =
+            weak ? physics::StressBand::red : physics::StressBand::green;
+        const int frame = view::strut_frame_for_stress(_connect_role, band, true);
         view::position_strut_sprite(_preview_strut, from, to, frame);
         return;
     }
@@ -241,7 +235,7 @@ void Game::_update_build_hints()
 
 void Game::_update_build()
 {
-    bn::fixed speed = bn::keypad::r_held() ? game_ui::CURSOR_FAST : game_ui::CURSOR_SPEED;
+    bn::fixed speed = game_ui::CURSOR_SPEED;
     int axes = 0;
 
     if(bn::keypad::left_held() || bn::keypad::right_held())
@@ -355,9 +349,16 @@ void Game::_update_build()
         _weld_dragged = false;
     }
 
+    // B: DELETE — prefer beam under cursor, else player node (vision).
     if(bn::keypad::b_pressed())
     {
-        if(hovered && _bridge.is_player_node(hovered.value()))
+        const bn::optional<int> strut_hit = _bridge.find_strut_near(_cursor_pos);
+
+        if(strut_hit && _bridge.remove_strut(strut_hit.value()))
+        {
+            _show_toast(game_ui::ToastKind::deleted);
+        }
+        else if(hovered && _bridge.is_player_node(hovered.value()))
         {
             if(_bridge.remove_player_node(hovered.value()) == bridge::RemoveNodeResult::ok)
             {
@@ -379,20 +380,16 @@ void Game::_update_build()
         }
     }
 
+    // L/R: CYCLE materials (vision legend).
+    if(bn::keypad::l_pressed() && !bn::keypad::a_held())
+    {
+        _cycle_material(-1);
+    }
+
     if(bn::keypad::r_pressed() && !bn::keypad::a_held() && !bn::keypad::left_held() &&
        !bn::keypad::right_held() && !bn::keypad::up_held() && !bn::keypad::down_held())
     {
-        _cycle_connect_role();
-    }
-
-    if(bn::keypad::l_pressed())
-    {
-        const bridge::UndoResult undone = _bridge.undo_last_edit();
-
-        if(undone == bridge::UndoResult::removed_node)
-        {
-            _selected.reset();
-        }
+        _cycle_material(1);
     }
 
     if(bn::keypad::select_pressed())
@@ -428,6 +425,12 @@ void Game::_handle_confirm(bn::optional<int> hovered, bn::fixed_point place_at)
             return;
         }
 
+        if(_bridge.budget_remaining() < bridge::NODE_COST)
+        {
+            _show_toast(game_ui::ToastKind::full);
+            return;
+        }
+
         const bn::fixed_point snapped = game::snap_point(place_at);
         const bn::optional<int> created =
             _bridge.add_node(snapped.x(), snapped.y(), false);
@@ -444,7 +447,7 @@ void Game::_handle_confirm(bn::optional<int> hovered, bn::fixed_point place_at)
     if(_selected && _selected.value() != node_id)
     {
         const bridge::StrutPreview preview =
-            _bridge.preview_strut(_selected.value(), node_id, _connect_role);
+            _bridge.preview_strut(_selected.value(), node_id, _connect_role, _connect_material);
 
         switch(preview.status)
         {
@@ -457,14 +460,26 @@ void Game::_handle_confirm(bn::optional<int> hovered, bn::fixed_point place_at)
                 break;
 
             case bridge::StrutPreviewStatus::ok:
+            {
                 if(preview.max_tension < _max_train_load())
                 {
                     _show_toast(game_ui::ToastKind::weak);
                 }
 
-                (void)_bridge.add_strut(_selected.value(), node_id, _connect_role);
+                const int next_cost = bridge::link_cost(_connect_material) +
+                                      (hovered ? 0 : bridge::NODE_COST);
+
+                if(_bridge.budget_remaining() < next_cost)
+                {
+                    _show_toast(game_ui::ToastKind::full);
+                    break;
+                }
+
+                (void)_bridge.add_strut(_selected.value(), node_id, _connect_role,
+                                        _connect_material);
                 bn::sound_items::ui.play();
                 break;
+            }
 
             default:
                 break;
@@ -493,7 +508,7 @@ void Game::_try_chain_weld(bn::optional<int> hovered, bn::fixed_point draw_at)
     if(hovered)
     {
         const bridge::StrutPreview preview =
-            _bridge.preview_strut(from, hovered.value(), _connect_role);
+            _bridge.preview_strut(from, hovered.value(), _connect_role, _connect_material);
 
         if(preview.status == bridge::StrutPreviewStatus::ok)
         {
@@ -538,25 +553,68 @@ void Game::_try_chain_weld(bn::optional<int> hovered, bn::fixed_point draw_at)
 
 void Game::_cycle_connect_role()
 {
-    if(!_bridge.allows_link_role(bridge::LinkRole::brace))
+    if(!_bridge.allows_link_role(bridge::LinkRole::brace) &&
+       !_bridge.allows_link_role(bridge::LinkRole::foundation))
     {
         _connect_role = bridge::LinkRole::track;
+        _connect_material = bridge::MaterialId::wood;
         return;
     }
 
     _connect_role = _connect_role == bridge::LinkRole::track ?
         bridge::LinkRole::brace : bridge::LinkRole::track;
+    _connect_material = bridge::material_for_role(_connect_role);
     bn::sound_items::ui.play();
+}
+
+void Game::_cycle_material(const int direction)
+{
+    bridge::MaterialId next = _connect_material;
+
+    for(int i = 0; i < material::COUNT; ++i)
+    {
+        next = direction >= 0 ? material::next(next) : material::prev(next);
+
+        if(_bridge.allows_material(next))
+        {
+            _connect_material = next;
+            _connect_role = bridge::role_for_material(next);
+
+            // Wood stays track; iron/cable prefer brace when allowed.
+            if(next == bridge::MaterialId::wood)
+            {
+                _connect_role = bridge::LinkRole::track;
+            }
+            else if(next == bridge::MaterialId::iron || next == bridge::MaterialId::cable)
+            {
+                _connect_role = _bridge.allows_link_role(bridge::LinkRole::brace) ?
+                    bridge::LinkRole::brace : bridge::LinkRole::track;
+            }
+            else if(next == bridge::MaterialId::stone)
+            {
+                _connect_role = bridge::LinkRole::foundation;
+            }
+
+            bn::sound_items::ui.play();
+            return;
+        }
+    }
 }
 
 int Game::_build_tool_label() const
 {
-    if(_bridge.allows_link_role(bridge::LinkRole::brace))
+    switch(_connect_material)
     {
-        return _connect_role == bridge::LinkRole::track ? game_ui::LABEL_TRACK : game_ui::LABEL_ROD;
+        case bridge::MaterialId::iron:
+            return game_ui::LABEL_ROD;
+        case bridge::MaterialId::cable:
+            return game_ui::LABEL_THIN;
+        case bridge::MaterialId::stone:
+            return game_ui::LABEL_WAIT;
+        default:
+            return _bridge.allows_link_role(bridge::LinkRole::brace) ?
+                game_ui::LABEL_TRACK : game_ui::LABEL_BUILD;
     }
-
-    return game_ui::LABEL_BUILD;
 }
 
 void Game::_enter_test()
@@ -706,14 +764,17 @@ void Game::_update_hud()
 
     if(_play_mode == PlayMode::build)
     {
-        const session::RunScore live =
-            session::compute_run_score(_bridge, _bridge.level_def());
-        _set_counter(_node_count_digits, live.total_cost, -20);
-        _set_counter(_strut_count_digits, _bridge.level_def().par_cost, 12);
+        // EDIT_MODE: remaining £ (÷10 to fit 2 digits) and spent £ (÷10).
+        const int remaining = _bridge.budget_remaining() / 10;
+        const int spent = _bridge.budget_spent() / 10;
+        _set_counter(_node_count_digits, remaining, -20);
+        _set_counter(_strut_count_digits, spent, 12);
     }
     else
     {
-        _set_counter(_node_count_digits, _bridge.player_node_count(), -20);
+        // SIMULATION_MODE: peak stress % and member count.
+        const int stress_pct = (_bridge.peak_stress() * 100).integer();
+        _set_counter(_node_count_digits, stress_pct, -20);
         _set_counter(_strut_count_digits, _bridge.struts().size(), 12);
     }
 

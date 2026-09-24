@@ -16,10 +16,20 @@ namespace level
 
 constexpr int COUNT = 8;
 
-/// Bit flags — align with bridge::LinkRole order (track = bit 0, brace = bit 1).
+/// Bit flags — align with bridge::LinkRole order (track = bit 0, brace = bit 1, foundation = bit 2).
 inline constexpr uint8_t ALLOW_TRACK = 1;
 inline constexpr uint8_t ALLOW_BRACE = 2;
+inline constexpr uint8_t ALLOW_FOUNDATION = 4;
 inline constexpr uint8_t ALLOW_TRACK_AND_BRACE = ALLOW_TRACK | ALLOW_BRACE;
+inline constexpr uint8_t ALLOW_ALL_ROLES = ALLOW_TRACK | ALLOW_BRACE | ALLOW_FOUNDATION;
+
+/// Material unlock bits — wood / iron / stone / cable.
+inline constexpr uint8_t ALLOW_WOOD = 1;
+inline constexpr uint8_t ALLOW_IRON = 2;
+inline constexpr uint8_t ALLOW_STONE = 4;
+inline constexpr uint8_t ALLOW_CABLE = 8;
+inline constexpr uint8_t ALLOW_WOOD_IRON = ALLOW_WOOD | ALLOW_IRON;
+inline constexpr uint8_t ALLOW_ALL_MATERIALS = ALLOW_WOOD | ALLOW_IRON | ALLOW_STONE | ALLOW_CABLE;
 
 struct Seed
 {
@@ -40,7 +50,9 @@ struct Def
     bn::fixed parallax_front; ///< Near layer scroll factor.
     uint8_t allowed_roles;  ///< ALLOW_* bitmask for connect tools on this level.
     uint8_t intro_dialog_id; ///< 0 = none; 1..N index into intro label pairs.
-    int par_cost;           ///< Target cost (nodes + timber + 2× rods) for 3★; 0 = stars disabled.
+    int par_cost;           ///< Target £ cost for 3★; 0 = stars disabled.
+    int budget_pounds;      ///< EDIT_MODE purse (£). 0 → derive from par × 4.
+    uint8_t allowed_materials; ///< ALLOW_WOOD / IRON / STONE / CABLE mask.
 };
 
 [[nodiscard]] const Def& get(int level_index);
@@ -48,6 +60,21 @@ struct Def
 [[nodiscard]] inline bool allows_role(const Def& def, uint8_t role_bit)
 {
     return (def.allowed_roles & role_bit) != 0;
+}
+
+[[nodiscard]] inline bool allows_material(const Def& def, uint8_t material_bit)
+{
+    return (def.allowed_materials & material_bit) != 0;
+}
+
+[[nodiscard]] inline int effective_budget(const Def& def)
+{
+    if(def.budget_pounds > 0)
+    {
+        return def.budget_pounds;
+    }
+
+    return def.par_cost > 0 ? def.par_cost * 4 : 1500;
 }
 
 } // namespace level

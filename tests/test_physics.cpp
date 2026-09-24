@@ -46,6 +46,17 @@ int main()
 {
     std::cout << "Morris Bridge host physics tests (bn::fixed mock is 20.12)\n";
 
+    {
+        expect_near(physics::stress_ratio(4, 8), bn::fixed(1) / 2, bn::fixed(1) / 16,
+                    "stress_ratio half yield");
+        assert(physics::stress_band(bn::fixed(4) / 10) == physics::StressBand::green);
+        assert(physics::stress_band(bn::fixed(6) / 10) == physics::StressBand::yellow);
+        assert(physics::stress_band(bn::fixed(9) / 10) == physics::StressBand::red);
+        assert(physics::stress_band(bn::fixed(1)) == physics::StressBand::breaking);
+        assert(physics::is_breaking(bn::fixed(1)));
+        std::cout << "  ok stress_ratio and heatmap bands\n";
+    }
+
     // 3-4-5 triangle: exact integer length, no rounding alibi.
     {
         const bn::fixed_point a(0, 0);
@@ -383,13 +394,15 @@ int main()
         bridge::BridgeSystem system;
         system.load_level(1);
         const bridge::StrutPreview timber =
-            system.preview_strut(bridge::START_NODE, 3, bridge::LinkRole::track);
+            system.preview_strut(bridge::START_NODE, 3, bridge::LinkRole::track,
+                                 bridge::MaterialId::wood);
         const bridge::StrutPreview rod =
-            system.preview_strut(bridge::START_NODE, 3, bridge::LinkRole::brace);
+            system.preview_strut(bridge::START_NODE, 3, bridge::LinkRole::brace,
+                                 bridge::MaterialId::iron);
         assert(timber.status == bridge::StrutPreviewStatus::ok);
         assert(rod.status == bridge::StrutPreviewStatus::ok);
         assert(rod.max_tension > timber.max_tension);
-        std::cout << "  ok rod material is stronger than timber at the same span\n";
+        std::cout << "  ok iron material is stronger than wood at the same span\n";
     }
 
     {
@@ -410,11 +423,13 @@ int main()
         bridge::BridgeSystem hill;
         hill.load_level(1);
         const bn::fixed timber_ghost =
-            hill.span_preview_capacity(physics::SAFE_LENGTH * 4, bridge::LinkRole::track);
+            hill.span_preview_capacity(physics::SAFE_LENGTH * 4, bridge::LinkRole::track,
+                                       bridge::MaterialId::wood);
         const bn::fixed rod_ghost =
-            hill.span_preview_capacity(physics::SAFE_LENGTH * 4, bridge::LinkRole::brace);
+            hill.span_preview_capacity(physics::SAFE_LENGTH * 4, bridge::LinkRole::brace,
+                                       bridge::MaterialId::iron);
         assert(rod_ghost > timber_ghost);
-        std::cout << "  ok build-mode stress preview warns on overlong timber\n";
+        std::cout << "  ok build-mode stress preview warns on overlong wood\n";
     }
 
     {

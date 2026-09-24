@@ -1,5 +1,13 @@
 # Changelog & project history
 
+## 2026-09-24 — Vision refactor: materials, truss stress, EDIT/SIM/RESULT
+
+- **Materials:** Wood £10 / Iron £25 / Stone £50 / Cable £15 with level £ budgets
+- **Physics:** Load-path truss stress (`F/yield`), 4-band heatmap, cascade collapse → DERAILED
+- **EDIT controls:** 8×8 grid; A draw, B delete beam, L/R cycle material, START run
+- **Docs:** [diagnosis-vision.md](diagnosis-vision.md), rewritten [physics.md](physics.md)
+- Host `make -C tests` green (all level playthroughs); ROM binary refresh via CI
+
 ## 2026-08-30 — GBA is the product (not a web workshop)
 
 - The whole point of this repository is a **Game Boy Advance** game
