@@ -42,16 +42,18 @@ void Game::_show_gameplay()
     _menu_arrow.set_visible(false);
     _track_card.set_visible(false);
     _hatt.set_visible(false);
+    // Dark thin top chrome (PANEL_SELECT reads better than white HUD over sky/digits).
     _top_bar.set_visible(true);
     _top_bar.set_position(0, game_ui::HUD_TOP_Y);
-    _top_bar.set_item(bn::sprite_items::panel, game_ui::PANEL_HUD);
+    _top_bar.set_item(bn::sprite_items::panel, game_ui::PANEL_SELECT);
     _top_bar.set_vertical_scale(bn::fixed(1) / 4);
+    _top_bar.set_horizontal_scale(bn::fixed(3) / 2);
     _panel.set_visible(true);
     _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_HUD);
-    _panel.set_position(0, game_ui::HUD_BOTTOM_Y - 2);
+    _panel.set_position(0, game_ui::HUD_BOTTOM_Y);
     _panel.set_vertical_scale(bn::fixed(1) / 2);
     _label.set_visible(true);
-    _label.set_position(-88, game_ui::HUD_TOP_Y);
+    _label.set_position(-96, game_ui::HUD_TOP_Y);
     _label.set_item(bn::sprite_items::label, game_ui::LABEL_EDIT);
     _hint_secondary.set_visible(false);
     _update_build_hints();
@@ -578,7 +580,7 @@ void Game::_update_hud()
     {
         --_no_go_timer;
         _label.set_item(bn::sprite_items::label, game_ui::LABEL_NO_GO);
-        _label.set_position(-88, game_ui::HUD_TOP_Y);
+        _label.set_position(-96, game_ui::HUD_TOP_Y);
         _label.set_visible(true);
     }
     else if(_play_mode == PlayMode::test)
@@ -605,34 +607,33 @@ void Game::_update_hud()
         }
 
         _label.set_item(bn::sprite_items::label, status_frame);
-        _label.set_position(-88, game_ui::HUD_TOP_Y);
+        _label.set_position(-96, game_ui::HUD_TOP_Y);
         _label.set_visible(true);
 
-        // SIM: stress % (left digits) + STRESS tag via toast slot unused — strut digits = member count.
         const int stress_pct = (_bridge.peak_stress() * 100).integer();
-        _set_counter(_node_count_digits, stress_pct, -20);
-        _set_counter(_strut_count_digits, _bridge.struts().size(), 40);
+        _set_counter(_node_count_digits, stress_pct, -16);
         _hint_label.set_item(bn::sprite_items::label, game_ui::LABEL_STRESS);
         _hint_label.set_position(-56, game_ui::HUD_TOP_Y);
         _hint_label.set_visible(true);
+        _set_counter(_strut_count_digits, _bridge.struts().size(), 56);
         _hint_secondary.set_visible(false);
         _panel.set_visible(false);
     }
     else if(_play_mode == PlayMode::build)
     {
         _label.set_item(bn::sprite_items::label, game_ui::LABEL_EDIT);
-        _label.set_position(-88, game_ui::HUD_TOP_Y);
+        _label.set_position(-96, game_ui::HUD_TOP_Y);
         _label.set_visible(true);
 
-        // EDIT: 4-digit £ remaining across both digit pairs (AB CD).
+        // £ remaining as 4 digits centered on the dark top bar.
         const int remaining = _bridge.budget_remaining();
         const int hi = remaining / 100;
         const int lo = remaining % 100;
-        _set_counter(_node_count_digits, hi, -28);
-        _set_counter(_strut_count_digits, lo, -8);
+        _set_counter(_node_count_digits, hi, -24);
+        _set_counter(_strut_count_digits, lo, -4);
 
         _panel.set_visible(true);
-        _panel.set_position(0, game_ui::HUD_BOTTOM_Y - 2);
+        _panel.set_position(0, game_ui::HUD_BOTTOM_Y);
         _hint_label.set_item(bn::sprite_items::label, _build_tool_label());
         _hint_label.set_position(-48, game_ui::HUD_BOTTOM_Y);
         _hint_label.set_visible(true);
@@ -650,7 +651,14 @@ void Game::_update_hud()
         _hint_secondary.set_visible(true);
     }
 
+    // Target load sits on the far right of the top chrome.
     _set_weight_digits(_max_train_load().integer(), playing);
+
+    if(playing)
+    {
+        _weight_digits[0].set_position(80, game_ui::HUD_TOP_Y);
+        _weight_digits[1].set_position(88, game_ui::HUD_TOP_Y);
+    }
 }
 
 void Game::_update_build_hints()
