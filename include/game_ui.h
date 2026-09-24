@@ -94,6 +94,21 @@ constexpr int LABEL_CONFUS = 36;
 constexpr int LABEL_LOOP = 37;
 constexpr int LABEL_THIN = 38;
 
+/// Vision chrome frames (appended after lore strings).
+constexpr int LABEL_EDIT = 39;
+constexpr int LABEL_RUN = 40;
+constexpr int LABEL_FAIL = 41;
+constexpr int LABEL_WIN = 42;
+constexpr int LABEL_WOOD = 43;
+constexpr int LABEL_IRON = 44;
+constexpr int LABEL_STONE = 45;
+constexpr int LABEL_CABLE = 46;
+constexpr int LABEL_A_DRAW = 47;
+constexpr int LABEL_B_DEL = 48;
+constexpr int LABEL_LR_CY = 49;
+constexpr int LABEL_BUDGT = 50;
+constexpr int LABEL_STRESS = 51;
+
 constexpr int BANNER_LEVEL_SELECT = 0;
 constexpr int BANNER_HATT_OK = 1;
 constexpr int BANNER_DELAY = 2;

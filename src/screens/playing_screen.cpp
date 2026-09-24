@@ -42,12 +42,17 @@ void Game::_show_gameplay()
     _menu_arrow.set_visible(false);
     _track_card.set_visible(false);
     _hatt.set_visible(false);
+    _top_bar.set_visible(true);
+    _top_bar.set_position(0, game_ui::HUD_TOP_Y);
+    _top_bar.set_item(bn::sprite_items::panel, game_ui::PANEL_HUD);
+    _top_bar.set_vertical_scale(bn::fixed(1) / 4);
     _panel.set_visible(true);
     _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_HUD);
     _panel.set_position(0, game_ui::HUD_BOTTOM_Y - 2);
+    _panel.set_vertical_scale(bn::fixed(1) / 2);
     _label.set_visible(true);
-    _label.set_position(0, game_ui::HUD_BOTTOM_Y);
-    _label.set_item(bn::sprite_items::label, game_ui::LABEL_BUILD);
+    _label.set_position(-88, game_ui::HUD_TOP_Y);
+    _label.set_item(bn::sprite_items::label, game_ui::LABEL_EDIT);
     _hint_secondary.set_visible(false);
     _update_build_hints();
     _cursor.set_visible(true);
@@ -179,67 +184,6 @@ void Game::_update_preview()
     }
 
     _preview_strut.set_visible(false);
-}
-
-void Game::_update_build_hints()
-{
-    if(_screen != Screen::playing || _play_mode != PlayMode::build)
-    {
-        _hint_label.set_visible(false);
-        _hint_secondary.set_visible(false);
-        return;
-    }
-
-    if(!_build_hints_seen)
-    {
-        ++_build_hint_timer;
-
-        if(_build_hint_timer >= game_ui::BUILD_HINT_FRAMES ||
-           bn::keypad::any_pressed())
-        {
-            _build_hints_seen = true;
-        }
-
-        const int phase = (_build_hint_timer / 60) % 3;
-        int frame = game_ui::LABEL_HINT_NODE;
-
-        if(phase == 1)
-        {
-            frame = game_ui::LABEL_HINT_WELD;
-        }
-        else if(phase == 2)
-        {
-            frame = game_ui::LABEL_HINT_PAUSE;
-        }
-
-        _hint_label.set_visible(true);
-        _hint_label.set_position(0, game_ui::HUD_BOTTOM_Y - 16);
-        _hint_label.set_item(bn::sprite_items::label, frame);
-        _hint_secondary.set_visible(false);
-        return;
-    }
-
-    // Bottom strip legend: material is on `_label`; hints teach A/START flow (vision key legend).
-    if(_bridge.has_track_path())
-    {
-        _hint_label.set_item(bn::sprite_items::label, game_ui::LABEL_START);
-        _hint_secondary.set_item(bn::sprite_items::label, game_ui::LABEL_HINT_PAUSE);
-    }
-    else if(_selected)
-    {
-        _hint_label.set_item(bn::sprite_items::label, game_ui::LABEL_HINT_WELD);
-        _hint_secondary.set_item(bn::sprite_items::label, game_ui::LABEL_HINT_PAUSE);
-    }
-    else
-    {
-        _hint_label.set_item(bn::sprite_items::label, game_ui::LABEL_HINT_NODE);
-        _hint_secondary.set_item(bn::sprite_items::label, game_ui::LABEL_HINT_WELD);
-    }
-
-    _hint_label.set_visible(true);
-    _hint_label.set_position(0, game_ui::HUD_BOTTOM_Y - 16);
-    _hint_secondary.set_visible(true);
-    _hint_secondary.set_position(0, game_ui::HUD_BOTTOM_Y - 8);
 }
 
 void Game::_update_build()
@@ -615,14 +559,134 @@ int Game::_build_tool_label() const
     switch(_connect_material)
     {
         case bridge::MaterialId::iron:
-            return game_ui::LABEL_ROD;
+            return game_ui::LABEL_IRON;
         case bridge::MaterialId::cable:
-            return game_ui::LABEL_THIN;
+            return game_ui::LABEL_CABLE;
         case bridge::MaterialId::stone:
-            return game_ui::LABEL_WAIT;
+            return game_ui::LABEL_STONE;
         default:
-            return _bridge.allows_link_role(bridge::LinkRole::brace) ?
-                game_ui::LABEL_TRACK : game_ui::LABEL_BUILD;
+            return game_ui::LABEL_WOOD;
+    }
+}
+
+void Game::_update_hud()
+{
+    const bool playing = _screen == Screen::playing;
+    _top_bar.set_visible(playing);
+
+    if(_no_go_timer > 0)
+    {
+        --_no_go_timer;
+        _label.set_item(bn::sprite_items::label, game_ui::LABEL_NO_GO);
+        _label.set_position(-88, game_ui::HUD_TOP_Y);
+        _label.set_visible(true);
+    }
+    else if(_play_mode == PlayMode::test)
+    {
+        int status_frame = game_ui::LABEL_RUN;
+
+        switch(_bridge.status())
+        {
+            case bridge::SimStatus::success:
+                status_frame = game_ui::LABEL_WIN;
+                break;
+
+            case bridge::SimStatus::failed_fall:
+                status_frame = game_ui::LABEL_FAIL;
+                break;
+
+            case bridge::SimStatus::no_path:
+                status_frame = game_ui::LABEL_NO_GO;
+                break;
+
+            default:
+                status_frame = game_ui::LABEL_RUN;
+                break;
+        }
+
+        _label.set_item(bn::sprite_items::label, status_frame);
+        _label.set_position(-88, game_ui::HUD_TOP_Y);
+        _label.set_visible(true);
+
+        // SIM: stress % (left digits) + STRESS tag via toast slot unused — strut digits = member count.
+        const int stress_pct = (_bridge.peak_stress() * 100).integer();
+        _set_counter(_node_count_digits, stress_pct, -20);
+        _set_counter(_strut_count_digits, _bridge.struts().size(), 40);
+        _hint_label.set_item(bn::sprite_items::label, game_ui::LABEL_STRESS);
+        _hint_label.set_position(-56, game_ui::HUD_TOP_Y);
+        _hint_label.set_visible(true);
+        _hint_secondary.set_visible(false);
+        _panel.set_visible(false);
+    }
+    else if(_play_mode == PlayMode::build)
+    {
+        _label.set_item(bn::sprite_items::label, game_ui::LABEL_EDIT);
+        _label.set_position(-88, game_ui::HUD_TOP_Y);
+        _label.set_visible(true);
+
+        // EDIT: 4-digit £ remaining across both digit pairs (AB CD).
+        const int remaining = _bridge.budget_remaining();
+        const int hi = remaining / 100;
+        const int lo = remaining % 100;
+        _set_counter(_node_count_digits, hi, -28);
+        _set_counter(_strut_count_digits, lo, -8);
+
+        _panel.set_visible(true);
+        _panel.set_position(0, game_ui::HUD_BOTTOM_Y - 2);
+        _hint_label.set_item(bn::sprite_items::label, _build_tool_label());
+        _hint_label.set_position(-48, game_ui::HUD_BOTTOM_Y);
+        _hint_label.set_visible(true);
+
+        if(_bridge.has_track_path())
+        {
+            _hint_secondary.set_item(bn::sprite_items::label, game_ui::LABEL_START);
+        }
+        else
+        {
+            _hint_secondary.set_item(bn::sprite_items::label, game_ui::LABEL_A_DRAW);
+        }
+
+        _hint_secondary.set_position(48, game_ui::HUD_BOTTOM_Y);
+        _hint_secondary.set_visible(true);
+    }
+
+    _set_weight_digits(_max_train_load().integer(), playing);
+}
+
+void Game::_update_build_hints()
+{
+    // Vision bottom strip is driven by `_update_hud` (material + A DRAW / START).
+    // Keep the first-time onboarding cycle on the secondary line only.
+    if(_screen != Screen::playing || _play_mode != PlayMode::build)
+    {
+        return;
+    }
+
+    if(!_build_hints_seen)
+    {
+        ++_build_hint_timer;
+
+        if(_build_hint_timer >= game_ui::BUILD_HINT_FRAMES || bn::keypad::any_pressed())
+        {
+            _build_hints_seen = true;
+            return;
+        }
+
+        const int phase = (_build_hint_timer / 60) % 3;
+        int frame = game_ui::LABEL_A_DRAW;
+
+        if(phase == 1)
+        {
+            frame = game_ui::LABEL_B_DEL;
+        }
+        else if(phase == 2)
+        {
+            frame = game_ui::LABEL_LR_CY;
+        }
+
+        _hint_secondary.set_visible(true);
+        _hint_secondary.set_position(48, game_ui::HUD_BOTTOM_Y);
+        _hint_secondary.set_item(bn::sprite_items::label, frame);
     }
 }
 
@@ -732,60 +796,4 @@ void Game::_update_test()
     {
         _leave_test();
     }
-}
-
-void Game::_update_hud()
-{
-    int frame = game_ui::LABEL_BUILD;
-
-    if(_no_go_timer > 0)
-    {
-        --_no_go_timer;
-        frame = game_ui::LABEL_NO_GO;
-    }
-    else if(_play_mode == PlayMode::test)
-    {
-        switch(_bridge.status())
-        {
-            case bridge::SimStatus::success:
-                frame = game_ui::LABEL_USEFUL;
-                break;
-
-            case bridge::SimStatus::failed_fall:
-                frame = game_ui::LABEL_ASHES;
-                break;
-
-            case bridge::SimStatus::no_path:
-                frame = game_ui::LABEL_NO_GO;
-                break;
-
-            default:
-                frame = game_ui::LABEL_TEST;
-                break;
-        }
-    }
-    else if(_play_mode == PlayMode::build)
-    {
-        frame = _build_tool_label();
-    }
-
-    _label.set_item(bn::sprite_items::label, frame);
-
-    if(_play_mode == PlayMode::build)
-    {
-        // EDIT_MODE: remaining £ (÷10 to fit 2 digits) and spent £ (÷10).
-        const int remaining = _bridge.budget_remaining() / 10;
-        const int spent = _bridge.budget_spent() / 10;
-        _set_counter(_node_count_digits, remaining, -20);
-        _set_counter(_strut_count_digits, spent, 12);
-    }
-    else
-    {
-        // SIMULATION_MODE: peak stress % and member count.
-        const int stress_pct = (_bridge.peak_stress() * 100).integer();
-        _set_counter(_node_count_digits, stress_pct, -20);
-        _set_counter(_strut_count_digits, _bridge.struts().size(), 12);
-    }
-
-    _set_weight_digits(_max_train_load().integer(), true);
 }

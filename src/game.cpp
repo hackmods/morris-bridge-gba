@@ -45,10 +45,11 @@ void screen_trampoline_all_complete(void* context);
 Game::Game() :
     _cursor(bn::sprite_items::cursor.create_sprite(0, 0)),
     _train(bn::sprite_items::train.create_sprite(_bridge.train_position())),
-    _label(bn::sprite_items::label.create_sprite(0, 66)),
-    _hint_label(bn::sprite_items::label.create_sprite(0, 44)),
-    _hint_secondary(bn::sprite_items::label.create_sprite(0, 54)),
-    _panel(bn::sprite_items::panel.create_sprite(0, 66)),
+    _label(bn::sprite_items::label.create_sprite(-88, game_ui::HUD_TOP_Y)),
+    _hint_label(bn::sprite_items::label.create_sprite(-48, game_ui::HUD_BOTTOM_Y)),
+    _hint_secondary(bn::sprite_items::label.create_sprite(48, game_ui::HUD_BOTTOM_Y)),
+    _panel(bn::sprite_items::panel.create_sprite(0, game_ui::HUD_BOTTOM_Y - 2)),
+    _top_bar(bn::sprite_items::panel.create_sprite(0, game_ui::HUD_TOP_Y)),
     _banner(bn::sprite_items::banner.create_sprite(0, -36)),
     _logo(bn::sprite_items::logo.create_sprite(0, -52)),
     _menu_row(bn::sprite_items::menu.create_sprite(0, 8)),
@@ -73,6 +74,10 @@ Game::Game() :
     _hint_label.set_visible(false);
     _hint_secondary.set_visible(false);
     _panel.set_z_order(-19);
+    _top_bar.set_z_order(-20);
+    _top_bar.set_vertical_scale(bn::fixed(1) / 4);
+    _top_bar.set_item(bn::sprite_items::panel, game_ui::PANEL_HUD);
+    _top_bar.set_visible(false);
     _banner.set_z_order(-30);
     _logo.set_z_order(-29);
     _logo.set_visible(false);
@@ -500,6 +505,7 @@ void Game::_hide_gameplay()
 {
     _cursor.set_visible(false);
     _train.set_visible(false);
+    _top_bar.set_visible(false);
     _backdrop.set_scenery_visible(false);
     _graph.sync_nodes(_bridge, false, _frame, bn::nullopt, _ring);
     _graph.sync_struts(_bridge, false, false, _frame);
@@ -516,6 +522,7 @@ void Game::_enter_pause()
     _panel.set_visible(true);
     _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_SELECT);
     _panel.set_position(0, 12);
+    _top_bar.set_visible(false);
     _track_card.set_visible(false);
     _label.set_visible(false);
     _hint_label.set_visible(false);
@@ -543,12 +550,7 @@ void Game::_leave_pause()
     _menu_row.set_visible(false);
     _menu_arrow.set_visible(false);
     _hatt.set_visible(false);
-    _panel.set_visible(true);
-    _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_HUD);
-    _panel.set_position(0, 66);
-    _label.set_visible(true);
-    _label.set_position(0, 68);
-    _label.set_item(bn::sprite_items::label, game_ui::LABEL_BUILD);
+    _show_gameplay();
     _cursor.set_visible(true);
 
     if(bn::music::playing())

@@ -147,6 +147,7 @@ private:
     bn::sprite_ptr _hint_label;
     bn::sprite_ptr _hint_secondary;
     bn::sprite_ptr _panel;
+    bn::sprite_ptr _top_bar;
     bn::sprite_ptr _banner;
     bn::sprite_ptr _logo;
     bn::sprite_ptr _menu_row;
