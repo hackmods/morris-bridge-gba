@@ -30,11 +30,8 @@ platform     Game + screens + GraphView (heatmap) + BGView
 ## Remaining vision polish (not blocking usable loop)
 
 - Fuller right-edge material *stack* (all four icons); selected material label sits at `HUD_MAT_X` today.
-- Clearer mid-SIM stress-heatmap capture when 8×8 strut helpers land consistently in playwright.
 - Full dense FEM matrix — intentionally replaced by documented load-path truss (GBA frame budget).
 
-**Top chrome** EDIT + BUDGT + £ + target. **Sky strip** (`HUD_STRIP_Y`) A DRAW/START + onboarding; **right** selected material. Bottom ground scanlines are too busy for OAM chrome (GBA ≤10 sprites/line) — chrome uses `Z_HUD` and sky rows.
-
-**QA:** L+R+START loads the host reference layout then enters SIM (playtest assist).
+**Verified on device (mGBA-WASM):** EDIT + BUDGT + £ + A DRAW + WOOD; SIM `RUN!` + `STRESS` with train on reference deck; RESULT `WIN!` + Hatt OK / USEFUL. **QA:** L+R+START loads host reference then enters SIM.
 
 See [physics.md](physics.md) for tuneable yield / cascade knobs.
