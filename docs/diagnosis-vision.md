@@ -29,9 +29,10 @@ platform     Game + screens + GraphView (heatmap) + BGView
 
 ## Remaining vision polish (not blocking usable loop)
 
-- Dedicated top 8px chrome sprites (title string, £ glyph, train icon) — current HUD reuses digit sprites (budget÷10).
-- Right-side material icon strip (OAM budget); material is cycled via L/R + label.
-- Authored debris sprites beyond dust puffs / snap flash.
-- Full dense FEM stiffness matrix — intentionally replaced by documented load-path truss (GBA frame budget).
+- Right-side vertical material icon strip (OAM); L/R cycles WOOD/IRON/STONE/CABLE labels today.
+- Clearer mid-SIM stress-heatmap capture when 8×8 strut helpers land consistently in playwright.
+- Full dense FEM matrix — intentionally replaced by documented load-path truss (GBA frame budget).
+
+**Top chrome now shows** EDIT + BUDGT + 4-digit £ + target load. **Bottom strip** shows material + A DRAW/START.
 
 See [physics.md](physics.md) for tuneable yield / cascade knobs.
