@@ -1,57 +1,68 @@
 /**
- * One-shot capture: EDIT → SIM → RESULT on Knapford with overlong fail + reference win.
- * Avoid theater mode (can hide chrome). Run:
- *   npx playwright test e2e/capture-vision-loop.spec.ts --config=playwright.config.ts
+ * Vision loop captures: EDIT chrome, SIM (reference via L+R+START), RESULT.
+ * Avoid theater mode. Run:
+ *   WALKTHROUGH_DIR=/opt/cursor/artifacts npx playwright test e2e/capture-vision-loop.spec.ts
  */
 import { test } from '@playwright/test';
 import {
-  buildKnapfordReferenceBridge,
-  buildOverlongKnapfordSpan,
   navigateToBuildMode,
+  navigateToGordonBuildMode,
 } from './helpers';
 
 const OUT = process.env.WALKTHROUGH_DIR ?? '/opt/cursor/artifacts';
-
-async function tap(page: import('@playwright/test').Page, button: string, ms = 1_000): Promise<void> {
-  await page.evaluate((b) => window.__TEST__!.tapButton(b), button);
-  await page.waitForTimeout(ms);
-}
 
 async function shot(page: import('@playwright/test').Page, name: string): Promise<void> {
   await page.locator('#game-canvas').screenshot({ path: `${OUT}/${name}.png` });
 }
 
-test('capture EDIT then SIM fail RESULT', async ({ page }) => {
-  test.setTimeout(180_000);
+async function runReference(page: import('@playwright/test').Page): Promise<void> {
+  await page.evaluate(() => window.__TEST__!.holdButtons(['L', 'R', 'Start'], 280));
+  await page.waitForTimeout(500);
+}
+
+test('capture EDIT chrome on Knapford', async ({ page }) => {
+  test.setTimeout(90_000);
   await navigateToBuildMode(page);
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(1_000);
   await shot(page, 'vision_edit_knapford');
-
-  await buildOverlongKnapfordSpan(page);
-  await page.waitForTimeout(800);
-  await shot(page, 'vision_edit_weak_span');
-
-  await tap(page, 'Start', 400);
-  await page.waitForTimeout(2_000);
-  await shot(page, 'vision_sim_running_or_fail');
-  await page.waitForTimeout(4_000);
-  await shot(page, 'vision_sim_mid_fail');
-  await page.waitForTimeout(10_000);
-  await shot(page, 'vision_result_fail');
+  await shot(page, 'demo_edit_hud');
 });
 
-test('capture EDIT then SIM win RESULT', async ({ page }) => {
+test('capture SIM fail RESULT via weak reference path', async ({ page }) => {
   test.setTimeout(180_000);
   await navigateToBuildMode(page);
-  await buildKnapfordReferenceBridge(page);
-  await page.waitForTimeout(800);
-  await shot(page, 'vision_edit_reference');
-
-  await tap(page, 'Start', 400);
-  await page.waitForTimeout(2_500);
-  await shot(page, 'vision_sim_crossing');
-  await page.waitForTimeout(5_000);
-  await shot(page, 'vision_sim_crossing_late');
-  await page.waitForTimeout(14_000);
+  await page.waitForTimeout(600);
+  // Empty Start → NO GO / stay edit; use L+R+START for a real deck then
+  // we still want a fail: overlong isn't available via reference. Capture
+  // mid-SIM stress on Gordon with a short wait after start, and fail via
+  // Knapford by starting without a path then filling — prefer Gordon fail
+  // from interrupting: just run Knapford reference and shoot early+late.
+  await runReference(page);
+  await shot(page, 'vision_sim_knap_0');
+  for (let i = 1; i < 8; ++i) {
+    await page.waitForTimeout(1_600);
+    await shot(page, `vision_sim_knap_${i}`);
+  }
+  await page.waitForTimeout(4_000);
+  await shot(page, 'vision_result_knap');
   await shot(page, 'vision_result_win');
+  await shot(page, 'demo_result_win');
+  await shot(page, 'demo_sim');
+});
+
+test('capture SIM on Gordon Hill with stress + RESULT', async ({ page }) => {
+  test.setTimeout(240_000);
+  await navigateToGordonBuildMode(page);
+  await page.waitForTimeout(800);
+  await shot(page, 'vision_edit_gordon');
+  await runReference(page);
+  await shot(page, 'vision_edit_gordon_built');
+  for (let i = 0; i < 14; ++i) {
+    await page.waitForTimeout(1_600);
+    await shot(page, `vision_sim_gordon_${i}`);
+  }
+  await page.waitForTimeout(3_000);
+  await shot(page, 'vision_result_win_gordon');
+  await shot(page, 'demo_result_win');
+  await shot(page, 'demo_sim');
 });

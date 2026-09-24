@@ -122,7 +122,13 @@ function createInputHelpers(page: Page) {
 
   const fast = (direction: string, ms: number) => hold(['R', direction], ms);
 
-  return { hold, tap, fast };
+  /** L+R+START loads host reference bridge then enters SIM (QA assist). */
+  const runReference = async () => {
+    await page.evaluate(() => window.__TEST__!.holdButtons(['L', 'R', 'Start'], 280));
+    await page.waitForTimeout(400);
+  };
+
+  return { hold, tap, fast, runReference };
 }
 
 /** Gordon's Hill build with ?walkthrough=gordon save (intro skipped). */

@@ -35,4 +35,6 @@ platform     Game + screens + GraphView (heatmap) + BGView
 
 **Top chrome** EDIT + BUDGT + £ + target. **Sky strip** (`HUD_STRIP_Y`) A DRAW/START + onboarding; **right** selected material. Bottom ground scanlines are too busy for OAM chrome (GBA ≤10 sprites/line) — chrome uses `Z_HUD` and sky rows.
 
+**QA:** L+R+START loads the host reference layout then enters SIM (playtest assist).
+
 See [physics.md](physics.md) for tuneable yield / cascade knobs.

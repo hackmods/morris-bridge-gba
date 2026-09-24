@@ -28,6 +28,7 @@
 #include "game_constants.h"
 #include "graph_view.h"
 #include "level.h"
+#include "level_solutions.h"
 #include "material.h"
 #include "physics.h"
 #include "run_score.h"
@@ -349,6 +350,20 @@ void Game::_update_build()
 
     if(bn::keypad::start_pressed() && !bn::keypad::a_held())
     {
+        // L+R+START: load the host reference layout (playtest / QA assist), then run.
+        if(bn::keypad::l_held() && bn::keypad::r_held())
+        {
+            const engine::Id eng = _bridge.engine();
+            const int level = _bridge.current_level();
+
+            if(level_solutions::build_reference(_bridge, level))
+            {
+                _bridge.set_engine(eng);
+                _selected.reset();
+                _sync_graph_sprites();
+            }
+        }
+
         _enter_test();
     }
 }
