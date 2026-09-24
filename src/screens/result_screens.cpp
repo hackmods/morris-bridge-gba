@@ -36,6 +36,7 @@ void Game::_show_level_complete()
 {
     _screen = Screen::level_complete;
     _set_splash_visible(false);
+    _top_bar.set_visible(false);
     _newly_unlocked = engine::none;
     _show_unlock_flash = false;
 
@@ -89,6 +90,7 @@ void Game::_show_level_failed()
 {
     _screen = Screen::level_failed;
     _set_splash_visible(false);
+    _top_bar.set_visible(false);
     _banner.set_visible(true);
     _banner.set_item(bn::sprite_items::banner, _pick_fail_banner());
     _banner.set_position(0, -28);

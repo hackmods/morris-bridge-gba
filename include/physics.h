@@ -3,17 +3,34 @@
 
 /**
  * @file
- * Fixed-point structural math for Thomas's Bridge.
+ * Fixed-point structural math for Thomas's Bridge / Sodor Bridge Builder.
  *
- * Tension model:
- *   Tension = Load × (DistanceFromTrain / StrutLength)
+ * ## Simplified truss stress model (GBA-friendly)
  *
- * Max tension scales with span length, joint reinforcement, and triangular
- * bracing. The locomotive applies ENGINE_WEIGHT on the first span.
+ * Full FEM (direct stiffness with a dense K matrix) is too heavy for the
+ * ≤15% simulation budget on GBA with no heap. Instead we use a documented
+ * **load-path truss approximation** that still exposes tuneable yield limits:
+ *
+ * 1. Train load `W` is applied as a vertical force on the active track member,
+ *    split to its endpoints by lever rule (same as classic midspan tension).
+ * 2. Endpoint loads redistribute to incident members proportional to
+ *    `stiffness_mul / length` (relative EA/L), so braces carry share of load.
+ * 3. Axial force on member i: `|F_i|`. Cables discard compression (tension-only).
+ * 4. Strain ratio: `stress = |F| / yield(material)` (stone pier yield → ∞).
+ * 5. Collapse: if `stress >= 1.0`, destroy the member, immediately re-solve
+ *    surrounding loads (cascade), and mark the train `DERAILED` if its path
+ *    strut is gone.
+ *
+ * Legacy helpers (`tension`, `effective_max_tension`) remain for ratings and
+ * host-test continuity; simulation prefers `stress_ratio` against yield.
  */
 
 #include "bn_fixed.h"
 #include "bn_fixed_point.h"
+
+#include "material.h"
+
+#include <cstdint>
 
 namespace physics
 {
@@ -42,6 +59,9 @@ inline constexpr bn::fixed TRIANGLE_BONUS = bn::fixed(3) / 2;
 /// Newton iterations for the optional reciprocal-free length refine step.
 inline constexpr int SQRT_ITERS = 5;
 
+/// Cascade re-solve passes after a snap (limits frame cost).
+inline constexpr int CASCADE_MAX_PASSES = 4;
+
 [[nodiscard]] constexpr bn::fixed abs(bn::fixed value)
 {
     return value < 0 ? -value : value;
@@ -60,10 +80,33 @@ inline constexpr int SQRT_ITERS = 5;
 [[nodiscard]] bn::fixed tension(bn::fixed load, bn::fixed distance_from_train,
                                 bn::fixed strut_length);
 
+/**
+ * @brief Normalized stress ratio in [0, ∞). Collapse when >= 1.
+ */
+[[nodiscard]] bn::fixed stress_ratio(bn::fixed force, bn::fixed yield_strength);
+
 [[nodiscard]] constexpr bool exceeds_max_tension(bn::fixed current, bn::fixed max_tension)
 {
     return current > max_tension;
 }
+
+[[nodiscard]] constexpr bool is_breaking(bn::fixed stress)
+{
+    return stress >= bn::fixed(1);
+}
+
+/**
+ * @brief Discrete GBA stress heatmap band (vision palette).
+ */
+enum class StressBand : uint8_t
+{
+    green = 0,   ///< 0% – 50%
+    yellow = 1,  ///< 51% – 80%
+    red = 2,     ///< 81% – 99%
+    breaking = 3 ///< ≥ 100% / snapped flash
+};
+
+[[nodiscard]] StressBand stress_band(bn::fixed stress);
 
 /**
  * @brief Base span rating before structural bonuses.
@@ -88,6 +131,20 @@ inline constexpr int SQRT_ITERS = 5;
 [[nodiscard]] bn::fixed effective_max_tension(bn::fixed length, int connections_a,
                                               int connections_b, bool triangulated,
                                               bn::fixed safe_length = SAFE_LENGTH);
+
+/**
+ * @brief Material yield scaled by length rating (shorter spans tolerate more).
+ *
+ * `rated_yield = material_yield × (safe_length / length)` then × reinforcement.
+ */
+[[nodiscard]] bn::fixed rated_yield(material::Id material, bn::fixed length,
+                                    int connections_a, int connections_b, bool triangulated,
+                                    bn::fixed safe_length = SAFE_LENGTH);
+
+/**
+ * @brief Relative axial stiffness share used when redistributing joint loads.
+ */
+[[nodiscard]] bn::fixed member_stiffness(material::Id material, bn::fixed length);
 
 } // namespace physics
 

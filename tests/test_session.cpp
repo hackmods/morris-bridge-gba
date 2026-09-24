@@ -42,17 +42,18 @@ int main()
         const session::RunScore score =
             session::compute_run_score(system, system.level_def());
         assert(score.brace_links == 2);
-        assert(score.total_cost == 13);
+        assert(score.total_cost == 140);
         assert(score.stars == 3);
-        std::cout << "  ok rod braces cost 2 each on Gordon's Hill\n";
+        std::cout << "  ok iron braces cost £25 each on Gordon's Hill\n";
     }
 
     {
         bridge::BridgeSystem system;
         system.load_level(1);
         const level::Def& def = system.level_def();
-        assert(def.par_cost == 13);
+        assert(def.par_cost == 140);
         assert(def.bg_theme_id == 1);
+        assert(def.budget_pounds == 1200);
         std::cout << "  ok Gordon's Hill par and theme id\n";
     }
 

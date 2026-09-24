@@ -1245,6 +1245,7 @@ def make_labels() -> None:
     # Indices 0-7: core HUD. 8-10: onboarding hints. 11-16: rare PG lore alternates.
     # 17-18: build tool indicators. 19-34: eight level intro dialog pairs.
     # 35-38: extra rare strings from docs/lore-leak.md phrase book.
+    # 39+: Sodor Bridge vision chrome (EDIT/SIM status, materials, key legend).
     texts = (
         "BUILD",
         "TEST!",
@@ -1285,6 +1286,19 @@ def make_labels() -> None:
         "CONFUS",
         "LOOP!",
         "THIN!",
+        "EDIT",
+        "RUN!",
+        "FAIL!",
+        "WIN!",
+        "WOOD",
+        "IRON",
+        "STONE",
+        "CABLE",
+        "A DRAW",
+        "B DEL!",
+        "L/R CY",
+        "BUDGT",
+        "STRESS",
     )
     w, fh = 32, 8
     px = fill(w, fh * len(texts))
@@ -1292,6 +1306,8 @@ def make_labels() -> None:
         2, 2, 2, 3, 2, 3, 2, 3, 2, 2, 2, 3, 3, 2, 3, 3, 3, 2, 2, 2, 2, 3, 3, 2, 3,
         2, 3, 2, 3, 2, 3, 2, 3, 2, 3,
         3, 9, 3, 3,
+        # vision chrome
+        3, 3, 9, 11, 2, 2, 2, 2, 3, 9, 3, 3, 9,
     )
     for i, text in enumerate(texts):
         y0 = i * fh

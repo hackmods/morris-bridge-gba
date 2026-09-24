@@ -146,10 +146,15 @@ flowchart TB
 
 **MaterialId** — how strong?
 
-| Material | Use |
-|----------|-----|
-| `timber` | Default track beams |
-| `rod` | Braces; higher strength, shorter safe span, higher cost |
+| Material | £ | Use |
+|----------|---|-----|
+| `wood` | 10 | Default track beams |
+| `iron` | 25 | Girders / braces; higher yield |
+| `stone` | 50 | Pier (infinite yield, ground-anchor only) |
+| `cable` | 15 | Tension-only ties |
+
+(Legacy names `timber`/`rod` alias wood/iron.)
+
 
 **Link** (replaces `Strut`):
 

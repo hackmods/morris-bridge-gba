@@ -45,10 +45,12 @@ void screen_trampoline_all_complete(void* context);
 Game::Game() :
     _cursor(bn::sprite_items::cursor.create_sprite(0, 0)),
     _train(bn::sprite_items::train.create_sprite(_bridge.train_position())),
-    _label(bn::sprite_items::label.create_sprite(0, 66)),
-    _hint_label(bn::sprite_items::label.create_sprite(0, 44)),
-    _hint_secondary(bn::sprite_items::label.create_sprite(0, 54)),
-    _panel(bn::sprite_items::panel.create_sprite(0, 66)),
+    _label(bn::sprite_items::label.create_sprite(-88, game_ui::HUD_TOP_Y)),
+    _hint_label(bn::sprite_items::label.create_sprite(-48, game_ui::HUD_BOTTOM_Y)),
+    _hint_secondary(bn::sprite_items::label.create_sprite(48, game_ui::HUD_BOTTOM_Y)),
+    _legend(bn::sprite_items::label.create_sprite(48, 60)),
+    _panel(bn::sprite_items::panel.create_sprite(0, game_ui::HUD_BOTTOM_Y - 2)),
+    _top_bar(bn::sprite_items::panel.create_sprite(0, game_ui::HUD_TOP_Y)),
     _banner(bn::sprite_items::banner.create_sprite(0, -36)),
     _logo(bn::sprite_items::logo.create_sprite(0, -52)),
     _menu_row(bn::sprite_items::menu.create_sprite(0, 8)),
@@ -67,12 +69,18 @@ Game::Game() :
     _cursor.set_z_order(game_ui::Z_CURSOR);
     _train.set_z_order(-15);
     _train.set_visible(false);
-    _label.set_z_order(-18);
-    _hint_label.set_z_order(-18);
-    _hint_secondary.set_z_order(-18);
+    _label.set_z_order(game_ui::Z_HUD);
+    _hint_label.set_z_order(game_ui::Z_HUD);
+    _hint_secondary.set_z_order(game_ui::Z_HUD);
+    _legend.set_z_order(game_ui::Z_HUD);
     _hint_label.set_visible(false);
     _hint_secondary.set_visible(false);
-    _panel.set_z_order(-19);
+    _legend.set_visible(false);
+    _panel.set_z_order(game_ui::Z_HUD_PANEL);
+    _top_bar.set_z_order(game_ui::Z_HUD_PANEL);
+    _top_bar.set_vertical_scale(bn::fixed(1) / 4);
+    _top_bar.set_item(bn::sprite_items::panel, game_ui::PANEL_HUD);
+    _top_bar.set_visible(false);
     _banner.set_z_order(-30);
     _logo.set_z_order(-29);
     _logo.set_visible(false);
@@ -170,28 +178,13 @@ int Game::_pick_win_label() const
 
 int Game::_pick_fail_label() const
 {
-    if(! _lore_rare(3))
+    // Vision RESULT_MODE: Sir Topham Hatt — "confusion and delay".
+    if(_lore_rare(3))
     {
-        return game_ui::LABEL_ASHES;
+        return game_ui::LABEL_CONFUS;
     }
 
-    switch(_lore_roll(4) % 5)
-    {
-        case 0:
-            return game_ui::LABEL_OOPS;
-
-        case 1:
-            return game_ui::LABEL_WAIT;
-
-        case 2:
-            return game_ui::LABEL_AGAIN;
-
-        case 3:
-            return game_ui::LABEL_LISTEN;
-
-        default:
-            return game_ui::LABEL_CONFUS;
-    }
+    return game_ui::LABEL_DELAY;
 }
 
 int Game::_pick_win_banner() const
@@ -358,11 +351,12 @@ void Game::_sync_train_sprite()
 void Game::_set_weight_digits(int value, bool visible)
 {
     const int clamped = value < 0 ? 0 : (value > 99 ? 99 : value);
+    const bn::fixed y = (_screen == Screen::playing) ? game_ui::HUD_TOP_Y : bn::fixed(66);
     _weight_digits[0].set_item(bn::sprite_items::digit, clamped / 10);
-    _weight_digits[0].set_position(-4, 66);
+    _weight_digits[0].set_position(-4, y);
     _weight_digits[0].set_visible(visible && clamped >= 10);
     _weight_digits[1].set_item(bn::sprite_items::digit, clamped % 10);
-    _weight_digits[1].set_position(clamped >= 10 ? 4 : 0, 66);
+    _weight_digits[1].set_position(clamped >= 10 ? 4 : 0, y);
     _weight_digits[1].set_visible(visible);
 }
 
@@ -496,6 +490,7 @@ void Game::_start_level(int level_index)
     _play_mode = PlayMode::build;
     _selected.reset();
     _connect_role = bridge::LinkRole::track;
+    _connect_material = bridge::MaterialId::wood;
     _pause_option = PauseOption::resume;
     _build_hint_timer = 0;
     _weld_holding = false;
@@ -513,6 +508,7 @@ void Game::_hide_gameplay()
 {
     _cursor.set_visible(false);
     _train.set_visible(false);
+    _top_bar.set_visible(false);
     _backdrop.set_scenery_visible(false);
     _graph.sync_nodes(_bridge, false, _frame, bn::nullopt, _ring);
     _graph.sync_struts(_bridge, false, false, _frame);
@@ -529,10 +525,12 @@ void Game::_enter_pause()
     _panel.set_visible(true);
     _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_SELECT);
     _panel.set_position(0, 12);
+    _top_bar.set_visible(false);
     _track_card.set_visible(false);
     _label.set_visible(false);
     _hint_label.set_visible(false);
     _hint_secondary.set_visible(false);
+    _legend.set_visible(false);
     _menu_row.set_visible(true);
     _menu_row.set_item(bn::sprite_items::menu, game_ui::MENU_PAUSE_BASE + int(_pause_option));
     _menu_row.set_position(0, 0);
@@ -556,12 +554,7 @@ void Game::_leave_pause()
     _menu_row.set_visible(false);
     _menu_arrow.set_visible(false);
     _hatt.set_visible(false);
-    _panel.set_visible(true);
-    _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_HUD);
-    _panel.set_position(0, 66);
-    _label.set_visible(true);
-    _label.set_position(0, 68);
-    _label.set_item(bn::sprite_items::label, game_ui::LABEL_BUILD);
+    _show_gameplay();
     _cursor.set_visible(true);
 
     if(bn::music::playing())

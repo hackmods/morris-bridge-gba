@@ -1,72 +1,66 @@
-# Physics (fixed-point)
+# Physics (fixed-point truss stress)
 
-All game physics uses Butano **`bn::fixed`** (20.12). No `float` or `double` on the GBA path.
+All game physics uses Butano **`bn::fixed`** (20.12). No `float`/`double` on the GBA path. Host tests compile the same sources against `tests/host_bn/`.
 
-Host unit tests compile the same sources against a 20.12 mock in [`tests/host_bn/`](../tests/host_bn/).
+## Why not full FEM?
 
-## Layout
+A dense direct-stiffness solve (up to 16 nodes × 2 DOF) exceeds the ≤15% simulation frame budget once you include sprite sync. We use a **load-path truss approximation** that still exposes per-material yield and cascade collapse.
+
+## Materials (`include/material.h`)
+
+| Id | £ | Yield (base) | Notes |
+|----|---|--------------|-------|
+| Wood | 10 | 8 | Deck default |
+| Iron | 25 | 14 | Girder / brace |
+| Stone | 50 | ∞ (1000) | Pier only — one end must be a ground anchor |
+| Cable | 15 | 7 | Tension-only (compression share discarded) |
+
+Joints cost £10 each (`NODE_COST`).
+
+## Rated yield
+
+```text
+rated = material_yield × (safe_length / length)
+      × reinforcement(joints_a, joints_b)
+      × (triangulated ? 1.5 : 1)
+```
+
+Stone skips length derating. Collapse when `stress >= 1.0`.
+
+## Load-path solve (each SIM frame on the active track member)
+
+1. Train load `W` (engine + coach ramp) → axial deck force via classic
+   `tension = W × (distance_along / length)`.
+2. Split `W/2` to each endpoint; redistribute to **other** incident members
+   proportional to `stiffness_mul / length` (relative EA/L).
+3. `stress_i = |F_i| / rated_yield_i`.
+4. If any `stress >= 1`, destroy the worst member, re-solve (≤ `CASCADE_MAX_PASSES`),
+   and if the train’s path member is gone → **DERAILED** (`failed_fall`).
+
+## Stress heatmap bands
+
+| Band | Stress | Palette |
+|------|--------|---------|
+| Green | 0–50% | cool green |
+| Yellow | 51–80% | amber |
+| Red | 81–99% | hot red |
+| Breaking | ≥100% | magenta / snap frame |
+
+## Tuning difficulty
+
+- Raise `material::TABLE[].yield_strength` → easier.
+- Lower `SAFE_LENGTH` / level `safe_length` → harsher long spans.
+- Increase train `ENGINE_WEIGHT` / coaches → harder.
+- `CASCADE_MAX_PASSES` limits how far a collapse propagates per frame.
+
+## Legacy helpers
+
+`tension`, `effective_max_tension`, and `exceeds_max_tension` remain for ratings and older tests. Simulation prefers `stress_ratio` / `is_breaking`.
+
+## Layout constants
 
 | Constant | Value | Meaning |
 |----------|-------|---------|
-| `TRACK_Y` | 52 | Rail height — nodes, start/end banks |
-| `GROUND_TILE_Y` | 56 | Ground scenery tile centers |
-| `TRAIN_Y_OFFSET` | −6 | Sprite offset so wheels sit on the rail |
-
-## Distance
-
-Squared distance avoids `sqrt` in cursor snap. Euclidean distance uses `isqrt64` + `approx_sqrt`.
-
-## Tension
-
-```text
-Tension = Load × (DistanceFromTrain / StrutLength)
-```
-
-- **Cars:** `BASE_WEIGHT` (4)
-- **Locomotive** on the first span: `ENGINE_WEIGHT` (6)
-
-## Max tension (span rating)
-
-Base rating (inverse length):
-
-```text
-base = BASE_MAX_TENSION × SAFE_LENGTH / length
-```
-
-Effective rating after structural bonuses:
-
-```text
-effective = base × reinforcement × (triangulated ? TRIANGLE_BONUS : 1)
-```
-
-**Reinforcement:** each redundant strut at an endpoint adds `REINFORCEMENT_PER_JOINT` (¼) to the multiplier.
-
-**Triangle bonus:** when a third node forms a closed triangle with the strut, multiply by `TRIANGLE_BONUS` (1.5×).
-
-## Locomotive engine
-
-- Speed ramps from `ENGINE_MIN_SPEED` to `TRAIN_SPEED` over `ACCEL_FRAMES` (24 frames).
-- Heavier load on span index 0 (`ENGINE_WEIGHT`).
-
-## Failure
-
-When `current_tension > max_tension`, the strut breaks, the train keeps its lerp position, and fall begins with `FALL_INITIAL_VY` plus `GRAVITY` each frame.
-
-## Audio
-
-Original parody loops via Maxmod (`AUDIOBACKEND := maxmod`):
-
-| Track | Cue |
-|-------|-----|
-| `island_line.mod` | Title march |
-| `yard.mod` | Level select |
-| `workshop.mod` | Build mode |
-| `full_steam.mod` | Crossing |
-
-SFX: `chuff`, `peep`, `whistle`, `useful`, `snap`, `delay`, `splash`, `ui`.
-
-See [Audio](audio.md). Generate with `python3 tools/gen_audio.py`.
-
-## Host test coverage
-
-Run: `make -C tests`
+| `TRACK_Y` | 52 | Rail height |
+| `GRID_STEP` | 8 | EDIT_MODE snap |
+| `UNDERGROUND_Y` | 64 | Pier build floor |

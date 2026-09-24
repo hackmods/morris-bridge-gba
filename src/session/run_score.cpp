@@ -34,7 +34,7 @@ RunScore compute_run_score(const bridge::BridgeSystem& system, const level::Def&
 
     for(const bridge::Strut& strut : system.struts())
     {
-        if(strut.role == bridge::LinkRole::brace)
+        if(strut.role == bridge::LinkRole::brace || strut.role == bridge::LinkRole::foundation)
         {
             ++score.brace_links;
         }
@@ -42,11 +42,11 @@ RunScore compute_run_score(const bridge::BridgeSystem& system, const level::Def&
         {
             ++score.track_links;
         }
+
+        score.total_cost += bridge::link_cost(strut.material);
     }
 
-    score.total_cost = score.player_nodes * bridge::NODE_COST +
-                       score.track_links * bridge::TIMBER_LINK_COST +
-                       score.brace_links * bridge::ROD_LINK_COST;
+    score.total_cost += score.player_nodes * bridge::NODE_COST;
 
     if(def.par_cost > 0)
     {
