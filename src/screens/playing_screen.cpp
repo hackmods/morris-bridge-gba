@@ -44,9 +44,9 @@ void Game::_show_gameplay()
     _hatt.set_visible(false);
     _panel.set_visible(true);
     _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_HUD);
-    _panel.set_position(0, 66);
+    _panel.set_position(0, game_ui::HUD_BOTTOM_Y - 2);
     _label.set_visible(true);
-    _label.set_position(0, 68);
+    _label.set_position(0, game_ui::HUD_BOTTOM_Y);
     _label.set_item(bn::sprite_items::label, game_ui::LABEL_BUILD);
     _hint_secondary.set_visible(false);
     _update_build_hints();
@@ -79,11 +79,12 @@ void Game::_update_playing()
 void Game::_set_counter(bn::vector<bn::sprite_ptr, 2>& digits, int value, bn::fixed x_base)
 {
     const int clamped = value < 0 ? 0 : (value > 99 ? 99 : value);
+    const bn::fixed y = (_screen == Screen::playing) ? game_ui::HUD_TOP_Y : bn::fixed(66);
     digits[0].set_item(bn::sprite_items::digit, clamped / 10);
-    digits[0].set_position(x_base, 66);
+    digits[0].set_position(x_base, y);
     digits[0].set_visible(_screen == Screen::playing);
     digits[1].set_item(bn::sprite_items::digit, clamped % 10);
-    digits[1].set_position(x_base + 8, 66);
+    digits[1].set_position(x_base + 8, y);
     digits[1].set_visible(_screen == Screen::playing);
 }
 
@@ -230,7 +231,7 @@ void Game::_update_build_hints()
     }
 
     _hint_label.set_visible(true);
-    _hint_label.set_position(0, 52);
+    _hint_label.set_position(0, game_ui::HUD_BOTTOM_Y - 16);
 }
 
 void Game::_update_build()

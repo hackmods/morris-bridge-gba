@@ -37,6 +37,11 @@ constexpr int Z_RING = 4;
 constexpr int Z_GHOST = 6;
 constexpr int Z_STRUT_PREVIEW = 9;
 
+/// Vision top chrome (8px bar) — digits / target load sit near screen top.
+inline constexpr bn::fixed HUD_TOP_Y = -72;
+/// Vision bottom chrome (controls / material legend).
+inline constexpr bn::fixed HUD_BOTTOM_Y = 68;
+
 enum class ToastKind
 {
     none,

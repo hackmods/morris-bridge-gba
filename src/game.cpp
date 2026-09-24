@@ -343,11 +343,12 @@ void Game::_sync_train_sprite()
 void Game::_set_weight_digits(int value, bool visible)
 {
     const int clamped = value < 0 ? 0 : (value > 99 ? 99 : value);
+    const bn::fixed y = (_screen == Screen::playing) ? game_ui::HUD_TOP_Y : bn::fixed(66);
     _weight_digits[0].set_item(bn::sprite_items::digit, clamped / 10);
-    _weight_digits[0].set_position(-4, 66);
+    _weight_digits[0].set_position(-4, y);
     _weight_digits[0].set_visible(visible && clamped >= 10);
     _weight_digits[1].set_item(bn::sprite_items::digit, clamped % 10);
-    _weight_digits[1].set_position(clamped >= 10 ? 4 : 0, 66);
+    _weight_digits[1].set_position(clamped >= 10 ? 4 : 0, y);
     _weight_digits[1].set_visible(visible);
 }
 
