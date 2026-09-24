@@ -2,6 +2,8 @@
 
 Living notes from Cloud Agent sessions: what shipped, what broke, and what to pick up next. Complements [Changelog](changelog.md) (history) and [Future expansion](future-expansion.md) (roadmap).
 
+**Next track (2026-09-24):** [UI & playability plan](ui-playability-plan.md) — menus, feel, vision chrome, Knapford authored art. Systems/vision pass notes: [diagnosis-vision.md](diagnosis-vision.md).
+
 ---
 
 ## PR merge policy (read first)

@@ -34,4 +34,6 @@ platform     Game + screens + GraphView (heatmap) + BGView
 
 **Verified on device (mGBA-WASM):** EDIT + BUDGT + £ + A DRAW + WOOD; SIM `RUN!` + `STRESS` with train on reference deck; RESULT `WIN!` + Hatt OK / USEFUL. **QA:** L+R+START loads host reference then enters SIM.
 
+**Next:** feel + chrome + authored art — not more physics. See [ui-playability-plan.md](ui-playability-plan.md).
+
 See [physics.md](physics.md) for tuneable yield / cascade knobs.

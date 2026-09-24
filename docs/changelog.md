@@ -1,5 +1,11 @@
 # Changelog & project history
 
+## 2026-09-24 — UI / playability handoff plan
+
+- Lessons from vision mockups vs placeholder ROM: systems ≠ shippable feel/look
+- New track doc: [ui-playability-plan.md](ui-playability-plan.md) (menus → feel → chrome → Knapford art)
+- Linked from [docs/README.md](README.md), [session-goal.md](session-goal.md), [knowledge.md](knowledge.md)
+
 ## 2026-09-24 — Vision refactor: materials, truss stress, EDIT/SIM/RESULT
 
 - **Materials:** Wood £10 / Iron £25 / Stone £50 / Cable £15 with level £ budgets
