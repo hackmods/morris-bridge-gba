@@ -186,6 +186,7 @@ void Game::_update_build_hints()
     if(_screen != Screen::playing || _play_mode != PlayMode::build)
     {
         _hint_label.set_visible(false);
+        _hint_secondary.set_visible(false);
         return;
     }
 
@@ -214,24 +215,31 @@ void Game::_update_build_hints()
         _hint_label.set_visible(true);
         _hint_label.set_position(0, game_ui::HUD_BOTTOM_Y - 16);
         _hint_label.set_item(bn::sprite_items::label, frame);
+        _hint_secondary.set_visible(false);
         return;
     }
 
+    // Bottom strip legend: material is on `_label`; hints teach A/START flow (vision key legend).
     if(_bridge.has_track_path())
     {
         _hint_label.set_item(bn::sprite_items::label, game_ui::LABEL_START);
+        _hint_secondary.set_item(bn::sprite_items::label, game_ui::LABEL_HINT_PAUSE);
     }
     else if(_selected)
     {
         _hint_label.set_item(bn::sprite_items::label, game_ui::LABEL_HINT_WELD);
+        _hint_secondary.set_item(bn::sprite_items::label, game_ui::LABEL_HINT_PAUSE);
     }
     else
     {
         _hint_label.set_item(bn::sprite_items::label, game_ui::LABEL_HINT_NODE);
+        _hint_secondary.set_item(bn::sprite_items::label, game_ui::LABEL_HINT_WELD);
     }
 
     _hint_label.set_visible(true);
     _hint_label.set_position(0, game_ui::HUD_BOTTOM_Y - 16);
+    _hint_secondary.set_visible(true);
+    _hint_secondary.set_position(0, game_ui::HUD_BOTTOM_Y - 8);
 }
 
 void Game::_update_build()
