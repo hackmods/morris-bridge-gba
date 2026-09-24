@@ -48,6 +48,7 @@ Game::Game() :
     _label(bn::sprite_items::label.create_sprite(-88, game_ui::HUD_TOP_Y)),
     _hint_label(bn::sprite_items::label.create_sprite(-48, game_ui::HUD_BOTTOM_Y)),
     _hint_secondary(bn::sprite_items::label.create_sprite(48, game_ui::HUD_BOTTOM_Y)),
+    _legend(bn::sprite_items::label.create_sprite(48, 60)),
     _panel(bn::sprite_items::panel.create_sprite(0, game_ui::HUD_BOTTOM_Y - 2)),
     _top_bar(bn::sprite_items::panel.create_sprite(0, game_ui::HUD_TOP_Y)),
     _banner(bn::sprite_items::banner.create_sprite(0, -36)),
