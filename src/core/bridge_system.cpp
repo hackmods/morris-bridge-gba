@@ -31,21 +31,35 @@ void BridgeSystem::set_engine(const engine::Id id)
     const engine::Profile& profile = engine::profile(id);
     _train_weight = profile.weight;
     _train_speed = profile.speed;
-    _coach_count = profile.coach_count;
+    _rebuild_train();
 }
 
-bn::fixed BridgeSystem::effective_weight_at(const bn::fixed distance_along,
-                                            const bn::fixed strut_length) const
+void BridgeSystem::_rebuild_train()
 {
-    if(strut_length <= 0)
+    const engine::Profile& profile = engine::profile(_engine);
+    _cars.clear();
+
+    for(int i = 0; i < profile.car_count; ++i)
     {
-        return _train_weight;
+        _cars.push_back(profile.cars[i]);
     }
 
-    const bn::fixed ratio = distance_along.safe_division(strut_length);
-    const bn::fixed coach_load =
-        bn::fixed(_coach_count).safe_multiplication(physics::COACH_WEIGHT).safe_multiplication(ratio);
-    return _train_weight + coach_load;
+    if(level::get(_level_index).banked)
+    {
+        _cars.push_back(engine::Car{ engine::CarKind::banker, engine::BANKER_WEIGHT });
+    }
+}
+
+bn::fixed BridgeSystem::train_total_weight() const
+{
+    bn::fixed total = _train_weight;
+
+    for(const engine::Car& car : _cars)
+    {
+        total += car.weight;
+    }
+
+    return total;
 }
 
 void BridgeSystem::load_level(int level_index)
@@ -62,7 +76,8 @@ void BridgeSystem::load_level(int level_index)
 
     _level_index = level_index;
     const level::Def& def = level::get(_level_index);
-    _safe_length = def.safe_length > 0 ? def.safe_length : physics::SAFE_LENGTH;
+    _beam_length = def.safe_length > 0 ? def.safe_length : level::DEFAULT_BEAM_LENGTH;
+    _rebuild_train();
     reset_level();
 }
 
@@ -70,18 +85,25 @@ void BridgeSystem::reset_level()
 {
     _nodes.clear();
     _struts.clear();
+    _saved_nodes.clear();
     _saved_struts.clear();
     _path.clear();
     _status = SimStatus::idle;
+    _train_distance = 0;
     _train_t = 0;
     _path_index = 0;
     _accel_frames = 0;
+    _settle_frames = 0;
+    _test_frames = 0;
+    _snapped_count = 0;
     _fall_vy = 0;
     _falling = false;
+    _test_ran = false;
+    _snap_flash.reset();
     _last_edit = LastEdit::none;
     _last_edit_index = -1;
     _seed_level();
-    _train_position = _nodes[START_NODE].position;
+    _park_train();
 }
 
 void BridgeSystem::_seed_level()
@@ -122,106 +144,23 @@ bn::optional<int> BridgeSystem::add_node(bn::fixed x, bn::fixed y, bool is_ancho
 
 bn::optional<int> BridgeSystem::add_strut(int node_a, int node_b, const LinkRole role)
 {
-    if(!allows_link_role(role))
-    {
-        return bn::optional<int>();
-    }
+    const StrutPreview preview = preview_strut(node_a, node_b, role);
 
-    if(node_a == node_b)
-    {
-        return bn::optional<int>();
-    }
-
-    if(node_a < 0 || node_b < 0 || node_a >= _nodes.size() || node_b >= _nodes.size())
-    {
-        return bn::optional<int>();
-    }
-
-    if(_struts.full())
-    {
-        return bn::optional<int>();
-    }
-
-    const int lo = min_id(node_a, node_b);
-    const int hi = max_id(node_a, node_b);
-
-    if(find_strut(lo, hi))
-    {
-        return bn::optional<int>();
-    }
-
-    const bn::fixed length = physics::distance(_nodes[lo].position, _nodes[hi].position);
-
-    if(length <= 0)
+    if(preview.status != StrutPreviewStatus::ok)
     {
         return bn::optional<int>();
     }
 
     Strut strut;
-    strut.node_a = lo;
-    strut.node_b = hi;
+    strut.node_a = min_id(node_a, node_b);
+    strut.node_b = max_id(node_a, node_b);
     strut.role = role;
     strut.material = material_for_role(role);
-    strut.length = length;
-    strut.current_tension = 0;
-    strut.triangulated = false;
-    strut.max_tension = 0;
+    strut.length = preview.length;
+    strut.max_tension = material(strut.material).strength;
     _struts.push_back(strut);
-    _recompute_strut_ratings();
     _record_strut_edit(_struts.size() - 1);
     return bn::optional<int>(_struts.size() - 1);
-}
-
-int BridgeSystem::_connection_count(int node_id) const
-{
-    int count = 0;
-
-    for(int i = 0; i < _struts.size(); ++i)
-    {
-        const Strut& strut = _struts[i];
-
-        if(strut.node_a == node_id || strut.node_b == node_id)
-        {
-            ++count;
-        }
-    }
-
-    return count;
-}
-
-bool BridgeSystem::_strut_is_triangulated(int strut_index) const
-{
-    const Strut& strut = _struts[strut_index];
-
-    for(int c = 0; c < _nodes.size(); ++c)
-    {
-        if(c == strut.node_a || c == strut.node_b)
-        {
-            continue;
-        }
-
-        if(find_strut(strut.node_a, c) && find_strut(strut.node_b, c))
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-void BridgeSystem::_recompute_strut_ratings()
-{
-    for(int i = 0; i < _struts.size(); ++i)
-    {
-        Strut& strut = _struts[i];
-        const int connections_a = _connection_count(strut.node_a);
-        const int connections_b = _connection_count(strut.node_b);
-        strut.triangulated = _strut_is_triangulated(i);
-        strut.max_tension = physics::effective_max_tension(strut.length, connections_a,
-                                                           connections_b, strut.triangulated,
-                                                           _safe_length)
-                                .safe_multiplication(material_strength(strut.material));
-    }
 }
 
 bn::optional<int> BridgeSystem::find_node_near(bn::fixed_point point) const
@@ -282,50 +221,29 @@ StrutPreview BridgeSystem::preview_strut(int node_a, int node_b, const LinkRole 
     }
 
     const bn::fixed length = physics::distance(_nodes[lo].position, _nodes[hi].position);
+    preview.length = length;
+    preview.max_length = max_link_length(role);
 
-    if(length <= 0)
+    if(length < MIN_LINK_LENGTH)
     {
         preview.status = StrutPreviewStatus::zero_length;
         return preview;
     }
 
-    preview.status = StrutPreviewStatus::ok;
-    preview.length = length;
-
-    const int connections_a = _connection_count(lo) + 1;
-    const int connections_b = _connection_count(hi) + 1;
-
-    bool triangulated = false;
-
-    for(int c = 0; c < _nodes.size(); ++c)
+    if(length > preview.max_length)
     {
-        if(c == lo || c == hi)
-        {
-            continue;
-        }
-
-        if(find_strut(lo, c) && find_strut(hi, c))
-        {
-            triangulated = true;
-            break;
-        }
+        preview.status = StrutPreviewStatus::too_long;
+        return preview;
     }
 
-    preview.max_tension = physics::effective_max_tension(length, connections_a, connections_b,
-                                                           triangulated, _safe_length)
-                               .safe_multiplication(material_strength(material_for_role(role)));
+    preview.status = StrutPreviewStatus::ok;
     return preview;
 }
 
-bn::fixed BridgeSystem::span_preview_capacity(const bn::fixed length, const LinkRole role) const
+bn::fixed BridgeSystem::max_link_length(const LinkRole role) const
 {
-    if(length <= 0 || !allows_link_role(role))
-    {
-        return 0;
-    }
-
-    return physics::max_tension_for_length(length, _safe_length)
-        .safe_multiplication(material_strength(material_for_role(role)));
+    const Material& mat = material(material_for_role(role));
+    return _beam_length * mat.reach_num / mat.reach_den;
 }
 
 UndoResult BridgeSystem::undo_last_edit()
@@ -442,7 +360,6 @@ RemoveNodeResult BridgeSystem::remove_player_node(int node_id)
         }
     }
 
-    _recompute_strut_ratings();
     return RemoveNodeResult::ok;
 }
 
@@ -454,60 +371,6 @@ bool BridgeSystem::allows_link_role(const LinkRole role) const
 bool BridgeSystem::is_player_node(int node_id) const
 {
     return node_id >= 0 && node_id < _nodes.size() && !_nodes[node_id].is_anchored;
-}
-
-bool BridgeSystem::has_track_path() const
-{
-    bool visited[MAX_NODES];
-
-    for(int i = 0; i < MAX_NODES; ++i)
-    {
-        visited[i] = false;
-    }
-
-    bn::vector<int, MAX_NODES> queue;
-    queue.push_back(START_NODE);
-    visited[START_NODE] = true;
-
-    while(!queue.empty())
-    {
-        const int current = queue[0];
-        queue.erase(queue.begin());
-
-        if(current == END_NODE)
-        {
-            return true;
-        }
-
-        for(int s = 0; s < _struts.size(); ++s)
-        {
-            const Strut& strut = _struts[s];
-
-            if(!is_routable(strut.role))
-            {
-                continue;
-            }
-
-            int next = -1;
-
-            if(strut.node_a == current)
-            {
-                next = strut.node_b;
-            }
-            else if(strut.node_b == current)
-            {
-                next = strut.node_a;
-            }
-
-            if(next >= 0 && !visited[next])
-            {
-                visited[next] = true;
-                queue.push_back(next);
-            }
-        }
-    }
-
-    return false;
 }
 
 void BridgeSystem::_record_node_edit(int node_id)
@@ -543,8 +406,6 @@ void BridgeSystem::_remove_strut_at(int strut_index)
             --_last_edit_index;
         }
     }
-
-    _recompute_strut_ratings();
 }
 
 bn::optional<int> BridgeSystem::find_strut(int node_a, int node_b) const
@@ -563,134 +424,265 @@ bn::optional<int> BridgeSystem::find_strut(int node_a, int node_b) const
     return bn::optional<int>();
 }
 
-bool BridgeSystem::_bfs_path()
+bool BridgeSystem::is_routable(const Strut& strut) const
 {
-    _path.clear();
-
-    int parent[MAX_NODES];
-    bool visited[MAX_NODES];
-
-    for(int i = 0; i < MAX_NODES; ++i)
+    if(strut.role != LinkRole::track)
     {
-        parent[i] = -1;
-        visited[i] = false;
+        return false;
     }
 
+    const bn::fixed_point& a = _nodes[strut.node_a].position;
+    const bn::fixed_point& b = _nodes[strut.node_b].position;
+    return physics::abs(b.y() - a.y()) * MAX_GRADE_RUN <= physics::abs(b.x() - a.x());
+}
+
+bool BridgeSystem::has_track_path() const
+{
+    bool visited[MAX_NODES] = {};
     bn::vector<int, MAX_NODES> queue;
     queue.push_back(START_NODE);
     visited[START_NODE] = true;
 
-    bool found = false;
-
-    while(!queue.empty() && !found)
+    for(int head = 0; head < queue.size(); ++head)
     {
-        const int current = queue[0];
-        queue.erase(queue.begin());
+        const int current = queue[head];
 
         if(current == END_NODE)
         {
-            found = true;
-            break;
+            return true;
         }
 
-        for(int s = 0; s < _struts.size(); ++s)
+        for(const Strut& strut : _struts)
         {
-            const Strut& strut = _struts[s];
-
-            if(!is_routable(strut.role))
+            if(strut.node_a != current && strut.node_b != current)
             {
                 continue;
             }
 
-            int next = -1;
+            const int next = strut.node_a == current ? strut.node_b : strut.node_a;
 
-            if(strut.node_a == current)
-            {
-                next = strut.node_b;
-            }
-            else if(strut.node_b == current)
-            {
-                next = strut.node_a;
-            }
-
-            if(next >= 0 && !visited[next])
+            if(!visited[next] && is_routable(strut))
             {
                 visited[next] = true;
-                parent[next] = current;
                 queue.push_back(next);
             }
         }
     }
 
-    if(!visited[END_NODE])
+    return false;
+}
+
+bool BridgeSystem::_find_route()
+{
+    // Shortest climbable track route by length (Dijkstra, at most 16 nodes), so
+    // a timber truss chord above the deck never steals the train from the deck.
+    _path.clear();
+
+    constexpr int UNREACHED = 0x7FFFFFFF;
+    int dist[MAX_NODES];
+    int parent[MAX_NODES];
+    bool done[MAX_NODES] = {};
+
+    for(int i = 0; i < MAX_NODES; ++i)
+    {
+        dist[i] = UNREACHED;
+        parent[i] = -1;
+    }
+
+    dist[START_NODE] = 0;
+
+    for(int pass = 0; pass < _nodes.size(); ++pass)
+    {
+        int current = -1;
+
+        for(int i = 0; i < _nodes.size(); ++i)
+        {
+            if(!done[i] && dist[i] != UNREACHED && (current < 0 || dist[i] < dist[current]))
+            {
+                current = i;
+            }
+        }
+
+        if(current < 0 || current == END_NODE)
+        {
+            break;
+        }
+
+        done[current] = true;
+
+        for(const Strut& strut : _struts)
+        {
+            if(strut.node_a != current && strut.node_b != current)
+            {
+                continue;
+            }
+
+            const int next = strut.node_a == current ? strut.node_b : strut.node_a;
+            const int through = dist[current] + strut.length.data();
+
+            if(!done[next] && through < dist[next] && is_routable(strut))
+            {
+                dist[next] = through;
+                parent[next] = current;
+            }
+        }
+    }
+
+    if(dist[END_NODE] == UNREACHED)
     {
         return false;
     }
 
     bn::vector<int, MAX_NODES> reverse;
-    int cursor = END_NODE;
 
-    while(cursor != -1)
+    for(int cursor = END_NODE; cursor != -1; cursor = parent[cursor])
     {
         reverse.push_back(cursor);
-        cursor = parent[cursor];
     }
 
     for(int i = reverse.size() - 1; i >= 0; --i)
     {
+        _path_cum[_path.size()] = bn::fixed::from_data(dist[reverse[i]]);
         _path.push_back(reverse[i]);
     }
 
     return _path.size() >= 2;
 }
 
+void BridgeSystem::_prepare_solver()
+{
+    for(int i = 0; i < _nodes.size(); ++i)
+    {
+        _sim[i] = NodeSim();
+        _sim[i].weight = _nodes[i].is_anchored ? 0 : JOINT_WEIGHT.data();
+        _load[i] = 0;
+    }
+
+    for(Strut& strut : _struts)
+    {
+        const int64_t rest = strut.length.data();
+        const Material& mat = material(strut.material);
+
+        strut.inv_rest2 = int32_t((int64_t(1) << 56) / (rest * rest));
+        strut.inv_rest = int32_t((int64_t(1) << 32) / rest);
+        strut.ea_q4 = mat.stiffness.data() >> (bn::fixed::precision() - 4);
+        strut.max_tension = mat.strength;
+        strut.current_tension = 0;
+        strut.peak_tension = 0;
+        strut.compressed = false;
+
+        // Each joint carries half of every link that meets it.
+        const int32_t half = strut.length.safe_multiplication(mat.weight_per_px).data() / 2;
+
+        if(!_nodes[strut.node_a].is_anchored)
+        {
+            _sim[strut.node_a].weight += half;
+        }
+
+        if(!_nodes[strut.node_b].is_anchored)
+        {
+            _sim[strut.node_b].weight += half;
+        }
+    }
+
+    _refresh_inertia();
+}
+
+void BridgeSystem::_refresh_inertia()
+{
+    // Explicit integration is only stable while (stiffness / inertia) at every
+    // joint stays under the step limit. Joints keep their true weight for
+    // gravity but borrow extra inertia where stiff links meet, which leaves
+    // the static force balance — what decides a break — untouched.
+    constexpr int STABILITY_DIVISOR = 32;
+    bn::fixed stiffness_sum[MAX_NODES] = {};
+
+    for(const Strut& strut : _struts)
+    {
+        const bn::fixed per_px = material(strut.material).stiffness.safe_division(strut.length);
+        stiffness_sum[strut.node_a] += per_px;
+        stiffness_sum[strut.node_b] += per_px;
+    }
+
+    for(int i = 0; i < _nodes.size(); ++i)
+    {
+        if(_nodes[i].is_anchored)
+        {
+            _sim[i].inv_inertia = 0;
+            continue;
+        }
+
+        bn::fixed inertia = bn::fixed::from_data(_sim[i].weight);
+        const bn::fixed needed = stiffness_sum[i] / STABILITY_DIVISOR;
+
+        if(needed > inertia)
+        {
+            inertia = needed;
+        }
+
+        _sim[i].inv_inertia = bn::fixed(1).safe_division(inertia).data();
+    }
+}
+
 SimStatus BridgeSystem::begin_test()
 {
-    _saved_struts = _struts;
-    _recompute_strut_ratings();
     _falling = false;
     _fall_vy = 0;
+    _train_distance = 0;
     _train_t = 0;
     _path_index = 0;
     _accel_frames = 0;
-    _train_position = _nodes[START_NODE].position;
+    _test_frames = 0;
+    _snapped_count = 0;
+    _snap_flash.reset();
+    _park_train();
 
-    for(int i = 0; i < _struts.size(); ++i)
-    {
-        _struts[i].current_tension = 0;
-    }
-
-    if(!_bfs_path())
+    if(!_find_route())
     {
         _status = SimStatus::no_path;
         return _status;
     }
 
+    _saved_nodes = _nodes;
+    _saved_struts = _struts;
+    _test_ran = true;
+    _settle_frames = SETTLE_FRAMES;
+    _prepare_solver();
     _status = SimStatus::running;
     return _status;
 }
 
 void BridgeSystem::end_test()
 {
-    if(!_saved_struts.empty() || _status != SimStatus::idle)
+    if(_test_ran)
     {
+        // The rewind: the build comes back exactly as welded, but every link
+        // remembers the worst force it carried (a snapped link reads as full).
+        for(Strut& saved : _saved_struts)
+        {
+            const bn::optional<int> live = find_strut(saved.node_a, saved.node_b);
+            saved.peak_tension = live ? _struts[live.value()].peak_tension : saved.max_tension;
+            saved.current_tension = 0;
+            saved.compressed = false;
+        }
+
+        _nodes = _saved_nodes;
         _struts = _saved_struts;
+        _saved_nodes.clear();
         _saved_struts.clear();
+        _test_ran = false;
     }
 
     _path.clear();
     _status = SimStatus::idle;
     _falling = false;
     _fall_vy = 0;
+    _train_distance = 0;
     _train_t = 0;
     _path_index = 0;
     _accel_frames = 0;
-    _train_position = _nodes[START_NODE].position;
-
-    for(int i = 0; i < _struts.size(); ++i)
-    {
-        _struts[i].current_tension = 0;
-    }
+    _settle_frames = 0;
+    _park_train();
 }
 
 void BridgeSystem::_break_strut(int strut_index)
@@ -702,7 +694,8 @@ void BridgeSystem::_break_strut(int strut_index)
         12,
     };
     _struts.erase(_struts.begin() + strut_index);
-    _recompute_strut_ratings();
+    ++_snapped_count;
+    _refresh_inertia();
 }
 
 const SnapFlash* BridgeSystem::snap_flash() const
@@ -715,11 +708,6 @@ void BridgeSystem::_start_falling()
     _falling = true;
     _fall_vy = FALL_INITIAL_VY;
     _status = SimStatus::failed_fall;
-}
-
-bn::fixed BridgeSystem::_current_train_load() const
-{
-    return _path_index == 0 ? physics::ENGINE_WEIGHT : physics::BASE_WEIGHT;
 }
 
 bn::fixed BridgeSystem::_current_train_speed() const
@@ -738,15 +726,311 @@ bn::fixed BridgeSystem::current_train_speed() const
     return _current_train_speed();
 }
 
-void BridgeSystem::_apply_tension(int strut_index, bn::fixed distance_along)
+void BridgeSystem::_apply_axle(const bn::fixed distance, const bn::fixed weight)
 {
-    Strut& strut = _struts[strut_index];
-    const bn::fixed effective = effective_weight_at(distance_along, strut.length);
-    strut.current_tension = physics::tension(effective, distance_along, strut.length);
+    const int last = _path.size() - 1;
+
+    // Axles still on the start bank or already on the far bank load solid ground.
+    if(distance <= 0 || distance >= _path_cum[last])
+    {
+        return;
+    }
+
+    const int segment = _segment_at(distance);
+    const int a = _path[segment];
+    const int b = _path[segment + 1];
+
+    if(!find_strut(a, b))
+    {
+        return;
+    }
+
+    const bn::fixed span = _path_cum[segment + 1] - _path_cum[segment];
+    const bn::fixed t = (distance - _path_cum[segment]).safe_division(span);
+    const int32_t on_b = weight.safe_multiplication(t).data();
+    _load[a] += weight.data() - on_b;
+    _load[b] += on_b;
+}
+
+bn::fixed BridgeSystem::_axle_distance(const int axle) const
+{
+    return _train_distance - engine::CAR_SPACING * axle;
+}
+
+int BridgeSystem::_segment_at(const bn::fixed distance) const
+{
+    const int last = _path.size() - 1;
+    int segment = 0;
+
+    while(segment + 1 < last && distance >= _path_cum[segment + 1])
+    {
+        ++segment;
+    }
+
+    return segment;
+}
+
+void BridgeSystem::_park_train()
+{
+    // Engine at the start anchor, coaches strung out behind it on the bank.
+    const bn::fixed_point start = _nodes[START_NODE].position;
+
+    for(int axle = 0; axle <= engine::MAX_CARS; ++axle)
+    {
+        _axle_position[axle] =
+            bn::fixed_point(start.x() - engine::CAR_SPACING * axle, start.y());
+    }
+}
+
+bn::fixed BridgeSystem::_axle_weight(const int axle) const
+{
+    if(axle == 0)
+    {
+        return _train_weight;
+    }
+
+    const engine::Car& car = _cars[axle - 1];
+
+    if(car.kind != engine::CarKind::truck)
+    {
+        return car.weight;
+    }
+
+    // Troublesome Trucks never ride smoothly: each one slams down, then goes
+    // light, out of step with the truck next to it.
+    const bool heavy = ((_test_frames / TRUCK_JOLT_FRAMES) + axle) % 2 == 0;
+    return car.weight + (heavy ? car.weight.safe_multiplication(TRUCK_JOLT)
+                               : -car.weight.safe_multiplication(TRUCK_JOLT));
+}
+
+bn::fixed BridgeSystem::_grade_factor() const
+{
+    // Engines labour uphill and run away downhill: speed scales with the
+    // grade of the link under the engine, sag included.
+    const int last = _path.size() - 1;
+
+    if(_train_distance <= 0 || _train_distance >= _path_cum[last])
+    {
+        return 1;
+    }
+
+    const int segment = _segment_at(_train_distance);
+    const bn::fixed_point& a = _nodes[_path[segment]].position;
+    const bn::fixed_point& b = _nodes[_path[segment + 1]].position;
+    const bn::fixed run = physics::abs(b.x() - a.x());
+
+    if(run < 1)
+    {
+        return 1;
+    }
+
+    bn::fixed factor = bn::fixed(1) - (a.y() - b.y()).safe_division(run);
+
+    if(factor < bn::fixed(1) / 2)
+    {
+        factor = bn::fixed(1) / 2;
+    }
+    else if(factor > bn::fixed(5) / 4)
+    {
+        factor = bn::fixed(5) / 4;
+    }
+
+    return factor;
+}
+
+void BridgeSystem::_apply_train_load()
+{
+    for(int i = 0; i < _nodes.size(); ++i)
+    {
+        _load[i] = 0;
+    }
+
+    for(int axle = 0; axle < axle_count(); ++axle)
+    {
+        _apply_axle(_axle_distance(axle), _axle_weight(axle));
+    }
+}
+
+void BridgeSystem::_substep(const int gravity_q8, const int damping_shift)
+{
+    constexpr int32_t MAX_VELOCITY = 3 << 20;  // 3 px per substep
+    constexpr int32_t FLOOR_Y = 120 << 12;     // well below the screen
+
+    for(int i = 0; i < _nodes.size(); ++i)
+    {
+        _sim[i].fx = 0;
+        _sim[i].fy = ((_sim[i].weight * gravity_q8) >> 8) + _load[i];
+    }
+
+    for(int s = 0; s < _struts.size();)
+    {
+        Strut& strut = _struts[s];
+        const bn::fixed_point& a = _nodes[strut.node_a].position;
+        const bn::fixed_point& b = _nodes[strut.node_b].position;
+        const int32_t dx = b.x().data() - a.x().data();
+        const int32_t dy = b.y().data() - a.y().data();
+        const int64_t rest = strut.length.data();
+        const int64_t rest2 = rest * rest;
+        int64_t diff = int64_t(dx) * dx + int64_t(dy) * dy - rest2;
+
+        // x = d²/rest² − 1 in Q16; clamped far past any strain that survives.
+        if(diff > rest2 / 2)
+        {
+            diff = rest2 / 2;
+        }
+        else if(diff < -(rest2 / 2))
+        {
+            diff = -(rest2 / 2);
+        }
+
+        const int32_t x = int32_t((diff * strut.inv_rest2) >> 40);
+
+        // strain = sqrt(1 + x) − 1 ≈ x/2 − x²/8 + x³/16 — no sqrt, no divide.
+        const int32_t x2 = (x * x) >> 16;
+        const int32_t strain = (x >> 1) - (x2 >> 3) + (((x2 * x) >> 16) >> 4);
+        const int32_t force = (strut.ea_q4 * strain) >> 8;  // + tension, − compression
+        const int32_t magnitude = force < 0 ? -force : force;
+
+        strut.current_tension = bn::fixed::from_data(magnitude);
+        strut.compressed = force < 0;
+
+        if(strut.current_tension > strut.peak_tension)
+        {
+            strut.peak_tension = strut.current_tension;
+        }
+
+        if(strut.current_tension > strut.max_tension)
+        {
+            _break_strut(s);
+            continue;
+        }
+
+        const int32_t ux = int32_t((int64_t(dx) * strut.inv_rest) >> 20);
+        const int32_t uy = int32_t((int64_t(dy) * strut.inv_rest) >> 20);
+        const int32_t fx = (force * ux) >> 12;
+        const int32_t fy = (force * uy) >> 12;
+        _sim[strut.node_a].fx += fx;
+        _sim[strut.node_a].fy += fy;
+        _sim[strut.node_b].fx -= fx;
+        _sim[strut.node_b].fy -= fy;
+        ++s;
+    }
+
+    for(int i = 0; i < _nodes.size(); ++i)
+    {
+        Node& node = _nodes[i];
+
+        if(node.is_anchored)
+        {
+            continue;
+        }
+
+        NodeSim& sim = _sim[i];
+        sim.vx += int32_t((int64_t(sim.fx) * sim.inv_inertia) >> 10);
+        sim.vy += int32_t((int64_t(sim.fy) * sim.inv_inertia) >> 10);
+        sim.vx -= sim.vx >> damping_shift;
+        sim.vy -= sim.vy >> damping_shift;
+
+        if(sim.vx > MAX_VELOCITY)
+        {
+            sim.vx = MAX_VELOCITY;
+        }
+        else if(sim.vx < -MAX_VELOCITY)
+        {
+            sim.vx = -MAX_VELOCITY;
+        }
+
+        if(sim.vy > MAX_VELOCITY)
+        {
+            sim.vy = MAX_VELOCITY;
+        }
+        else if(sim.vy < -MAX_VELOCITY)
+        {
+            sim.vy = -MAX_VELOCITY;
+        }
+
+        const int32_t px = node.position.x().data() + ((sim.vx + 128) >> 8);
+        int32_t py = node.position.y().data() + ((sim.vy + 128) >> 8);
+
+        if(py > FLOOR_Y)
+        {
+            py = FLOOR_Y;
+            sim.vx = 0;
+            sim.vy = 0;
+        }
+
+        node.position = bn::fixed_point(bn::fixed::from_data(px), bn::fixed::from_data(py));
+    }
+}
+
+void BridgeSystem::_place_train()
+{
+    const int last = _path.size() - 1;
+    const bn::fixed total = _path_cum[last];
+    const bn::fixed_point start = _nodes[START_NODE].position;
+    const bn::fixed_point end = _nodes[END_NODE].position;
+
+    // The run is won when the last coach is off the bridge, not the engine.
+    if(_axle_distance(axle_count() - 1) >= total)
+    {
+        _status = SimStatus::success;
+    }
+
+    for(int axle = 0; axle < axle_count(); ++axle)
+    {
+        const bn::fixed distance = _axle_distance(axle);
+
+        if(distance <= 0)
+        {
+            // Still on the start bank.
+            _axle_position[axle] = bn::fixed_point(start.x() + distance, start.y());
+            continue;
+        }
+
+        if(distance >= total)
+        {
+            // Rolled off onto the far bank.
+            _axle_position[axle] = bn::fixed_point(end.x() + (distance - total), end.y());
+            continue;
+        }
+
+        const int segment = _segment_at(distance);
+        const int a = _path[segment];
+        const int b = _path[segment + 1];
+        const bn::fixed span = _path_cum[segment + 1] - _path_cum[segment];
+        const bn::fixed t = (distance - _path_cum[segment]).safe_division(span);
+
+        if(axle == 0)
+        {
+            _path_index = segment;
+            _train_t = t;
+        }
+
+        if(!find_strut(a, b))
+        {
+            // The road under any part of the train is gone.
+            _start_falling();
+            return;
+        }
+
+        _axle_position[axle] = physics::lerp(_nodes[a].position, _nodes[b].position, t);
+
+        const bn::fixed built_y =
+            physics::lerp(_saved_nodes[a].position, _saved_nodes[b].position, t).y();
+
+        if(_axle_position[axle].y() > built_y + SINK_DEPTH)
+        {
+            _start_falling();
+            return;
+        }
+    }
 }
 
 SimStatus BridgeSystem::update()
 {
+    constexpr int SETTLE_DAMPING_SHIFT = 4;
+    constexpr int RUN_DAMPING_SHIFT = 5;
+
     if(_snap_flash.has_value())
     {
         SnapFlash& flash = _snap_flash.value();
@@ -761,11 +1045,27 @@ SimStatus BridgeSystem::update()
     if(_status == SimStatus::failed_fall)
     {
         _fall_vy += GRAVITY;
-        _train_position.set_y(_train_position.y() + _fall_vy);
 
-        if(_train_position.y() > FALL_Y_LIMIT)
+        // The whole train goes down together.
+        for(bn::fixed_point& axle : _axle_position)
         {
-            _train_position.set_y(FALL_Y_LIMIT);
+            axle.set_y(axle.y() + _fall_vy);
+
+            if(axle.y() > FALL_Y_LIMIT)
+            {
+                axle.set_y(FALL_Y_LIMIT);
+            }
+        }
+
+        // The wreck keeps falling without the train on it.
+        for(int i = 0; i < _nodes.size(); ++i)
+        {
+            _load[i] = 0;
+        }
+
+        for(int step = 0; step < SIM_SUBSTEPS; ++step)
+        {
+            _substep(256, RUN_DAMPING_SHIFT);
         }
 
         return _status;
@@ -776,68 +1076,35 @@ SimStatus BridgeSystem::update()
         return _status;
     }
 
-    if(_path_index + 1 >= _path.size())
+    ++_test_frames;
+
+    int gravity_q8 = 256;
+    int damping_shift = RUN_DAMPING_SHIFT;
+
+    if(_settle_frames > 0)
     {
-        _status = SimStatus::success;
-        _train_position = _nodes[END_NODE].position;
-        return _status;
-    }
+        --_settle_frames;
+        damping_shift = SETTLE_DAMPING_SHIFT;
 
-    const int from = _path[_path_index];
-    const int to = _path[_path_index + 1];
-    const bn::optional<int> strut_id = find_strut(from, to);
-
-    if(!strut_id)
-    {
-        _start_falling();
-        return _status;
-    }
-
-    const int strut_index = strut_id.value();
-    const Node& a = _nodes[from];
-    const Node& b = _nodes[to];
-    const bn::fixed length = _struts[strut_index].length;
-    const bn::fixed speed = _current_train_speed();
-    const bn::fixed dt = length > 0 ? speed.safe_division(length) : bn::fixed(1);
-
-    _train_t += dt;
-    ++_accel_frames;
-
-    bn::fixed along = _train_t.safe_multiplication(length);
-
-    if(along > length)
-    {
-        along = length;
-    }
-
-    _apply_tension(strut_index, along);
-
-    if(physics::exceeds_max_tension(_struts[strut_index].current_tension,
-                                    _struts[strut_index].max_tension))
-    {
-        _break_strut(strut_index);
-        _train_position = physics::lerp(a.position, b.position, _train_t);
-        _start_falling();
-        return _status;
-    }
-
-    if(_train_t >= 1)
-    {
-        _train_t = 0;
-        _path_index += 1;
-        _train_position = b.position;
-        _struts[strut_index].current_tension = 0;
-
-        if(_path_index + 1 >= _path.size())
+        if(_test_frames < GRAVITY_RAMP_FRAMES)
         {
-            _status = SimStatus::success;
+            gravity_q8 = (_test_frames * 256) / GRAVITY_RAMP_FRAMES;
         }
     }
     else
     {
-        _train_position = physics::lerp(a.position, b.position, _train_t);
+        _train_distance += _current_train_speed().safe_multiplication(_grade_factor());
+        ++_accel_frames;
     }
 
+    _apply_train_load();
+
+    for(int step = 0; step < SIM_SUBSTEPS; ++step)
+    {
+        _substep(gravity_q8, damping_shift);
+    }
+
+    _place_train();
     return _status;
 }
 

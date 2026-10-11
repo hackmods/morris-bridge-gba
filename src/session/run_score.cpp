@@ -32,7 +32,7 @@ RunScore compute_run_score(const bridge::BridgeSystem& system, const level::Def&
     RunScore score;
     score.player_nodes = system.player_node_count();
 
-    for(const bridge::Strut& strut : system.struts())
+    for(const bridge::Strut& strut : system.built_struts())
     {
         if(strut.role == bridge::LinkRole::brace)
         {
@@ -54,6 +54,14 @@ RunScore compute_run_score(const bridge::BridgeSystem& system, const level::Def&
     }
     else
     {
+        score.stars = 1;
+    }
+
+    // Sir Topham Hatt's timetable names the engine. A lighter one still clears
+    // the track, but it is not the crossing the level asked for.
+    if(system.train_total_weight() < engine::total_weight(def.scheduled_engine))
+    {
+        score.under_weight = true;
         score.stars = 1;
     }
 

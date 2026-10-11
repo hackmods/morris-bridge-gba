@@ -43,6 +43,7 @@ private:
     [[nodiscard]] int _pick_win_banner() const;
     [[nodiscard]] int _pick_fail_banner() const;
     [[nodiscard]] bn::fixed _max_train_load() const;
+    [[nodiscard]] bool _link_out_of_reach(bn::fixed length) const;
 
     void _load_progress();
     void _persist_progress();
@@ -54,6 +55,7 @@ private:
     void _animate_backdrop();
     [[nodiscard]] engine::Id _active_engine() const;
     void _sync_train_sprite();
+    void _sync_overlays();
     void _set_weight_digits(int value, bool visible);
     void _step_level(int delta);
     void _sync_level_select_flavor();
@@ -134,6 +136,11 @@ private:
     int _build_hint_timer = 0;
     int _no_go_timer = 0;
     int _fail_reveal_timer = 0;
+    int _no_go_label = 0;
+    int _fail_streak = 0;          ///< Failed test runs in a row on this track.
+    int _snaps_seen = 0;           ///< Links already heard snapping this run.
+    bool _fell_before_departure = false;
+    int _tool_tag_flash = 0;
     bool _weld_holding = false;
     bool _weld_dragged = false;
     bn::fixed_point _weld_press_pos;
@@ -153,9 +160,10 @@ private:
     bn::sprite_ptr _hatt;
     bn::sprite_ptr _ghost;
     bn::sprite_ptr _ring;
-    bn::sprite_ptr _preview_strut;
     bn::sprite_ptr _toast;
     bn::sprite_ptr _portrait;
+    bn::sprite_ptr _tool_tag;
+    bn::vector<bn::sprite_ptr, engine::MAX_CARS> _cars;
     bn::camera_ptr _camera;
     bn::vector<game_ui::DustPuff, game_ui::MAX_DUST> _dust;
     bn::vector<bn::sprite_ptr, 2> _node_count_digits;

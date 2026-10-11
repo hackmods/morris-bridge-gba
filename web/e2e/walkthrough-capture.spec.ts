@@ -52,8 +52,8 @@ test('capture Gordon Hill walkthrough screenshots', async ({ page }) => {
   await page.locator('#game-canvas').screenshot({ path: `${OUT_DIR}/07_gordons_hill_build_rod.png` });
 });
 
-/** Vicarstown viaduct theme + James engine (all_unlocked walkthrough save). */
-test('capture Vicarstown walkthrough screenshots', async ({ page }) => {
+/** Track 3, Culdee Fell (all_unlocked walkthrough save; file names kept from when it was Vicarstown). */
+test('capture Culdee Fell walkthrough screenshots', async ({ page }) => {
   await page.goto('/?walkthrough=vicarstown');
   await waitForRenderSettle(page, 3_000);
   await page.locator('#btn-theater').click();

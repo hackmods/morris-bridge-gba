@@ -1,191 +1,97 @@
 #include "level.h"
 
-#include "game_constants.h"
-#include "physics.h"
-
 namespace level
 {
 namespace
 {
 
+// Seed 0 is the start bank, seed 1 the end bank; the rest are the only other
+// solid ground a level offers. Every span between them has to be engineered.
+// Nothing sits lower than y = 40: the HUD owns the bottom of the screen.
+
+// Tutorial: one riverbed rock under mid-span. Prop the deck or lose it.
 constexpr Seed Knapford[] = {
-    { -88, game::TRACK_Y, true },
-    { 88, game::TRACK_Y, true },
-    { -104, game::TRACK_Y, true },
-    { -72, game::TRACK_Y, true },
-    { 72, game::TRACK_Y, true },
-    { 104, game::TRACK_Y, true },
+    { -40, 12, true },
+    { 40, 12, true },
+    { 0, 40, true },
 };
 
+// The climb: the far bank is 32 px higher, two crags overhang the line, and
+// Edward banks every train from behind.
 constexpr Seed GordonHill[] = {
-    { -96, 44, true },
-    { 96, 44, true },
-    { -112, game::TRACK_Y, true },
-    { -80, game::TRACK_Y, true },
-    { 80, game::TRACK_Y, true },
-    { 112, game::TRACK_Y, true },
+    { -80, 44, true },
+    { 80, 12, true },
+    { -36, -24, true },
+    { 36, -36, true },
 };
 
-constexpr Seed Vicarstown[] = {
-    { -104, 48, true },
-    { 104, 48, true },
-    { -120, game::TRACK_Y, true },
-    { -88, game::TRACK_Y, true },
-    { 88, game::TRACK_Y, true },
-    { 120, game::TRACK_Y, true },
+// Nothing but the two sides of the ravine: the span must be a truss.
+constexpr Seed CuldeeFell[] = {
+    { -60, 30, true },
+    { 60, 30, true },
 };
 
+// Timber only, no rock: a queen-post truss in wood.
 constexpr Seed Tidmouth[] = {
-    { -72, game::TRACK_Y, true },
-    { 72, game::TRACK_Y, true },
-    { -88, game::TRACK_Y, true },
-    { -56, game::TRACK_Y, true },
-    { 56, game::TRACK_Y, true },
-    { 88, game::TRACK_Y, true },
+    { -48, 30, true },
+    { 48, 30, true },
 };
 
+// Deep cutting with ledges low on each wall: strut the deck from below.
 constexpr Seed Wellsworth[] = {
-    { -100, 48, true },
-    { 100, 48, true },
-    { -116, game::TRACK_Y, true },
-    { -84, game::TRACK_Y, true },
-    { 84, game::TRACK_Y, true },
-    { 116, game::TRACK_Y, true },
+    { -56, 0, true },
+    { 56, 0, true },
+    { -56, 40, true },
+    { 56, 40, true },
 };
 
+// One off-centre rock in a wide river: a trestle plus a long free span.
 constexpr Seed CrovanGate[] = {
-    { -96, 36, true },
-    { 96, 36, true },
-    { -112, game::TRACK_Y, true },
-    { -80, game::TRACK_Y, true },
-    { 80, game::TRACK_Y, true },
-    { 112, game::TRACK_Y, true },
+    { -88, 0, true },
+    { 88, 0, true },
+    { -16, 40, true },
 };
 
-constexpr Seed CallanCanal[] = {
-    { -108, 50, true },
-    { 108, 50, true },
-    { -120, game::TRACK_Y, true },
-    { -92, game::TRACK_Y, true },
-    { 92, game::TRACK_Y, true },
-    { 120, game::TRACK_Y, true },
+// Low line between the two towers of Callan Castle: stays from above.
+constexpr Seed Callan[] = {
+    { -72, 40, true },
+    { 72, 40, true },
+    { -72, -20, true },
+    { 72, -20, true },
 };
 
-constexpr Seed SodorSummit[] = {
-    { -112, 40, true },
-    { 112, 40, true },
-    { -120, game::TRACK_Y, true },
-    { -96, game::TRACK_Y, true },
-    { 96, game::TRACK_Y, true },
-    { 120, game::TRACK_Y, true },
+// The bridge to the mainland: the longest span, one pier in the channel.
+constexpr Seed Vicarstown[] = {
+    { -96, 8, true },
+    { 96, 8, true },
+    { 0, 40, true },
 };
 
+#define SEEDS(name) name, int(sizeof(name) / sizeof(Seed))
+
+// seeds, theme, scheduled engine, deck y, beam length, river y, parallax
+// back/front, tools, intro, par, banked. tools/gen_graphics.py reads this table (and
+// the seeds above) to draw each level's terrain, so keep the layout regular.
 constexpr Def DEFINITIONS[COUNT] = {
-    {
-        Knapford,
-        int(sizeof(Knapford) / sizeof(Seed)),
-        0,
-        engine::Id::thomas,
-        game::TRACK_Y,
-        physics::SAFE_LENGTH,
-        bn::fixed(1) / 4,
-        bn::fixed(1) / 2,
-        ALLOW_TRACK,
-        1,
-        5,
-    },
-    {
-        GordonHill,
-        int(sizeof(GordonHill) / sizeof(Seed)),
-        1,
-        engine::Id::edward,
-        bn::fixed(44),
-        bn::fixed(44),
-        bn::fixed(1) / 3,
-        bn::fixed(3) / 5,
-        ALLOW_TRACK_AND_BRACE,
-        2,
-        13,
-    },
-    {
-        Vicarstown,
-        int(sizeof(Vicarstown) / sizeof(Seed)),
-        2,
-        engine::Id::james,
-        bn::fixed(48),
-        bn::fixed(40),
-        bn::fixed(1) / 3,
-        bn::fixed(2) / 3,
-        ALLOW_TRACK_AND_BRACE,
-        3,
-        13,
-    },
-    {
-        Tidmouth,
-        int(sizeof(Tidmouth) / sizeof(Seed)),
-        0,
-        engine::Id::percy,
-        game::TRACK_Y,
-        physics::SAFE_LENGTH,
-        bn::fixed(1) / 4,
-        bn::fixed(1) / 2,
-        ALLOW_TRACK,
-        4,
-        5,
-    },
-    {
-        Wellsworth,
-        int(sizeof(Wellsworth) / sizeof(Seed)),
-        1,
-        engine::Id::thomas,
-        bn::fixed(48),
-        bn::fixed(44),
-        bn::fixed(1) / 3,
-        bn::fixed(3) / 5,
-        ALLOW_TRACK_AND_BRACE,
-        5,
-        11,
-    },
-    {
-        CrovanGate,
-        int(sizeof(CrovanGate) / sizeof(Seed)),
-        2,
-        engine::Id::edward,
-        bn::fixed(36),
-        bn::fixed(40),
-        bn::fixed(1) / 4,
-        bn::fixed(3) / 5,
-        ALLOW_TRACK_AND_BRACE,
-        6,
-        13,
-    },
-    {
-        CallanCanal,
-        int(sizeof(CallanCanal) / sizeof(Seed)),
-        0,
-        engine::Id::james,
-        bn::fixed(50),
-        bn::fixed(36),
-        bn::fixed(1) / 3,
-        bn::fixed(2) / 3,
-        ALLOW_TRACK_AND_BRACE,
-        7,
-        15,
-    },
-    {
-        SodorSummit,
-        int(sizeof(SodorSummit) / sizeof(Seed)),
-        1,
-        engine::Id::james,
-        bn::fixed(40),
-        bn::fixed(36),
-        bn::fixed(1) / 3,
-        bn::fixed(2) / 3,
-        ALLOW_TRACK_AND_BRACE,
-        8,
-        17,
-    },
+    { SEEDS(Knapford), 0, engine::Id::thomas, 12, 48, 54,
+      bn::fixed(1) / 4, bn::fixed(1) / 2, ALLOW_TRACK, 1, 4, false },
+    { SEEDS(GordonHill), 1, engine::Id::thomas, 44, 48, 60,
+      bn::fixed(1) / 3, bn::fixed(3) / 5, ALLOW_TRACK_AND_BRACE, 2, 13, true },
+    { SEEDS(CuldeeFell), 1, engine::Id::edward, 30, 44, 54,
+      bn::fixed(1) / 3, bn::fixed(2) / 3, ALLOW_TRACK_AND_BRACE, 3, 20, false },
+    { SEEDS(Tidmouth), 0, engine::Id::percy, 30, 44, 54,
+      bn::fixed(1) / 4, bn::fixed(1) / 2, ALLOW_TRACK, 4, 13, false },
+    { SEEDS(Wellsworth), 1, engine::Id::henry, 0, 48, 58,
+      bn::fixed(1) / 3, bn::fixed(3) / 5, ALLOW_TRACK_AND_BRACE, 5, 9, false },
+    { SEEDS(CrovanGate), 0, engine::Id::edward, 0, 48, 54,
+      bn::fixed(1) / 4, bn::fixed(3) / 5, ALLOW_TRACK_AND_BRACE, 6, 21, false },
+    { SEEDS(Callan), 0, engine::Id::james, 40, 48, 60,
+      bn::fixed(1) / 3, bn::fixed(2) / 3, ALLOW_TRACK_AND_BRACE, 7, 18, false },
+    { SEEDS(Vicarstown), 2, engine::Id::henry, 8, 48, 54,
+      bn::fixed(1) / 3, bn::fixed(2) / 3, ALLOW_TRACK_AND_BRACE, 8, 27, false },
 };
+
+#undef SEEDS
 
 } // namespace
 

@@ -22,6 +22,11 @@ constexpr int CURSOR_REPEAT_DELAY = 10;
 constexpr int CURSOR_REPEAT_RATE = 3;
 constexpr int TOAST_FRAMES = 90;
 constexpr int SHAKE_FRAMES = 10;
+/// How long the collapse plays out before the fail screen covers it.
+constexpr int FAIL_REVEAL_FRAMES = 45;
+/// Failed runs in a row before the fail line turns to AGAIN, then LOOP.
+constexpr int AGAIN_STREAK = 3;
+constexpr int LOOP_STREAK = 5;
 constexpr int DUST_LIFE = 24;
 constexpr int MAX_DUST = 6;
 constexpr int CHUFF_FRAMES = 10;
@@ -33,6 +38,17 @@ constexpr int TOAST_DEL = 2;
 constexpr int Z_CURSOR = -32767;
 constexpr int Z_TOAST = -17;
 constexpr int Z_DIGIT = -19;
+/// HUD label sits behind the panel (the digits own it); dialog text must not.
+constexpr int Z_HUD_LABEL = -18;
+/// Build hints sit at the top of the screen, clear of the river and its rocks.
+constexpr int BUILD_HINT_Y = -70;
+/// TRACK / ROD tag beside the HUD panel, and how long it blinks after a swap.
+constexpr int TOOL_TAG_X = -50;
+constexpr int TOOL_TAG_Y = 70;
+constexpr int TOOL_TAG_FLASH_FRAMES = 30;
+/// The winning engine is drawn no further right than this on the result screen.
+constexpr int RESULT_TRAIN_MAX_X = 100;
+constexpr int Z_DIALOG_LABEL = -21;
 constexpr int Z_RING = 4;
 constexpr int Z_GHOST = 6;
 constexpr int Z_STRUT_PREVIEW = 9;
@@ -95,6 +111,10 @@ constexpr int BANNER_DELAY = 2;
 constexpr int BANNER_HATT_PEEP = 3;
 constexpr int BANNER_DELAY_LISTEN = 4;
 constexpr int BANNER_ENGINE_SELECT = 5;
+constexpr int BANNER_CINDERS = 6;
+constexpr int BANNER_BUFFERS = 7;
+constexpr int BANNER_BOTHER = 8;
+constexpr int BANNER_REALLY_USEFUL = 9;
 
 constexpr int PANEL_HUD = 0;
 constexpr int PANEL_DIALOG = 1;

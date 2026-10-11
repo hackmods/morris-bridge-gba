@@ -41,9 +41,9 @@ flowchart TB
 
 | Path | Responsibility |
 |------|----------------|
-| [`include/physics.h`](../include/physics.h) | Distance, sqrt, tension, max-tension-by-length |
+| [`include/physics.h`](../include/physics.h) | Fixed-point distance, sqrt, lerp |
 | [`src/physics.cpp`](../src/physics.cpp) | Implementations shared by GBA and host tests |
-| [`include/bridge_system.h`](../include/bridge_system.h) | Node/strut graph, BFS path, train simulation |
+| [`include/bridge_system.h`](../include/bridge_system.h) | Node/strut graph, materials, truss solver, routing, train |
 | [`src/bridge_system.cpp`](../src/bridge_system.cpp) | `BridgeSystem` state machine |
 | [`src/main.cpp`](../src/main.cpp) | Input, sprites, HUD labels, game loop |
 | [`graphics/`](../graphics/) | Indexed BMPs + Butano JSON metadata |

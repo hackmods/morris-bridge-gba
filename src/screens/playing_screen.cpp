@@ -41,10 +41,12 @@ void Game::_show_gameplay()
     _menu_arrow.set_visible(false);
     _track_card.set_visible(false);
     _hatt.set_visible(false);
+    _portrait.set_visible(false);
     _panel.set_visible(true);
     _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_HUD);
     _panel.set_position(0, 66);
     _label.set_visible(true);
+    _label.set_z_order(game_ui::Z_HUD_LABEL);
     _label.set_position(0, 68);
     _label.set_item(bn::sprite_items::label, game_ui::LABEL_BUILD);
     _hint_secondary.set_visible(false);
@@ -66,6 +68,14 @@ void Game::_update_playing()
     {
         _update_build_hints();
         _update_test();
+
+        if(_screen != Screen::playing)
+        {
+            // The run just ended; the result screen owns the label and digits now.
+            _set_counter(_node_count_digits, 0, -20);
+            _set_counter(_strut_count_digits, 0, 12);
+            return;
+        }
     }
 
     _sync_graph_sprites();
@@ -128,14 +138,14 @@ void Game::_update_preview()
 {
     if(_screen != Screen::playing || _play_mode != PlayMode::build || !_selected)
     {
-        _preview_strut.set_visible(false);
+        _graph.hide_preview();
         return;
     }
 
     const auto& nodes = _bridge.nodes();
     const bn::fixed_point from = nodes[_selected.value()].position;
     bn::fixed_point to = _cursor_pos;
-    bn::fixed max_tension = 0;
+    bool weak = false;
     bool show = false;
 
     const bn::optional<int> hovered = _bridge.find_node_near(_cursor_pos);
@@ -145,10 +155,11 @@ void Game::_update_preview()
         const bridge::StrutPreview preview =
             _bridge.preview_strut(_selected.value(), hovered.value(), _connect_role);
 
-        if(preview.status == bridge::StrutPreviewStatus::ok)
+        if(preview.status == bridge::StrutPreviewStatus::ok ||
+           preview.status == bridge::StrutPreviewStatus::too_long)
         {
             to = nodes[hovered.value()].position;
-            max_tension = preview.max_tension;
+            weak = preview.status == bridge::StrutPreviewStatus::too_long;
             show = true;
         }
     }
@@ -159,15 +170,14 @@ void Game::_update_preview()
 
         if(length > 0)
         {
-            max_tension = _bridge.span_preview_capacity(length, _connect_role);
+            weak = _link_out_of_reach(length);
             show = true;
         }
     }
 
     if(show)
     {
-        const bn::fixed load = _max_train_load();
-        const bool weak = max_tension < load;
+        // The ghost goes red when the yard has no beam or rod that long.
         int frame = view::STRUT_PREVIEW_OK;
 
         if(_connect_role == bridge::LinkRole::brace)
@@ -179,11 +189,11 @@ void Game::_update_preview()
             frame = weak ? view::STRUT_PREVIEW_WEAK : view::STRUT_PREVIEW_OK;
         }
 
-        view::position_strut_sprite(_preview_strut, from, to, frame);
+        _graph.show_preview(from, to, frame);
         return;
     }
 
-    _preview_strut.set_visible(false);
+    _graph.hide_preview();
 }
 
 void Game::_update_build_hints()
@@ -217,7 +227,7 @@ void Game::_update_build_hints()
         }
 
         _hint_label.set_visible(true);
-        _hint_label.set_position(0, 52);
+        _hint_label.set_position(0, game_ui::BUILD_HINT_Y);
         _hint_label.set_item(bn::sprite_items::label, frame);
         return;
     }
@@ -236,7 +246,7 @@ void Game::_update_build_hints()
     }
 
     _hint_label.set_visible(true);
-    _hint_label.set_position(0, 52);
+    _hint_label.set_position(0, game_ui::BUILD_HINT_Y);
 }
 
 void Game::_update_build()
@@ -429,6 +439,14 @@ void Game::_handle_confirm(bn::optional<int> hovered, bn::fixed_point place_at)
         }
 
         const bn::fixed_point snapped = game::snap_point(place_at);
+
+        if(_selected &&
+           _link_out_of_reach(physics::distance(_bridge.nodes()[_selected.value()].position, snapped)))
+        {
+            // Do not plant a joint the selected one cannot reach.
+            _show_toast(game_ui::ToastKind::weak);
+            return;
+        }
         const bn::optional<int> created =
             _bridge.add_node(snapped.x(), snapped.y(), false);
 
@@ -456,12 +474,11 @@ void Game::_handle_confirm(bn::optional<int> hovered, bn::fixed_point place_at)
                 _show_toast(game_ui::ToastKind::full);
                 break;
 
-            case bridge::StrutPreviewStatus::ok:
-                if(preview.max_tension < _max_train_load())
-                {
-                    _show_toast(game_ui::ToastKind::weak);
-                }
+            case bridge::StrutPreviewStatus::too_long:
+                _show_toast(game_ui::ToastKind::weak);
+                return;
 
+            case bridge::StrutPreviewStatus::ok:
                 (void)_bridge.add_strut(_selected.value(), node_id, _connect_role);
                 bn::sound_items::ui.play();
                 break;
@@ -546,6 +563,7 @@ void Game::_cycle_connect_role()
 
     _connect_role = _connect_role == bridge::LinkRole::track ?
         bridge::LinkRole::brace : bridge::LinkRole::track;
+    _tool_tag_flash = game_ui::TOOL_TAG_FLASH_FRAMES;
     bn::sound_items::ui.play();
 }
 
@@ -567,15 +585,20 @@ void Game::_enter_test()
     _cursor.set_visible(false);
     _ghost.set_visible(false);
     _ring.set_visible(false);
-    _preview_strut.set_visible(false);
+    _graph.hide_preview();
     _train.set_visible(true);
     _train_prev_x = _bridge.train_position().x();
+    _snaps_seen = 0;
+    _fell_before_departure = false;
     (void)_bridge.begin_test();
     game_ui::set_train_sprite_position(_train, _bridge.train_position());
     _chuff_cooldown = 0;
 
     if(_bridge.status() == bridge::SimStatus::no_path)
     {
+        // Sending the train with nothing built at all gets a different "no".
+        const bool nothing_built = _bridge.player_node_count() == 0 && _bridge.struts().empty();
+        _no_go_label = nothing_built ? game_ui::LABEL_LISTEN : game_ui::LABEL_NO_GO;
         _audio.play(audio::MusicCue::none);
         bn::sound_items::delay.play();
         _no_go_timer = 60;
@@ -611,9 +634,25 @@ void Game::_update_test()
 
     const bridge::SimStatus status = _bridge.status();
 
+    if(_bridge.snapped_count() > _snaps_seen)
+    {
+        // Every link that lets go is heard, whether or not the train was on it.
+        _snaps_seen = _bridge.snapped_count();
+        _fell_before_departure = _fell_before_departure || _bridge.settling();
+        bn::sound_items::snap.play();
+        _trigger_shake();
+
+        if(const bridge::SnapFlash* flash = _bridge.snap_flash())
+        {
+            _spawn_dust(bn::fixed_point((flash->a.x() + flash->b.x()) / 2,
+                                        (flash->a.y() + flash->b.y()) / 2));
+        }
+    }
+
     if(status == bridge::SimStatus::failed_fall && prev_status == bridge::SimStatus::running)
     {
-        _fail_reveal_timer = 12;
+        // Long enough to watch the span come down before Hatt has his say.
+        _fail_reveal_timer = game_ui::FAIL_REVEAL_FRAMES;
         _trigger_shake();
         _spawn_dust(_train.position());
     }
@@ -644,14 +683,11 @@ void Game::_update_test()
 
             if(const bridge::SnapFlash* flash = _bridge.snap_flash())
             {
-                view::position_strut_sprite(_preview_strut, flash->a, flash->b, view::STRUT_SNAP);
-                _preview_strut.set_palette(
-                    bn::sprite_items::strut.palette_item().create_palette());
-                _preview_strut.set_visible(true);
+                _graph.show_preview(flash->a, flash->b, view::STRUT_SNAP);
             }
             else
             {
-                _preview_strut.set_visible(false);
+                _graph.hide_preview();
             }
 
             return;
@@ -674,7 +710,7 @@ void Game::_update_hud()
     if(_no_go_timer > 0)
     {
         --_no_go_timer;
-        frame = game_ui::LABEL_NO_GO;
+        frame = _no_go_label;
     }
     else if(_play_mode == PlayMode::test)
     {

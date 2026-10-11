@@ -9,6 +9,7 @@
 #include "bn_sound_items.h"
 
 #include "bn_sprite_items_banner.h"
+#include "bn_sprite_items_car.h"
 #include "bn_sprite_items_cursor.h"
 #include "bn_sprite_items_digit.h"
 #include "bn_sprite_items_ghost.h"
@@ -29,6 +30,10 @@
 #include "game_constants.h"
 #include "graph_view.h"
 #include "level.h"
+
+#ifdef MORRIS_PRELOAD_REFERENCE
+    #include "level_solutions.h"
+#endif
 #include "physics.h"
 #include "save_data.h"
 
@@ -57,9 +62,10 @@ Game::Game() :
     _hatt(bn::sprite_items::hatt.create_sprite(52, 8)),
     _ghost(game_ui::make_sprite(bn::sprite_items::ghost, 0, 0, game_ui::Z_GHOST)),
     _ring(game_ui::make_sprite(bn::sprite_items::ring, 0, 0, game_ui::Z_RING)),
-    _preview_strut(game_ui::make_sprite(bn::sprite_items::strut, 0, 0, game_ui::Z_STRUT_PREVIEW)),
     _toast(game_ui::make_sprite(bn::sprite_items::toast, 0, 52, game_ui::Z_TOAST)),
     _portrait(bn::sprite_items::portrait.create_sprite(56, 44)),
+    _tool_tag(bn::sprite_items::label.create_sprite(game_ui::TOOL_TAG_X, game_ui::TOOL_TAG_Y,
+                                                     game_ui::LABEL_TRACK)),
     _camera(bn::camera_ptr::create())
 {
     bn::bg_palettes::set_transparent_color(bn::color(8, 14, 20));
@@ -67,7 +73,7 @@ Game::Game() :
     _cursor.set_z_order(game_ui::Z_CURSOR);
     _train.set_z_order(-15);
     _train.set_visible(false);
-    _label.set_z_order(-18);
+    _label.set_z_order(game_ui::Z_HUD_LABEL);
     _hint_label.set_z_order(-18);
     _hint_secondary.set_z_order(-18);
     _hint_label.set_visible(false);
@@ -83,10 +89,18 @@ Game::Game() :
     _hatt.set_z_order(-23);
     _ghost.set_visible(false);
     _ring.set_visible(false);
-    _preview_strut.set_visible(false);
     _toast.set_visible(false);
     _portrait.set_z_order(-22);
     _portrait.set_visible(false);
+    _tool_tag.set_z_order(game_ui::Z_DIALOG_LABEL);
+    _tool_tag.set_visible(false);
+
+    for(int i = 0; i < engine::MAX_CARS; ++i)
+    {
+        _cars.push_back(bn::sprite_items::car.create_sprite(0, 0));
+        _cars.back().set_z_order(-14);
+        _cars.back().set_visible(false);
+    }
 
     _node_count_digits.push_back(game_ui::make_sprite(bn::sprite_items::digit, -20, 66, game_ui::Z_DIGIT));
     _node_count_digits.push_back(game_ui::make_sprite(bn::sprite_items::digit, -12, 66, game_ui::Z_DIGIT));
@@ -110,6 +124,7 @@ void Game::update()
     _update_dust();
     _screen_manager.update(_screen, this);
     _animate_train();
+    _sync_overlays();
 }
 
 void Game::_register_screen_handlers()
@@ -132,7 +147,12 @@ void Game::_sync_graph_sprites()
         visible && _play_mode == PlayMode::build ? _selected : bn::optional<int>();
 
     _graph.sync_nodes(_bridge, visible, _frame, selected, _ring);
-    _graph.sync_struts(_bridge, visible, _play_mode == PlayMode::test, _frame, _max_train_load());
+    _graph.sync_struts(_bridge, visible, _play_mode == PlayMode::test);
+
+    if(! visible)
+    {
+        _graph.hide_preview();
+    }
 }
 
 int Game::_lore_roll(int salt) const
@@ -145,68 +165,107 @@ bool Game::_lore_rare(int salt) const
     return _lore_roll(salt) < 4;
 }
 
+// The lore lines are earned, not rolled: each one answers what the player
+// just did. See docs/lore-leak.md for what they mean to the engines.
+
 int Game::_pick_win_label() const
 {
-    if(! _lore_rare(1))
+    if(_last_run_score.under_weight)
     {
-        return game_ui::LABEL_PEEP;
+        // Not the engine on Hatt's timetable.
+        return game_ui::LABEL_CONFUS;
     }
 
-    switch(_lore_roll(2) % 4)
+    if(_fail_streak >= game_ui::LOOP_STREAK)
     {
-        case 0:
-            return game_ui::LABEL_CHUFF;
-
-        case 1:
-            return game_ui::LABEL_TOOT;
-
-        case 2:
-            return game_ui::LABEL_LOOP;
-
-        default:
-            return game_ui::LABEL_THIN;
+        // Out of the rewind at last.
+        return game_ui::LABEL_LOOP;
     }
+
+    if(_last_run_score.stars >= 3)
+    {
+        // A bridge with nothing spare: a thin place.
+        return game_ui::LABEL_THIN;
+    }
+
+    if(_fail_streak == 0)
+    {
+        // First run, on steam and not on schedule.
+        return game_ui::LABEL_CHUFF;
+    }
+
+    return game_ui::LABEL_PEEP;
 }
 
 int Game::_pick_fail_label() const
 {
-    if(! _lore_rare(3))
+    if(_fell_before_departure)
     {
-        return game_ui::LABEL_ASHES;
+        // The bridge could not hold itself up, let alone a train.
+        return game_ui::LABEL_WAIT;
     }
 
-    switch(_lore_roll(4) % 5)
+    if(_fail_streak >= game_ui::LOOP_STREAK)
     {
-        case 0:
-            return game_ui::LABEL_OOPS;
-
-        case 1:
-            return game_ui::LABEL_WAIT;
-
-        case 2:
-            return game_ui::LABEL_AGAIN;
-
-        case 3:
-            return game_ui::LABEL_LISTEN;
-
-        default:
-            return game_ui::LABEL_CONFUS;
+        return game_ui::LABEL_LOOP;
     }
+
+    if(_fail_streak >= game_ui::AGAIN_STREAK)
+    {
+        return game_ui::LABEL_AGAIN;
+    }
+
+    if(_bridge.snapped_count() == 0)
+    {
+        // Nothing broke: the deck just sagged into the water.
+        return game_ui::LABEL_OOPS;
+    }
+
+    return game_ui::LABEL_ASHES;
 }
 
 int Game::_pick_win_banner() const
 {
-    return _lore_rare(5) ? game_ui::BANNER_HATT_PEEP : game_ui::BANNER_HATT_OK;
+    if(_last_run_score.stars >= 3 && !_last_run_score.under_weight)
+    {
+        // Par, with the timetabled engine: the highest praise on Sodor.
+        return game_ui::BANNER_REALLY_USEFUL;
+    }
+
+    return _fail_streak >= game_ui::AGAIN_STREAK ? game_ui::BANNER_HATT_PEEP
+                                                 : game_ui::BANNER_HATT_OK;
 }
 
 int Game::_pick_fail_banner() const
 {
-    return _lore_rare(6) ? game_ui::BANNER_DELAY_LISTEN : game_ui::BANNER_DELAY;
+    if(_fail_streak >= game_ui::LOOP_STREAK)
+    {
+        return game_ui::BANNER_DELAY_LISTEN;
+    }
+
+    if(_fail_streak >= game_ui::AGAIN_STREAK)
+    {
+        // Hatt has stopped being patient.
+        return game_ui::BANNER_DELAY;
+    }
+
+    if(_fell_before_departure)
+    {
+        return game_ui::BANNER_BOTHER;
+    }
+
+    // Nothing snapped means the train sagged into the water on its buffers.
+    return _bridge.snapped_count() == 0 ? game_ui::BANNER_BUFFERS : game_ui::BANNER_CINDERS;
 }
 
 bn::fixed Game::_max_train_load() const
 {
-    return _bridge.effective_weight_at(bn::fixed(256), bn::fixed(256));
+    return _bridge.train_total_weight();
+}
+
+bool Game::_link_out_of_reach(const bn::fixed length) const
+{
+    return length > _bridge.max_link_length(_connect_role);
 }
 
 void Game::_load_progress()
@@ -330,6 +389,67 @@ engine::Id Game::_active_engine() const
     return _selected_engine;
 }
 
+void Game::_sync_overlays()
+{
+    // The rest of the train follows the engine only while it is on the line.
+    const bool on_line = _screen == Screen::playing && _play_mode == PlayMode::test;
+
+    for(int i = 0; i < _cars.size(); ++i)
+    {
+        bn::sprite_ptr& car = _cars[i];
+        const int axle = i + 1;
+        const bool shown = on_line && axle < _bridge.axle_count();
+
+        if(shown)
+        {
+            const engine::CarKind kind = _bridge.car_kind(axle);
+
+            if(kind == engine::CarKind::banker)
+            {
+                // Edward, buffered up behind and pushing.
+                car.set_item(bn::sprite_items::train,
+                             engine::train_frame_base(engine::Id::edward) +
+                                 (_frame / 10) % engine::FRAMES_PER_ENGINE);
+            }
+            else
+            {
+                car.set_item(bn::sprite_items::car, int(kind));
+            }
+
+            bn::fixed_point at = _bridge.axle_position(axle);
+
+            if(kind == engine::CarKind::truck && _bridge.status() == bridge::SimStatus::running &&
+               ! _bridge.settling() && ((_frame / bridge::TRUCK_JOLT_FRAMES) + axle) % 2 == 0)
+            {
+                // Troublesome Trucks hop as they bump along.
+                at.set_y(at.y() - 1);
+            }
+
+            game_ui::set_train_sprite_position(car, at);
+            car.set_horizontal_flip(! _train_facing_right);
+        }
+
+        car.set_visible(shown && car.position().y() < bridge::FALL_Y_LIMIT);
+    }
+
+    // Which material the next weld uses, blinking for a moment after a swap.
+    const bool building = _screen == Screen::playing && _play_mode == PlayMode::build;
+
+    if(_tool_tag_flash > 0)
+    {
+        --_tool_tag_flash;
+    }
+
+    if(building)
+    {
+        _tool_tag.set_item(bn::sprite_items::label,
+                           _connect_role == bridge::LinkRole::brace ? game_ui::LABEL_ROD
+                                                                    : game_ui::LABEL_TRACK);
+    }
+
+    _tool_tag.set_visible(building && (_tool_tag_flash / 4) % 2 == 0);
+}
+
 void Game::_sync_train_sprite()
 {
     if(! _train.visible())
@@ -394,12 +514,13 @@ void Game::_sync_level_select_card()
 
 void Game::_step_engine(const int delta)
 {
-    int index = int(_selected_engine);
+    // Step through the roster in number order, No. 1 to No. 6.
+    int index = engine::roster_index(_selected_engine);
 
     for(int attempt = 0; attempt < engine::engine_count(); ++attempt)
     {
         index = (index + delta + engine::engine_count()) % engine::engine_count();
-        const engine::Id candidate = static_cast<engine::Id>(index);
+        const engine::Id candidate = engine::ROSTER[index];
 
         if(_progress.is_engine_unlocked(candidate))
         {
@@ -408,9 +529,8 @@ void Game::_step_engine(const int delta)
         }
     }
 
-    const engine::Profile& profile = engine::profile(_selected_engine);
     _menu_row.set_item(bn::sprite_items::menu, engine::menu_frame(_selected_engine));
-    _set_weight_digits(profile.weight.integer(), true);
+    _set_weight_digits(engine::total_weight(_selected_engine).integer(), true);
     _sync_train_sprite();
     _portrait.set_item(bn::sprite_items::portrait, engine::portrait_frame(_selected_engine));
 
@@ -490,8 +610,16 @@ void Game::_begin_pending_level()
 void Game::_start_level(int level_index)
 {
     _selected_level = level_index;
+    _fail_streak = 0;
     _bridge.load_level(level_index);
     _bridge.set_engine(_selected_engine);
+
+#ifdef MORRIS_PRELOAD_REFERENCE
+    // QA builds only (see docs/testing.md): every track starts with its par
+    // design welded, to check rendering and pacing without driving the cursor.
+    (void)level_solutions::build(_bridge, level_solutions::reference(level_index));
+#endif
+
     _screen = Screen::playing;
     _play_mode = PlayMode::build;
     _selected.reset();
@@ -502,7 +630,7 @@ void Game::_start_level(int level_index)
     _weld_dragged = false;
     _cursor_pos = _bridge.nodes()[bridge::START_NODE].position;
     _cursor_pos.set_x(_cursor_pos.x() + 16);
-    _backdrop.layout_for_level(_bridge.level_def());
+    _backdrop.layout_for_level(_bridge.level_def(), level_index);
     _backdrop.apply_parallax(_parallax_shift, _bridge.level_def());
     _show_gameplay();
     _sync_graph_sprites();
@@ -515,7 +643,8 @@ void Game::_hide_gameplay()
     _train.set_visible(false);
     _backdrop.set_scenery_visible(false);
     _graph.sync_nodes(_bridge, false, _frame, bn::nullopt, _ring);
-    _graph.sync_struts(_bridge, false, false, _frame);
+    _graph.sync_struts(_bridge, false, false);
+    _graph.hide_preview();
 }
 
 void Game::_enter_pause()

@@ -59,6 +59,7 @@ void Game::_show_level_complete()
     _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_DIALOG);
     _panel.set_position(0, 48);
     _label.set_visible(true);
+    _label.set_z_order(game_ui::Z_DIALOG_LABEL);
     _label.set_position(0, 50);
     _label.set_item(bn::sprite_items::label,
                     _show_unlock_flash ? game_ui::LABEL_NEW : _pick_win_label());
@@ -68,6 +69,12 @@ void Game::_show_level_complete()
     _cursor.set_visible(false);
     _train.set_visible(true);
     game_ui::set_train_sprite_position(_train, _bridge.train_position());
+
+    // The engine has run on down the far bank; keep it in the picture.
+    if(_train.x() > game_ui::RESULT_TRAIN_MAX_X)
+    {
+        _train.set_x(game_ui::RESULT_TRAIN_MAX_X);
+    }
     _audio.play(audio::MusicCue::none);
     bn::sound_items::useful.play();
     if(_show_unlock_flash)
@@ -83,11 +90,13 @@ void Game::_show_level_complete()
     _hatt.set_item(bn::sprite_items::hatt, game_ui::HATT_STERN);
     _sync_train_sprite();
     _set_weight_digits(_last_run_score.stars, _last_run_score.stars > 0);
+    _fail_streak = 0;
 }
 
 void Game::_show_level_failed()
 {
     _screen = Screen::level_failed;
+    ++_fail_streak;
     _set_splash_visible(false);
     _banner.set_visible(true);
     _banner.set_item(bn::sprite_items::banner, _pick_fail_banner());
@@ -96,6 +105,7 @@ void Game::_show_level_failed()
     _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_DIALOG);
     _panel.set_position(0, 48);
     _label.set_visible(true);
+    _label.set_z_order(game_ui::Z_DIALOG_LABEL);
     _label.set_position(0, 50);
     _label.set_item(bn::sprite_items::label, _pick_fail_label());
     _hint_label.set_visible(false);
@@ -136,13 +146,14 @@ void Game::_show_all_complete()
     _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_DIALOG);
     _panel.set_position(0, 40);
     _label.set_visible(true);
+    _label.set_z_order(game_ui::Z_DIALOG_LABEL);
     _label.set_position(0, 42);
     _hint_label.set_visible(false);
     _hint_secondary.set_visible(false);
     _menu_row.set_visible(false);
     _menu_arrow.set_visible(false);
     _train.set_visible(true);
-    _train.set_position(0, game::TRACK_Y + game::TRAIN_Y_OFFSET);
+    _train.set_position(0, game::MENU_TRAIN_Y);
     _hatt.set_visible(true);
     _hatt.set_position(56, 16);
     _hatt.set_item(bn::sprite_items::hatt, game_ui::HATT_STERN);
@@ -187,7 +198,10 @@ void Game::_update_level_failed()
 {
     if(bn::keypad::a_pressed() || bn::keypad::start_pressed() || bn::keypad::b_pressed())
     {
+        // Back to the workshop with the bridge rewound.
         _leave_test();
+        _screen = Screen::playing;
+        _show_gameplay();
     }
 }
 

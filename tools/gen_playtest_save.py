@@ -80,9 +80,9 @@ def all_unlocked_save() -> bytes:
     return encode_v4(
         max_unlocked_level=LEVEL_COUNT - 1,
         cleared_levels=0xFF,
-        unlocked_engines=0b11111,
+        unlocked_engines=0b111111,
         packed_stars=pack_stars(stars),
-        best_costs=(5, 11, 12, 5, 10, 12, 14, 16),
+        best_costs=(4, 13, 20, 13, 9, 21, 18, 27),
         intro_seen_mask=0xFF,
     )
 

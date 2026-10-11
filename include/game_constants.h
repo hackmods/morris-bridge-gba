@@ -31,7 +31,10 @@ inline constexpr bn::fixed GRID_STEP = 4;
 inline constexpr bn::fixed CHAIN_WELD_MIN = 24;
 
 /// Train sprite center sits above node joints so wheels rest on the rail.
-inline constexpr bn::fixed TRAIN_Y_OFFSET = -6;
+inline constexpr bn::fixed TRAIN_Y_OFFSET = -21;
+
+/// Where the engine sprite parks on menu screens.
+inline constexpr bn::fixed MENU_TRAIN_Y = 44;
 
 /**
  * @brief Snap one axis to the build grid.

@@ -4,125 +4,184 @@
 /**
  * @file
  * Reference bridge layouts used by host playthrough tests.
+ *
+ * Each design is the par solution for its level: the joints the player adds
+ * (in order, so they follow the level's seeded anchors in the node list) and
+ * the links between node indices. They are proof that every level is
+ * solvable at par with its scheduled engine — nothing in the ROM reads them.
  */
 
 #include "bridge_system.h"
 #include "engine.h"
-#include "game_constants.h"
 #include "level.h"
 
 namespace level_solutions
 {
-namespace
+
+struct Joint
+{
+    int x;
+    int y;
+};
+
+struct Link
+{
+    int a;
+    int b;
+    bridge::LinkRole role;
+};
+
+struct Design
+{
+    const Joint* joints;
+    int joint_count;
+    const Link* links;
+    int link_count;
+};
+
+namespace detail
 {
 
-inline bool weld_deck(bridge::BridgeSystem& system, const int* xs, int count)
+inline constexpr bridge::LinkRole T = bridge::LinkRole::track;
+inline constexpr bridge::LinkRole R = bridge::LinkRole::brace;
+
+// Knapford — anchors: 0 start, 1 end, 2 riverbed rock.
+// One deck joint over the rock, propped by a timber post.
+inline constexpr Joint KNAPFORD_JOINTS[] = { { 0, 12 } };
+inline constexpr Link KNAPFORD_LINKS[] = { { 0, 3, T }, { 3, 1, T }, { 2, 3, T } };
+
+// Gordon's Hill — anchors: 0 start, 1 end, 2 left crag, 3 right crag.
+// The deck climbs 32 px; every joint hangs from a crag on a rod.
+inline constexpr Joint GORDON_HILL_JOINTS[] = { { -40, 36 }, { 0, 28 }, { 40, 20 } };
+inline constexpr Link GORDON_HILL_LINKS[] = {
+    { 0, 4, T }, { 4, 5, T }, { 5, 6, T }, { 6, 1, T },
+    { 2, 4, R }, { 2, 5, R }, { 3, 6, R },
+};
+
+// Culdee Fell — anchors: 0 start, 1 end. A Warren through-truss: rods for the
+// end posts and top chord (compression), timber for the inner diagonals.
+inline constexpr Joint CULDEE_JOINTS[] = {
+    { -20, 30 }, { 20, 30 }, { -40, 0 }, { 0, 0 }, { 40, 0 },
+};
+inline constexpr Link CULDEE_LINKS[] = {
+    { 0, 2, T }, { 2, 3, T }, { 3, 1, T },
+    { 0, 4, R }, { 4, 2, T }, { 2, 5, T }, { 5, 3, T }, { 3, 6, T }, { 6, 1, R },
+    { 4, 5, R }, { 5, 6, R },
+};
+
+// Tidmouth — anchors: 0 start, 1 end. Timber queen-post truss; the one
+// diagonal stops the middle panel racking when the engine is off-centre.
+inline constexpr Joint TIDMOUTH_JOINTS[] = { { -16, 30 }, { 16, 30 }, { -16, 2 }, { 16, 2 } };
+inline constexpr Link TIDMOUTH_LINKS[] = {
+    { 0, 2, T }, { 2, 3, T }, { 3, 1, T },
+    { 0, 4, T }, { 4, 2, T }, { 4, 5, T }, { 5, 3, T }, { 5, 1, T }, { 4, 3, T },
+};
+
+// Wellsworth — anchors: 0 start, 1 end, 2 left ledge, 3 right ledge.
+// Each deck joint is strutted up from the ledge below it.
+inline constexpr Joint WELLSWORTH_JOINTS[] = { { -20, 0 }, { 20, 0 } };
+inline constexpr Link WELLSWORTH_LINKS[] = {
+    { 0, 4, T }, { 4, 5, T }, { 5, 1, T }, { 2, 4, R }, { 3, 5, R },
+};
+
+// Crovan's Gate — anchors: 0 start, 1 end, 2 river rock.
+// A three-legged trestle on the rock, then a king-post truss over open water.
+inline constexpr Joint CROVAN_JOINTS[] = {
+    { -52, 0 }, { -16, 0 }, { 20, 0 }, { 54, 0 }, { 54, -32 },
+};
+inline constexpr Link CROVAN_LINKS[] = {
+    { 0, 3, T }, { 3, 4, T }, { 4, 5, T }, { 5, 6, T }, { 6, 1, T },
+    { 2, 3, R }, { 2, 4, T }, { 2, 5, R },
+    { 5, 7, R }, { 7, 1, R }, { 7, 6, R },
+};
+
+// Callan — anchors: 0 start, 1 end, 2 left tower, 3 right tower.
+// Stays from the castle towers hold the outer joints; a rod king post between them
+// carries the middle one.
+inline constexpr Joint CALLAN_JOINTS[] = { { -36, 40 }, { 0, 40 }, { 36, 40 }, { 0, 4 } };
+inline constexpr Link CALLAN_LINKS[] = {
+    { 0, 4, T }, { 4, 5, T }, { 5, 6, T }, { 6, 1, T },
+    { 2, 4, R }, { 3, 6, R }, { 4, 7, R }, { 6, 7, R }, { 7, 5, R },
+};
+
+// Vicarstown — anchors: 0 start, 1 end, 2 pier in the channel.
+// Steep rod legs off the pier, then a rod king-post truss on each side.
+inline constexpr Joint VICARSTOWN_JOINTS[] = {
+    { -48, 8 }, { -16, 8 }, { 16, 8 }, { 48, 8 }, { -48, -28 }, { 48, -28 },
+};
+inline constexpr Link VICARSTOWN_LINKS[] = {
+    { 0, 3, T }, { 3, 4, T }, { 4, 5, T }, { 5, 6, T }, { 6, 1, T },
+    { 2, 4, R }, { 2, 5, R },
+    { 0, 7, R }, { 7, 4, R }, { 5, 8, R }, { 8, 1, R }, { 7, 3, R }, { 8, 6, R },
+};
+
+#define MORRIS_DESIGN(name) \
+    { name##_JOINTS, int(sizeof(name##_JOINTS) / sizeof(Joint)), \
+      name##_LINKS, int(sizeof(name##_LINKS) / sizeof(Link)) }
+
+inline constexpr Design DESIGNS[level::COUNT] = {
+    MORRIS_DESIGN(KNAPFORD),
+    MORRIS_DESIGN(GORDON_HILL),
+    MORRIS_DESIGN(CULDEE),
+    MORRIS_DESIGN(TIDMOUTH),
+    MORRIS_DESIGN(WELLSWORTH),
+    MORRIS_DESIGN(CROVAN),
+    MORRIS_DESIGN(CALLAN),
+    MORRIS_DESIGN(VICARSTOWN),
+};
+
+#undef MORRIS_DESIGN
+
+} // namespace detail
+
+[[nodiscard]] inline const Design& reference(const int level_index)
 {
-    const bn::fixed deck = system.level_def().deck_y;
-    int prev = bridge::START_NODE;
-
-    for(int i = 0; i < count; ++i)
-    {
-        const bn::optional<int> mid = system.add_node(xs[i], deck, false);
-
-        if(!mid)
-        {
-            return false;
-        }
-
-        if(!system.add_strut(prev, mid.value(), bridge::LinkRole::track).has_value())
-        {
-            return false;
-        }
-
-        prev = mid.value();
-    }
-
-    return system.add_strut(prev, bridge::END_NODE, bridge::LinkRole::track).has_value();
+    return detail::DESIGNS[level_index];
 }
 
-inline bool weld_end_braces(bridge::BridgeSystem& system, bool left, bool right)
+/**
+ * @brief Weld a design onto the already-loaded level. False if any joint or
+ * link is refused.
+ */
+[[nodiscard]] inline bool build(bridge::BridgeSystem& system, const Design& design)
 {
-    if(left && !system.add_strut(bridge::START_NODE, 3, bridge::LinkRole::brace).has_value())
+    for(int i = 0; i < design.joint_count; ++i)
     {
-        return false;
+        if(!system.add_node(design.joints[i].x, design.joints[i].y, false))
+        {
+            return false;
+        }
     }
 
-    if(right && !system.add_strut(bridge::END_NODE, 4, bridge::LinkRole::brace).has_value())
+    for(int i = 0; i < design.link_count; ++i)
     {
-        return false;
+        const Link& link = design.links[i];
+
+        if(!system.add_strut(link.a, link.b, link.role))
+        {
+            return false;
+        }
     }
 
     return true;
 }
 
-} // namespace
-
-inline bool build_knapford_reference(bridge::BridgeSystem& system)
+/**
+ * @brief Load a level with its scheduled engine and weld the par design.
+ */
+[[nodiscard]] inline bool build_reference(bridge::BridgeSystem& system, const int level_index)
 {
-    system.load_level(0);
-    system.set_engine(engine::Id::thomas);
-    const int xs[] = { -44, 44 };
-    return weld_deck(system, xs, 2);
+    if(level_index < 0 || level_index >= level::COUNT)
+    {
+        return false;
+    }
+
+    system.load_level(level_index);
+    system.set_engine(system.level_def().scheduled_engine);
+    return build(system, reference(level_index));
 }
 
-inline bool build_gordon_hill_reference(bridge::BridgeSystem& system)
-{
-    system.load_level(1);
-    system.set_engine(engine::Id::edward);
-    const int xs[] = { -52, -8, 36, 80 };
-    return weld_deck(system, xs, 4) && weld_end_braces(system, true, true);
-}
-
-inline bool build_vicarstown_reference(bridge::BridgeSystem& system)
-{
-    system.load_level(2);
-    system.set_engine(engine::Id::james);
-    const int xs[] = { -64, -24, 16, 56, 96 };
-    return weld_deck(system, xs, 5) && weld_end_braces(system, true, false);
-}
-
-inline bool build_tidmouth_reference(bridge::BridgeSystem& system)
-{
-    system.load_level(3);
-    system.set_engine(engine::Id::percy);
-    const int xs[] = { -24, 24 };
-    return weld_deck(system, xs, 2);
-}
-
-inline bool build_wellsworth_reference(bridge::BridgeSystem& system)
-{
-    system.load_level(4);
-    system.set_engine(engine::Id::thomas);
-    const int xs[] = { -50, 0, 50 };
-    return weld_deck(system, xs, 3) && weld_end_braces(system, true, true);
-}
-
-inline bool build_crovan_reference(bridge::BridgeSystem& system)
-{
-    system.load_level(5);
-    system.set_engine(engine::Id::edward);
-    const int xs[] = { -52, -8, 36, 80 };
-    return weld_deck(system, xs, 4) && weld_end_braces(system, true, true);
-}
-
-inline bool build_callan_reference(bridge::BridgeSystem& system)
-{
-    system.load_level(6);
-    system.set_engine(engine::Id::james);
-    const int xs[] = { -72, -32, 8, 48, 88 };
-    return weld_deck(system, xs, 5) && weld_end_braces(system, true, true);
-}
-
-inline bool build_summit_reference(bridge::BridgeSystem& system)
-{
-    system.load_level(7);
-    system.set_engine(engine::Id::james);
-    const int xs[] = { -80, -48, -16, 16, 48, 80 };
-    return weld_deck(system, xs, 6) && weld_end_braces(system, true, true);
-}
-
-[[nodiscard]] inline bool run_sim_to_completion(bridge::BridgeSystem& system, int max_frames = 600)
+[[nodiscard]] inline bool run_sim_to_completion(bridge::BridgeSystem& system, int max_frames = 1200)
 {
     if(system.begin_test() != bridge::SimStatus::running)
     {
@@ -140,81 +199,8 @@ inline bool build_summit_reference(bridge::BridgeSystem& system)
     return system.status() == bridge::SimStatus::success;
 }
 
-[[nodiscard]] inline bool run_knapford_playthrough(bridge::BridgeSystem& system, int max_frames = 600)
-{
-    return build_knapford_reference(system) && run_sim_to_completion(system, max_frames);
-}
-
-[[nodiscard]] inline bool run_gordon_hill_playthrough(bridge::BridgeSystem& system, int max_frames = 800)
-{
-    return build_gordon_hill_reference(system) && run_sim_to_completion(system, max_frames);
-}
-
-[[nodiscard]] inline bool run_vicarstown_playthrough(bridge::BridgeSystem& system, int max_frames = 900)
-{
-    return build_vicarstown_reference(system) && run_sim_to_completion(system, max_frames);
-}
-
-[[nodiscard]] inline bool run_tidmouth_playthrough(bridge::BridgeSystem& system, int max_frames = 700)
-{
-    return build_tidmouth_reference(system) && run_sim_to_completion(system, max_frames);
-}
-
-[[nodiscard]] inline bool run_wellsworth_playthrough(bridge::BridgeSystem& system, int max_frames = 800)
-{
-    return build_wellsworth_reference(system) && run_sim_to_completion(system, max_frames);
-}
-
-[[nodiscard]] inline bool run_crovan_playthrough(bridge::BridgeSystem& system, int max_frames = 900)
-{
-    return build_crovan_reference(system) && run_sim_to_completion(system, max_frames);
-}
-
-[[nodiscard]] inline bool run_callan_playthrough(bridge::BridgeSystem& system, int max_frames = 1000)
-{
-    return build_callan_reference(system) && run_sim_to_completion(system, max_frames);
-}
-
-[[nodiscard]] inline bool run_summit_playthrough(bridge::BridgeSystem& system, int max_frames = 1100)
-{
-    return build_summit_reference(system) && run_sim_to_completion(system, max_frames);
-}
-
-inline bool build_reference(bridge::BridgeSystem& system, int level_index)
-{
-    switch(level_index)
-    {
-        case 0:
-            return build_knapford_reference(system);
-
-        case 1:
-            return build_gordon_hill_reference(system);
-
-        case 2:
-            return build_vicarstown_reference(system);
-
-        case 3:
-            return build_tidmouth_reference(system);
-
-        case 4:
-            return build_wellsworth_reference(system);
-
-        case 5:
-            return build_crovan_reference(system);
-
-        case 6:
-            return build_callan_reference(system);
-
-        case 7:
-            return build_summit_reference(system);
-
-        default:
-            return false;
-    }
-}
-
-[[nodiscard]] inline bool run_level_playthrough(bridge::BridgeSystem& system, int level_index,
-                                                 int max_frames = 1100)
+[[nodiscard]] inline bool run_level_playthrough(bridge::BridgeSystem& system, const int level_index,
+                                                 int max_frames = 1200)
 {
     return build_reference(system, level_index) && run_sim_to_completion(system, max_frames);
 }

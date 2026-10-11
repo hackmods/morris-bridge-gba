@@ -97,13 +97,26 @@ NO GO becomes a different kind of no.
 
 ---
 
-## Three levels = three escape tries
+## Eight tracks = eight escape tries
 
-1. **Knapford Creek** — First breach. Water looks normal. Percy says it reflects the **wrong sky** for one frame. Win: HATT OK. Fail: DELAY.
+The rewind is in the ROM. Every failed test puts the bridge back exactly as it
+was welded — but the links **remember** the load that broke them and glow in
+build mode. The engines do not remember. The timber does.
 
-2. **Gordon's Hill** — Momentum test. Gordon thinks if he goes fast enough the rewind cannot catch him. Struts snapping = the map rejecting a cheat code.
-
-3. **Vicarstown** — Lift bridge threshold. Crossing may show **ASHES!** even when you win — not fire, **dust from somewhere else**. Friends argue whether that means success or warning.
+1. **Knapford** — First breach. One rock under the water. Percy says it
+   reflects the **wrong sky** for one frame.
+2. **Gordon's Hill** — Two crags hang over the climb. Nobody built them. Edward
+   pushes every train up from behind and never says where he learned the route.
+3. **Culdee Fell** — No rock, no crag: whatever holds the train up, you brought it.
+4. **Tidmouth** — Timber only. The yard "ran out" of rods the same week the
+   signal box started ringing.
+5. **Wellsworth** — Ledges low in the cutting, exactly where you need them.
+   Henry brings the Flying Kipper through; the trucks giggle the whole way.
+6. **Crovan's Gate** — One rock, off-centre, as if the river was drawn in a hurry.
+7. **Callan** — Two castle towers with nothing strung between them. Toby hears
+   them hum.
+8. **Vicarstown** — The thinnest place: the bridge to the mainland. One pier in
+   the channel. Everything on the other side is the wrong colour.
 
 **Secret lore level (not in ROM yet):** `BREACHED` — black screen, one peep, credits that never end.
 
@@ -111,7 +124,7 @@ NO GO becomes a different kind of no.
 
 ## PG phrase book (in-game easter eggs)
 
-These may appear rarely on win/fail screens. All are safe for kids; adults may hear extra meaning.
+These appear on win/fail screens for a reason — each is triggered by what the player did ([Game design → Lore lines](game-design.md#lore-lines)). All are safe for kids; adults may hear extra meaning.
 
 | Text | Kid reading | Friend reading |
 |------|-------------|----------------|
@@ -119,9 +132,13 @@ These may appear rarely on win/fail screens. All are safe for kids; adults may h
 | PEEP PEEP | Train is happy | "Listen listen" — Percy's warning |
 | CHUFF! | Train working hard | Escaping on steam, not schedule |
 | ASHES! | Oops, crash dust | Gray particles with no fire — **wrong kind of fall** |
-| LISTEN | Wait and pay attention | The broadcast is still playing |
-| WAIT! | Try again | Loop has not reset yet — hurry |
+| LISTEN | Wait and pay attention | The broadcast is still playing — also what you get for sending the train over **nothing at all** (DieselTrip was half right) |
+| WAIT! | The bridge fell before the train left | Loop has not reset yet — it could not even hold itself |
 | NO GO | Bridge does not connect | Graph refuses an illegal edge — **reality says no** |
+| THIN | A bridge with nothing wasted | You found a **thin place** — par, on the timetabled engine |
+| AGAIN / LOOP | Keep trying | The island has **rewound** you three, then five times |
+| CONFUS | Wrong engine | Not the engine on Hatt's timetable — **confusion** |
+| OOPS! | The bridge drooped | Nothing broke and you still went under |
 
 ---
 

@@ -2,7 +2,7 @@
 
 ## Host physics tests (recommended before every ROM deploy)
 
-Compiles real [`physics.cpp`](../src/physics.cpp) and [`bridge_system.cpp`](../src/bridge_system.cpp) against a **20.12 `bn::fixed` mock** — no Butano, no emulator, no floating-point.
+Compiles real [`physics.cpp`](../src/core/physics.cpp) and [`bridge_system.cpp`](../src/core/bridge_system.cpp) against a **20.12 `bn::fixed` mock** — no Butano, no emulator, no floating-point.
 
 ```bash
 make -C tests
@@ -13,11 +13,26 @@ make -C tests
 | Category | Examples |
 |----------|----------|
 | Math | `isqrt64`, `approx_sqrt`, 3-4-5 distance |
-| Tension | Midspan, endpoints, zero-length edge case |
-| Simulation | Two-span success, three-span success, overlong span failure, `no_path` |
-| Rating | `max_tension_for_length` at 48 px, 96 px, and 176 px |
-| Levels | Per-level seed counts, START/END positions, invalid index clamping, 8-track 3★ playthroughs |
-| Build helpers | Preview statuses, undo chain, player node budget |
+| Build rules | Beam/rod reach, minimum length, duplicates, locked tools, undo, joint budget |
+| Routing | `no_path`, rods are not a route, grade limit, deck preferred over a truss chord |
+| Structure (every level) | Unsupported deck collapses; par design holds; removing any one link loses the train; Gordon breaks par; weld order is irrelevant |
+| Structure (spot checks) | Loose joints fall, anchor-to-anchor links carry nothing, the Knapford post carries the engine's weight |
+| Rewind | A failed test restores the build and marks the links that gave way |
+| Scoring | Par cost = 3★ on the scheduled engine, lighter engine = 1★, over-building loses stars |
+| Levels | Per-level seed counts, START/END positions, invalid index clamping |
+
+### QA ROM with the par designs pre-built
+
+Driving the build cursor is slow when all you want is to look at a bridge on
+the GBA. Building with `MORRIS_PRELOAD_REFERENCE` starts every track with its
+par design already welded:
+
+```bash
+make LIBBUTANO=vendor/butano/butano   USERFLAGS="-DBN_CFG_SPRITE_AFFINE_MATS_MAX_ITEMS=32 -DBN_CFG_SPRITES_MAX_SORT_LAYERS=32 -DMORRIS_PRELOAD_REFERENCE"
+```
+
+Never ship that ROM. Touch `src/game.cpp` and rebuild without the flag before
+copying to `rom/`.
 
 ### Mock layer
 
