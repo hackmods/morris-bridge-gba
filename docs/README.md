@@ -64,4 +64,4 @@ docs/
 
 - **GitHub:** [`hackmods/morris-bridge-gba`](https://github.com/hackmods/morris-bridge-gba)
 - **ROM output:** `rom/thomas_bridge.gba` (about 420 KB as of 2026-10-11)
-- **Licence:** Butano, the engine, is zlib-licensed. This repository has no `LICENSE` file of its own yet.
+- **Licence:** [MIT](../LICENSE) for this project's own work; see [NOTICE](../NOTICE) for what that does not cover. Butano, the engine, is zlib-licensed.

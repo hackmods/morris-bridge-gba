@@ -122,4 +122,4 @@ More in [building the ROM](docs/building-rom.md) and [testing](docs/testing.md).
 | **Game title** | Thomas's Bridge |
 | **ROM** | `thomas_bridge.gba` (header `THOMASBRIDGE` / `THOM01`), about 420 KB, committed for clone-and-play |
 | **Repo name** | `morris-bridge-gba` is the working codename and stayed |
-| **Engine licence** | Butano is zlib-licensed |
+| **Licence** | [MIT](LICENSE) for this project's code, art and music. The characters are not ours to license — see [NOTICE](NOTICE). Butano, the engine, is zlib-licensed |

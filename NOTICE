@@ -1,0 +1,17 @@
+Thomas's Bridge is a fan-made parody.
+
+The MIT licence in LICENSE covers what this project made: its source code,
+its generated pixel art, its music and its documentation.
+
+It does not cover, and cannot grant any right to, Thomas & Friends, the
+Railway Series, or any of their characters, names and likenesses. Those belong
+to their respective owners. This project is not affiliated with, endorsed by,
+or licensed from Mattel, Gullane (Thomas) Limited, or anyone else who holds
+those rights. It is non-commercial and will be taken down on request.
+
+Third-party software:
+
+- Butano (https://github.com/GValiente/butano) by Gustavo Valiente, zlib
+  licence. Not included in this repository; fetched at build time.
+- mGBA (https://mgba.io/) via @thenick775/mgba-wasm, MPL-2.0, used by the
+  browser playtest.
