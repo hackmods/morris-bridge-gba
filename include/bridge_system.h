@@ -312,6 +312,8 @@ public:
     [[nodiscard]] StrutPreview preview_strut(int node_a, int node_b,
                                                LinkRole role = LinkRole::track) const;
 
+    /// Take back the newest weld. Call again to keep unwinding, joint by beam,
+    /// until only the anchors are left.
     [[nodiscard]] UndoResult undo_last_edit();
 
     [[nodiscard]] RemoveNodeResult remove_player_node(int node_id);

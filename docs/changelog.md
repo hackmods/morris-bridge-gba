@@ -1,5 +1,13 @@
 # Changelog & project history
 
+## 2026-10-11 — Quality of life
+
+- **Undo keeps going:** L takes back the newest weld, and pressing it again keeps unwinding, joint by beam, down to bare anchors
+- **Fast-forward:** hold A during a run to cross at double speed
+- **Keep a winning bridge:** B on the win screen returns to the workshop with the bridge still standing, so you can trim it for a better star. A still goes on to the next track; the map is under Pause
+- **LONG!** replaces WEAK when a weld is refused for being out of reach
+- Link sprites capped at 56 so a maximum-size bridge cannot push the sprite total past the GBA's 128
+
 ## 2026-10-11 — v2.0.1: slack-cable crash, material palette
 
 - **Fixed a crash** ("32bit integer division by zero") during a run on any track with cable. A slack cable can fold up shorter than a pixel; the link renderer then worked out that it needed zero sprite segments and divided by that. Links under 2 px are no longer drawn and the segment count is never zero (`physics::segments_for`, host-tested)

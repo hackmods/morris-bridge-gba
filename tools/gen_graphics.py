@@ -1454,9 +1454,9 @@ def make_digit() -> None:
 
 def make_toast() -> None:
     w, fh = 32, 8
-    texts = ("DUP!", "WEAK", "DEL", "SPENT")
+    texts = ("DUP!", "WEAK", "DEL", "SPENT", "LONG!")
     px = fill(w, fh * len(texts))
-    colors = (9, 3, 10, 9)
+    colors = (9, 3, 10, 9, 3)
     for i, text in enumerate(texts):
         y0 = i * fh
         panel_box(px, w, 1, y0 + 1, 31, y0 + 7)

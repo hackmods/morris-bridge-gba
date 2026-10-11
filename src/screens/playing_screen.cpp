@@ -120,6 +120,10 @@ void Game::_show_toast(game_ui::ToastKind kind)
             _toast.set_item(bn::sprite_items::toast, game_ui::TOAST_SPENT);
             break;
 
+        case game_ui::ToastKind::too_long:
+            _toast.set_item(bn::sprite_items::toast, game_ui::TOAST_LONG);
+            break;
+
         default:
             break;
     }
@@ -476,7 +480,7 @@ void Game::_handle_confirm(bn::optional<int> hovered, bn::fixed_point place_at)
            _link_out_of_reach(physics::distance(_bridge.nodes()[_selected.value()].position, snapped)))
         {
             // Do not plant a joint the selected one cannot reach.
-            _show_toast(game_ui::ToastKind::weak);
+            _show_toast(game_ui::ToastKind::too_long);
             return;
         }
         const bn::optional<int> created =
@@ -507,7 +511,7 @@ void Game::_handle_confirm(bn::optional<int> hovered, bn::fixed_point place_at)
                 break;
 
             case bridge::StrutPreviewStatus::too_long:
-                _show_toast(game_ui::ToastKind::weak);
+                _show_toast(game_ui::ToastKind::too_long);
                 return;
 
             case bridge::StrutPreviewStatus::ok:
@@ -675,6 +679,13 @@ void Game::_update_test()
     const bn::fixed prev_x = _train.position().x();
     const bridge::SimStatus prev_status = _bridge.status();
     (void)_bridge.update();
+
+    // Hold A to run the crossing at double speed.
+    if(bn::keypad::a_held() && _bridge.status() == bridge::SimStatus::running)
+    {
+        (void)_bridge.update();
+    }
+
     game_ui::set_train_sprite_position(_train, _bridge.train_position());
 
     const bridge::SimStatus status = _bridge.status();

@@ -256,7 +256,37 @@ UndoResult BridgeSystem::undo_last_edit()
     switch(_last_edit)
     {
         case LastEdit::none:
-            return UndoResult::nothing;
+        {
+            // Nothing fresh to take back: keep unwinding in build order. A
+            // joint is welded before the beam that reaches it, so the
+            // newest thing is the last beam, or the last joint if it has
+            // no beam left.
+            const int last_node = _nodes.size() - 1;
+
+            if(last_node >= 0 && is_player_node(last_node))
+            {
+                bool attached = false;
+
+                for(const Strut& strut : _struts)
+                {
+                    attached = attached || strut.node_a == last_node || strut.node_b == last_node;
+                }
+
+                if(! attached)
+                {
+                    return remove_player_node(last_node) == RemoveNodeResult::ok ?
+                        UndoResult::removed_node : UndoResult::nothing;
+                }
+            }
+
+            if(_struts.empty())
+            {
+                return UndoResult::nothing;
+            }
+
+            _remove_strut_at(_struts.size() - 1);
+            return UndoResult::removed_strut;
+        }
 
         case LastEdit::strut:
         {
