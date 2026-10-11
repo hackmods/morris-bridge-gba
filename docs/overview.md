@@ -2,7 +2,7 @@
 
 ## What is Thomas's Bridge?
 
-A **Game Boy Advance** demake prototype of a bridge-building puzzle game. The player places structural **nodes** and connects them with **struts** to span a canyon. A small tank engine must cross before struts snap under tension.
+A **Game Boy Advance** bridge-building puzzle game. The player places **joints** and welds timber and steel **links** between them to span a gap. The bridge is simulated as a real truss — it sags, carries load through its members, and snaps where it is overloaded — and a tank engine has to get across it.
 
 **Resolution:** 240×160 (GBA native)  
 **Engine:** [Butano](https://github.com/GValiente/butano) (modern C++20 GBA framework)  
@@ -22,9 +22,9 @@ A **Game Boy Advance** demake prototype of a bridge-building puzzle game. The pl
 ## What is in scope (v1)
 
 - Build mode: place nodes, connect struts, chain-building
-- Test mode: train follows BFS path; tension breaks long spans
-- Structural reinforcement (joint redundancy + triangular bracing)
-- Locomotive engine physics (heavier first span, acceleration ramp)
+- Test mode: fixed-point truss simulation ([Physics](physics.md)) — self-weight, moving axle loads, links snap in tension or compression
+- Train takes the shortest climbable track route; grades steeper than 1 in 2 are not a route
+- Eight levels, each a different structural problem (prop, hang, truss, strut, trestle, stay)
 - Thomas choo-choo SFX (chuff, whistle, peep) plus original parody BGM via Maxmod
 - Host physics tests (PC, no GBA toolchain)
 - Web playtest (mGBA-WASM) with keyboard + command queue

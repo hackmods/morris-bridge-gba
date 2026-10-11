@@ -1,6 +1,6 @@
 # UI & Playability Plan — Lessons + Fix Path
 
-**Status:** Active handoff for the next session  
+**Status:** Partly superseded (2026-10-11). The mechanics this plan assumed from PR #73 were replaced by the truss solver in [physics.md](physics.md); see the changelog. Still open from this plan: a hand playtest of Knapford with only on-screen hints (§4 exit criterion), menu clarity (§3), moving HUD chrome to a background layer (§5), and hand-authored art (§6 — note terrain is now generated from level data, see [graphics.md](graphics.md)).  
 **Product rule:** Ship `rom/thomas_bridge.gba` (Butano). Web = mGBA-WASM playtest only. See [AGENTS.md](../AGENTS.md).  
 **Related:** [Master plan](master-plan.md) · [Session goal](session-goal.md) · [Diagnosis (vision systems)](diagnosis-vision.md) · [Graphics](graphics.md) · [Game design](game-design.md)
 

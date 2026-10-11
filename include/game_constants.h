@@ -24,14 +24,17 @@ inline constexpr bn::fixed TRACK_Y = 52;
 /// Deepest build-grid row for pier foundations below the deck.
 inline constexpr bn::fixed UNDERGROUND_Y = 64;
 
-/// 8 px build grid (vision: 8×8 GBA snap).
-inline constexpr bn::fixed GRID_STEP = 8;
+/// 4 px build grid (matches cursor snap in main.cpp).
+inline constexpr bn::fixed GRID_STEP = 4;
 
 /// Hold-A chain-draw plants the next joint at least this far from the last.
 inline constexpr bn::fixed CHAIN_WELD_MIN = 24;
 
 /// Train sprite center sits above node joints so wheels rest on the rail.
-inline constexpr bn::fixed TRAIN_Y_OFFSET = -6;
+inline constexpr bn::fixed TRAIN_Y_OFFSET = -21;
+
+/// Where the engine sprite parks on menu screens.
+inline constexpr bn::fixed MENU_TRAIN_Y = 44;
 
 /**
  * @brief Snap one axis to the build grid.

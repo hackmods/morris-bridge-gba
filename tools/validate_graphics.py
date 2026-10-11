@@ -15,16 +15,18 @@ EXPECTED = {
     "bg_hills.bmp": {"width": 256, "height": 256, "max_colors": 16},
     "bg_ground.bmp": {"width": 256, "height": 256, "max_colors": 16},
     "bg_water.bmp": {"width": 256, "height": 512, "max_colors": 16},
-    "train.bmp": {"width": 32, "height": 320, "max_colors": 16},
-    "portrait.bmp": {"width": 32, "height": 160, "max_colors": 16},
+    "train.bmp": {"width": 32, "height": 384, "max_colors": 16},
+    "car.bmp": {"width": 32, "height": 224, "max_colors": 16},
+    "portrait.bmp": {"width": 32, "height": 192, "max_colors": 16},
     "node.bmp": {"width": 16, "height": 16, "max_colors": 16},
     "anchor.bmp": {"width": 16, "height": 16, "max_colors": 16},
-    "strut.bmp": {"width": 16, "height": 112, "max_colors": 16},
+    "strut.bmp": {"width": 16, "height": 128, "max_colors": 16},
     "hatt.bmp": {"width": 32, "height": 64, "max_colors": 16},
 }
 
 THEME_BG_LAYERS = ("bg_sky", "bg_hills", "bg_ground", "bg_water")
 THEME_COUNT = 3
+LEVEL_COUNT = 8
 
 
 def read_bmp(path: str) -> tuple[int, int, list[int]]:
@@ -77,6 +79,9 @@ def main() -> int:
             else:
                 rules = {"width": 256, "height": 256, "max_colors": 16}
             errors.extend(validate_file(name, rules))
+    for level_index in range(LEVEL_COUNT):
+        errors.extend(validate_file(f"bg_terrain_{level_index}.bmp",
+                                    {"width": 256, "height": 256, "max_colors": 16}))
     if errors:
         for err in errors:
             print(f"ERROR {err}")

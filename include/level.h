@@ -16,20 +16,16 @@ namespace level
 
 constexpr int COUNT = 8;
 
-/// Bit flags — align with bridge::LinkRole order (track = bit 0, brace = bit 1, foundation = bit 2).
+/// Longest timber beam when a level does not set its own.
+inline constexpr bn::fixed DEFAULT_BEAM_LENGTH = 48;
+
+/// Bit flags — align with bridge::LinkRole order (track = bit 0, brace = bit 1, cable = bit 2).
 inline constexpr uint8_t ALLOW_TRACK = 1;
 inline constexpr uint8_t ALLOW_BRACE = 2;
-inline constexpr uint8_t ALLOW_FOUNDATION = 4;
+inline constexpr uint8_t ALLOW_CABLE = 4;
 inline constexpr uint8_t ALLOW_TRACK_AND_BRACE = ALLOW_TRACK | ALLOW_BRACE;
-inline constexpr uint8_t ALLOW_ALL_ROLES = ALLOW_TRACK | ALLOW_BRACE | ALLOW_FOUNDATION;
-
-/// Material unlock bits — wood / iron / stone / cable.
-inline constexpr uint8_t ALLOW_WOOD = 1;
-inline constexpr uint8_t ALLOW_IRON = 2;
-inline constexpr uint8_t ALLOW_STONE = 4;
-inline constexpr uint8_t ALLOW_CABLE = 8;
-inline constexpr uint8_t ALLOW_WOOD_IRON = ALLOW_WOOD | ALLOW_IRON;
-inline constexpr uint8_t ALLOW_ALL_MATERIALS = ALLOW_WOOD | ALLOW_IRON | ALLOW_STONE | ALLOW_CABLE;
+inline constexpr uint8_t ALLOW_TRACK_AND_CABLE = ALLOW_TRACK | ALLOW_CABLE;
+inline constexpr uint8_t ALLOW_ALL = ALLOW_TRACK | ALLOW_BRACE | ALLOW_CABLE;
 
 struct Seed
 {
@@ -43,16 +39,16 @@ struct Def
     const Seed* seeds;
     int seed_count;
     int bg_theme_id;
-    engine::Id recommended_engine;
+    engine::Id scheduled_engine;  ///< Timetabled engine: full stars need it or a heavier one.
     bn::fixed deck_y;       ///< Rail / start-end height for this track.
-    bn::fixed safe_length;  ///< 0 → use physics::SAFE_LENGTH default.
+    bn::fixed safe_length;  ///< Longest timber beam the yard supplies; 0 → DEFAULT_BEAM_LENGTH.
+    bn::fixed water_y;      ///< River surface; the terrain art is generated to match.
     bn::fixed parallax_back;  ///< Far layer scroll factor (fixed 8 = 1.0).
     bn::fixed parallax_front; ///< Near layer scroll factor.
     uint8_t allowed_roles;  ///< ALLOW_* bitmask for connect tools on this level.
     uint8_t intro_dialog_id; ///< 0 = none; 1..N index into intro label pairs.
-    int par_cost;           ///< Target £ cost for 3★; 0 = stars disabled.
-    int budget_pounds;      ///< EDIT_MODE purse (£). 0 → derive from par × 4.
-    uint8_t allowed_materials; ///< ALLOW_WOOD / IRON / STONE / CABLE mask.
+    int par_cost;           ///< Target cost (joints + timber + 2× rods) for 3★; 0 = stars disabled.
+    bool banked;            ///< A banking engine pushes every train from behind (Gordon's Hill).
 };
 
 [[nodiscard]] const Def& get(int level_index);
@@ -60,21 +56,6 @@ struct Def
 [[nodiscard]] inline bool allows_role(const Def& def, uint8_t role_bit)
 {
     return (def.allowed_roles & role_bit) != 0;
-}
-
-[[nodiscard]] inline bool allows_material(const Def& def, uint8_t material_bit)
-{
-    return (def.allowed_materials & material_bit) != 0;
-}
-
-[[nodiscard]] inline int effective_budget(const Def& def)
-{
-    if(def.budget_pounds > 0)
-    {
-        return def.budget_pounds;
-    }
-
-    return def.par_cost > 0 ? def.par_cost * 4 : 1500;
 }
 
 } // namespace level

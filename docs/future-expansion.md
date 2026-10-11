@@ -93,7 +93,7 @@ flowchart TB
 
 | Responsibility | Detail |
 |----------------|--------|
-| Level unlock | Sequential: Knapford → … → Sodor Summit (8 tracks) |
+| Level unlock | Sequential: Knapford → … → Vicarstown (8 tracks) |
 | Engine unlock | Reward on first clear per level + Gordon when all cleared |
 | Session vs save | **v1:** RAM session (resets on power off). **v2:** Butano SRAM 256 B save block |
 | Cleared bitmask | Track replays, star ratings, lore flags |

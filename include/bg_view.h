@@ -26,7 +26,7 @@ public:
     void set_scenery_visible(bool visible);
 
     void reset_scenery_layout();
-    void layout_for_level(const level::Def& def);
+    void layout_for_level(const level::Def& def, int level_index);
     void apply_theme(int bg_theme_id);
 
     void animate_clouds();
@@ -54,6 +54,7 @@ private:
     bn::vector<bn::sprite_ptr, 2> _clouds;
 
     int _active_theme_id = -1;
+    int _terrain_level = -1;  ///< Level whose terrain is shown; -1 on menus.
 };
 
 } // namespace view

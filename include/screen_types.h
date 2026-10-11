@@ -24,10 +24,8 @@ enum class Id
 
 enum class PlayMode
 {
-    build,        ///< Legacy alias for EDIT_MODE.
-    test,         ///< Legacy alias for SIMULATION_MODE.
-    edit = build,
-    simulation = test,
+    build,
+    test,
 };
 
 enum class PauseOption

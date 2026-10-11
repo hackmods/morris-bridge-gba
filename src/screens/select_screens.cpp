@@ -89,15 +89,14 @@ void Game::_show_engine_select()
     _menu_arrow.set_position(-38, 16);
     _label.set_visible(false);
     _train.set_visible(true);
-    _train.set_position(-56, game::TRACK_Y + game::TRAIN_Y_OFFSET);
+    _train.set_position(-56, game::MENU_TRAIN_Y);
     _sync_train_sprite();
-    _set_weight_digits(engine::profile(_selected_engine).weight.integer(), true);
+    _set_weight_digits(engine::total_weight(_selected_engine).integer(), true);
     _portrait.set_visible(true);
     _portrait.set_position(56, 44);
     _portrait.set_item(bn::sprite_items::portrait, engine::portrait_frame(_selected_engine));
-    _hatt.set_visible(true);
-    _hatt.set_position(56, 44);
-    _hatt.set_item(bn::sprite_items::hatt, game_ui::HATT_STERN);
+    // The portrait has this corner; Hatt waits on the other screens.
+    _hatt.set_visible(false);
     _node_count_digits[0].set_visible(false);
     _node_count_digits[1].set_visible(false);
     _strut_count_digits[0].set_visible(false);
@@ -123,7 +122,7 @@ void Game::_show_level_intro(const int level_index)
     _menu_arrow.set_visible(false);
     _cursor.set_visible(false);
     _train.set_visible(true);
-    _train.set_position(-56, game::TRACK_Y + game::TRAIN_Y_OFFSET);
+    _train.set_position(-56, game::MENU_TRAIN_Y);
     _sync_train_sprite();
     _hatt.set_visible(true);
     _hatt.set_position(56, 44);

@@ -16,7 +16,7 @@ Do **not** ship a high-resolution web builder as the product, or demote the ROM 
 
 1. **Simulation:** `LinkRole` (track / brace / foundation-ready), track-only pathfinding, `BuildSession` with tools (place, track, brace, erase, undo), `MaterialId` (timber + rod), `RunScore` with par and ★.
 2. **Architecture:** `core/`, `session/`, `platform/gba/screens/`, `GraphView`, `AudioDirector`; `main.cpp` orchestration only (~400 lines max).
-3. **Content:** 8 data-driven levels (Knapford through Sodor Summit) with tool unlock progression; reference solution + `run_level_playthrough` host test for **each** level.
+3. **Content:** 8 data-driven levels (Knapford through Vicarstown) with tool unlock progression; reference solution + `run_level_playthrough` host test for **each** level.
 4. **Graphics:** Move sky/water/hills to **BG parallax** per theme; replace placeholder sprites with **authored** 32×32 trains, deck beams, rod braces, nodes, Hatt; stress palette feedback; juice (shake, dust, snap crack).
 5. **Audio:** Polished mode loops (Island Line, Yard, Workshop, Full Steam); frame-locked chuff; win/fail stings; pause ducking via AudioDirector.
 6. **Lore:** Optional first-visit intro lines per level + rare HUD strings from [lore-leak.md](lore-leak.md); epilogue beat on all-clear — never blocking gameplay.

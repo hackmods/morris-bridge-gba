@@ -1,66 +1,143 @@
-# Physics (fixed-point truss stress)
+# Physics (fixed-point)
 
-All game physics uses Butano **`bn::fixed`** (20.12). No `float`/`double` on the GBA path. Host tests compile the same sources against `tests/host_bn/`.
+Test mode runs a real structural simulation: a **pin-jointed spring truss**
+solved in integers on the GBA. A link holds or snaps because of the force that
+actually reaches it — nothing is rated up front and nothing gets a bonus for
+how many neighbours it has.
 
-## Why not full FEM?
+No `float`, no `double`, no heap. Positions are Butano **`bn::fixed`** (20.12);
+the solver's inner loop is raw `int32_t`/`int64_t`. Host unit tests compile the
+same sources against a 20.12 mock in [`tests/host_bn/`](../tests/host_bn/), so
+host and ROM produce the same numbers.
 
-A dense direct-stiffness solve (up to 16 nodes × 2 DOF) exceeds the ≤15% simulation frame budget once you include sprite sync. We use a **load-path truss approximation** that still exposes per-material yield and cascade collapse.
+Code: [`include/bridge_system.h`](../include/bridge_system.h),
+[`src/core/bridge_system.cpp`](../src/core/bridge_system.cpp).
 
-## Materials (`include/material.h`)
+## Model
 
-| Id | £ | Yield (base) | Notes |
-|----|---|--------------|-------|
-| Wood | 10 | 8 | Deck default |
-| Iron | 25 | 14 | Girder / brace |
-| Stone | 50 | ∞ (1000) | Pier only — one end must be a ground anchor |
-| Cable | 15 | 7 | Tension-only (compression share discarded) |
+| Thing | Behaviour |
+|-------|-----------|
+| **Anchor** | Bedrock. Never moves, takes any force. |
+| **Joint** | Free point with weight: `JOINT_WEIGHT` (¼) plus half of every link welded to it. |
+| **Link** | Axial spring. `force = stiffness × strain`. Snaps when `|force| > strength`, in tension or compression. |
+| **Train** | Axle loads (engine + cars 26 px apart) shared between the two joints of the link each axle stands on, by lever rule. |
 
-Joints cost £10 each (`NODE_COST`).
+Forces are in engine-weight units — Thomas weighs 4.
 
-## Rated yield
+| Material | Role | Stiffness (EA) | Strength | Weight / px | Cost | Reach |
+|----------|------|----------------|----------|-------------|------|-------|
+| Timber | Track (routable) | 480 | 8 | 1/128 | 1 | level beam length |
+| Rod | Brace | 720 | 12 | 1/128 | 2 | 1.5 × beam length |
+| Cable | Cable | 720 | 12, tension only | 1/256 | 1 | 2 × beam length |
 
-```text
-rated = material_yield × (safe_length / length)
-      × reinforcement(joints_a, joints_b)
-      × (triangulated ? 1.5 : 1)
-```
+A cable's force is clamped to zero whenever it is shorter than its rest length,
+so it holds what hangs from it and nothing that pushes on it.
 
-Stone skips length derating. Collapse when `stress >= 1.0`.
+Consequences that fall out of the model rather than being scripted:
 
-## Load-path solve (each SIM frame on the active track member)
+- A joint welded to nothing falls.
+- A deck strung straight from bank to bank is a chain, not a beam: it sags and
+  the tension that sag creates snaps it. The tension in a sagging chain is about
+  `cbrt(W² × EA / 8)`, which exceeds timber strength for every engine.
+- A joint tied to two anchors by two non-parallel links cannot move.
+- Shallow props and stays carry far more than the load they hold up
+  (`load / sin(angle)`); steep ones carry about the load itself.
+- A link between two anchors carries nothing. It still costs.
+- More structure is more dead weight for the rest to carry.
 
-1. Train load `W` (engine + coach ramp) → axial deck force via classic
-   `tension = W × (distance_along / length)`.
-2. Split `W/2` to each endpoint; redistribute to **other** incident members
-   proportional to `stiffness_mul / length` (relative EA/L).
-3. `stress_i = |F_i| / rated_yield_i`.
-4. If any `stress >= 1`, destroy the worst member, re-solve (≤ `CASCADE_MAX_PASSES`),
-   and if the train’s path member is gone → **DERAILED** (`failed_fall`).
+## Solver
 
-## Stress heatmap bands
+Each frame runs `SIM_SUBSTEPS` (4) explicit substeps:
 
-| Band | Stress | Palette |
-|------|--------|---------|
-| Green | 0–50% | cool green |
-| Yellow | 51–80% | amber |
-| Red | 81–99% | hot red |
-| Breaking | ≥100% | magenta / snap frame |
+1. Every joint gets its weight plus any axle load.
+2. Every link adds its axial force to both ends. Strain comes from squared
+   lengths, `x = d²/rest² − 1`, `strain ≈ x/2 − x²/8 + x³/16`, using reciprocals
+   precomputed in `begin_test()` — **no square root and no division per link**.
+3. Joints integrate (velocity, damping, position). Gravity is 1/64 px per
+   substep², i.e. the same ¼ px per frame² the falling train uses.
 
-## Tuning difficulty
+**Stability.** Explicit integration needs `stiffness / inertia` bounded at every
+joint. Joints keep their true weight for gravity but borrow extra *inertia*
+where stiff links meet (`_refresh_inertia`). Static equilibrium — which is what
+decides a break — does not involve inertia, so the answer is unchanged; only
+how fast the structure rings is.
 
-- Raise `material::TABLE[].yield_strength` → easier.
-- Lower `SAFE_LENGTH` / level `safe_length` → harsher long spans.
-- Increase train `ENGINE_WEIGHT` / coaches → harder.
-- `CASCADE_MAX_PASSES` limits how far a collapse propagates per frame.
+**Settling.** For `SETTLE_FRAMES` (40) the train waits on the bank while
+self-weight fades in over `GRAVITY_RAMP_FRAMES` (24) under heavier damping. A
+bridge that cannot hold itself up comes down before the engine moves.
 
-## Legacy helpers
+## Routing
 
-`tension`, `effective_max_tension`, and `exceeds_max_tension` remain for ratings and older tests. Simulation prefers `stress_ratio` / `is_breaking`.
+`begin_test()` picks the **shortest** route by length over track links
+(Dijkstra, ≤16 nodes). Track steeper than 1-in-`MAX_GRADE_RUN` (1 in 2) is not
+a route — engines stall on it — so timber can be used as a post or strut
+without the train trying to drive down it, and a timber truss chord above the
+deck never steals the train from the deck.
 
-## Layout constants
+## Build limits
+
+- Timber no longer than the level's beam length (`level::Def::safe_length`,
+  44–48 px); rod up to 1.5× that. The weld ghost turns red past the limit.
+- No link shorter than `MIN_LINK_LENGTH` (8 px).
+- 16 nodes including anchors, 32 links.
+
+## Failure and success
+
+- **Snap:** the link is removed, its stored energy is released into the
+  neighbours, and the collapse plays out physically.
+- **Fall:** the link under the engine or any coach is gone, or one of them has
+  sagged more than `SINK_DEPTH` (20 px) below the line as built.
+- **Success:** the last coach is off the bridge. The engine runs on down the
+  far bank until it is.
+
+## The rewind
+
+`end_test()` restores the build exactly as welded. Each link keeps
+`peak_tension`, the worst force it carried; a link that snapped reads as full.
+Links are tinted by `bridge::Heat`: amber from 50 % of strength, red from 80 %.
+Test mode uses the force right now; build mode uses `peak_tension`, so after a
+failed run the bridge shows where it gave way. `stress_percent()` and
+`peak_stress_percent()` feed the LOAD / PEAK numbers on the HUD.
+
+## Engines and trains
+
+| Engine | Weight | Cars (weight) | Total | Speed (px/frame) |
+|--------|--------|---------------|-------|------------------|
+| Percy | 3 | truck (1) | 4 | 1 |
+| Thomas | 4 | Annie (1), Clarabel (1) | 6 | 1 |
+| Edward | 4 | tender (2), coach (1) | 7 | ¾ |
+| James | 5 | tender (2), coach (1) | 8 | 1¼ |
+| Henry | 5 | tender (2), truck (1), truck (1) | 9 | 1 |
+| Gordon | 8 | tender (2), coach (2), coach (2) | 14 | 1½ |
+
+Each vehicle is one axle load, `CAR_SPACING` (26 px) behind the one in front,
+drawn at `BridgeSystem::axle_position`. The train starts parked on the start bank.
+
+- **Trucks** (`CarKind::truck`) jolt: their load is `weight × (1 ± TRUCK_JOLT)`,
+  flipping every `TRUCK_JOLT_FRAMES`, alternating truck to truck.
+- **Banker:** on a level with `banked` set, Edward is added as a last car of
+  `BANKER_WEIGHT` (4) behind every train.
+- **Grade:** speed is multiplied by `1 − rise/run` of the link under the engine
+  (clamped ½ to 1¼), measured on the bridge as it currently hangs.
+- Speed ramps from `ENGINE_MIN_SPEED` over `ACCEL_FRAMES` (24).
+
+## Layout
 
 | Constant | Value | Meaning |
 |----------|-------|---------|
-| `TRACK_Y` | 52 | Rail height |
-| `GRID_STEP` | 8 | EDIT_MODE snap |
-| `UNDERGROUND_Y` | 64 | Pier build floor |
+| `level::Def::deck_y` | per level | Rail height of both banks |
+| `GROUND_TILE_Y − TRACK_Y` | 4 | Bank ground sits this far below the rail |
+| `TRAIN_Y_OFFSET` | −6 | Sprite offset so wheels sit on the rail |
+
+## Host test coverage
+
+Run: `make -C tests`. See [Testing](testing.md).
+
+The structural tests are bridge-builder invariants, checked on all eight levels:
+
+- an unsupported deck collapses;
+- the par design holds, with the scheduled engine, at par cost;
+- removing **any one** link from the par design loses the train;
+- Gordon breaks every par design, except on Gordon's Hill where he is banked;
+- weld order does not change the result;
+- a link between two anchors carries zero force.

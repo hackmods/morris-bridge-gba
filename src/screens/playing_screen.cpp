@@ -28,8 +28,6 @@
 #include "game_constants.h"
 #include "graph_view.h"
 #include "level.h"
-#include "level_solutions.h"
-#include "material.h"
 #include "physics.h"
 #include "run_score.h"
 #include "save_data.h"
@@ -43,16 +41,16 @@ void Game::_show_gameplay()
     _menu_arrow.set_visible(false);
     _track_card.set_visible(false);
     _hatt.set_visible(false);
-    // Skip scaled white panel — status/budget/target sit as discrete labels on the sky.
-    _top_bar.set_visible(false);
-    _panel.set_visible(false);
+    _portrait.set_visible(false);
+    _panel.set_visible(true);
+    _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_HUD);
+    _panel.set_position(0, 66);
     _label.set_visible(true);
-    _label.set_position(-96, game_ui::HUD_TOP_Y);
-    _label.set_item(bn::sprite_items::label, game_ui::LABEL_EDIT);
+    _label.set_z_order(game_ui::Z_HUD_LABEL);
+    _label.set_position(0, 68);
+    _label.set_item(bn::sprite_items::label, game_ui::LABEL_BUILD);
     _hint_secondary.set_visible(false);
-    _legend.set_visible(false);
     _update_build_hints();
-    _update_hud();
     _cursor.set_visible(true);
     _train.set_visible(false);
     _backdrop.set_backdrop_visible(true);
@@ -70,6 +68,14 @@ void Game::_update_playing()
     {
         _update_build_hints();
         _update_test();
+
+        if(_screen != Screen::playing)
+        {
+            // The run just ended; the result screen owns the label and digits now.
+            _set_counter(_node_count_digits, 0, -20);
+            _set_counter(_strut_count_digits, 0, 12);
+            return;
+        }
     }
 
     _sync_graph_sprites();
@@ -82,12 +88,11 @@ void Game::_update_playing()
 void Game::_set_counter(bn::vector<bn::sprite_ptr, 2>& digits, int value, bn::fixed x_base)
 {
     const int clamped = value < 0 ? 0 : (value > 99 ? 99 : value);
-    const bn::fixed y = (_screen == Screen::playing) ? game_ui::HUD_TOP_Y : bn::fixed(66);
     digits[0].set_item(bn::sprite_items::digit, clamped / 10);
-    digits[0].set_position(x_base, y);
+    digits[0].set_position(x_base, 66);
     digits[0].set_visible(_screen == Screen::playing);
     digits[1].set_item(bn::sprite_items::digit, clamped % 10);
-    digits[1].set_position(x_base + 8, y);
+    digits[1].set_position(x_base + 8, 66);
     digits[1].set_visible(_screen == Screen::playing);
 }
 
@@ -109,6 +114,10 @@ void Game::_show_toast(game_ui::ToastKind kind)
 
         case game_ui::ToastKind::deleted:
             _toast.set_item(bn::sprite_items::toast, game_ui::TOAST_DEL);
+            break;
+
+        case game_ui::ToastKind::spent:
+            _toast.set_item(bn::sprite_items::toast, game_ui::TOAST_SPENT);
             break;
 
         default:
@@ -133,14 +142,14 @@ void Game::_update_preview()
 {
     if(_screen != Screen::playing || _play_mode != PlayMode::build || !_selected)
     {
-        _preview_strut.set_visible(false);
+        _graph.hide_preview();
         return;
     }
 
     const auto& nodes = _bridge.nodes();
     const bn::fixed_point from = nodes[_selected.value()].position;
     bn::fixed_point to = _cursor_pos;
-    bn::fixed max_tension = 0;
+    bool weak = false;
     bool show = false;
 
     const bn::optional<int> hovered = _bridge.find_node_near(_cursor_pos);
@@ -148,13 +157,13 @@ void Game::_update_preview()
     if(hovered && hovered.value() != _selected.value())
     {
         const bridge::StrutPreview preview =
-            _bridge.preview_strut(_selected.value(), hovered.value(), _connect_role,
-                                 _connect_material);
+            _bridge.preview_strut(_selected.value(), hovered.value(), _connect_role);
 
-        if(preview.status == bridge::StrutPreviewStatus::ok)
+        if(preview.status == bridge::StrutPreviewStatus::ok ||
+           preview.status == bridge::StrutPreviewStatus::too_long)
         {
             to = nodes[hovered.value()].position;
-            max_tension = preview.max_tension;
+            weak = preview.status == bridge::StrutPreviewStatus::too_long;
             show = true;
         }
     }
@@ -165,28 +174,92 @@ void Game::_update_preview()
 
         if(length > 0)
         {
-            max_tension = _bridge.span_preview_capacity(length, _connect_role, _connect_material);
+            weak = _link_out_of_reach(length);
             show = true;
         }
     }
 
     if(show)
     {
-        const bn::fixed load = _max_train_load();
-        const bool weak = max_tension < load;
-        const physics::StressBand band =
-            weak ? physics::StressBand::red : physics::StressBand::green;
-        const int frame = view::strut_frame_for_stress(_connect_role, band, true);
-        view::position_strut_sprite(_preview_strut, from, to, frame);
+        // The ghost goes red when the yard has no beam or rod that long.
+        int frame = view::STRUT_PREVIEW_OK;
+
+        if(_connect_role == bridge::LinkRole::brace)
+        {
+            frame = weak ? view::STRUT_BRACE_HOT : view::STRUT_BRACE_IDLE;
+        }
+        else if(_connect_role == bridge::LinkRole::cable)
+        {
+            frame = weak ? view::STRUT_BRACE_HOT : view::STRUT_CABLE;
+        }
+        else
+        {
+            frame = weak ? view::STRUT_PREVIEW_WEAK : view::STRUT_PREVIEW_OK;
+        }
+
+        _graph.show_preview(from, to, frame);
         return;
     }
 
-    _preview_strut.set_visible(false);
+    _graph.hide_preview();
+}
+
+void Game::_update_build_hints()
+{
+    if(_screen != Screen::playing || _play_mode != PlayMode::build)
+    {
+        _hint_label.set_visible(false);
+        return;
+    }
+
+    if(!_build_hints_seen)
+    {
+        ++_build_hint_timer;
+
+        if(_build_hint_timer >= game_ui::BUILD_HINT_FRAMES ||
+           bn::keypad::any_pressed())
+        {
+            _build_hints_seen = true;
+        }
+
+        const int phase = (_build_hint_timer / 60) % 3;
+        int frame = game_ui::LABEL_HINT_NODE;
+
+        if(phase == 1)
+        {
+            frame = game_ui::LABEL_HINT_WELD;
+        }
+        else if(phase == 2)
+        {
+            frame = game_ui::LABEL_HINT_PAUSE;
+        }
+
+        _hint_label.set_visible(true);
+        _hint_label.set_position(0, game_ui::BUILD_HINT_Y);
+        _hint_label.set_item(bn::sprite_items::label, frame);
+        return;
+    }
+
+    if(_bridge.has_track_path())
+    {
+        _hint_label.set_item(bn::sprite_items::label, game_ui::LABEL_START);
+    }
+    else if(_selected)
+    {
+        _hint_label.set_item(bn::sprite_items::label, game_ui::LABEL_HINT_WELD);
+    }
+    else
+    {
+        _hint_label.set_item(bn::sprite_items::label, game_ui::LABEL_HINT_NODE);
+    }
+
+    _hint_label.set_visible(true);
+    _hint_label.set_position(0, game_ui::BUILD_HINT_Y);
 }
 
 void Game::_update_build()
 {
-    bn::fixed speed = game_ui::CURSOR_SPEED;
+    bn::fixed speed = bn::keypad::r_held() ? game_ui::CURSOR_FAST : game_ui::CURSOR_SPEED;
     int axes = 0;
 
     if(bn::keypad::left_held() || bn::keypad::right_held())
@@ -300,16 +373,9 @@ void Game::_update_build()
         _weld_dragged = false;
     }
 
-    // B: DELETE — prefer beam under cursor, else player node (vision).
     if(bn::keypad::b_pressed())
     {
-        const bn::optional<int> strut_hit = _bridge.find_strut_near(_cursor_pos);
-
-        if(strut_hit && _bridge.remove_strut(strut_hit.value()))
-        {
-            _show_toast(game_ui::ToastKind::deleted);
-        }
-        else if(hovered && _bridge.is_player_node(hovered.value()))
+        if(hovered && _bridge.is_player_node(hovered.value()))
         {
             if(_bridge.remove_player_node(hovered.value()) == bridge::RemoveNodeResult::ok)
             {
@@ -325,22 +391,36 @@ void Game::_update_build()
                 _show_toast(game_ui::ToastKind::deleted);
             }
         }
+        else if(const bn::optional<int> link = _bridge.find_strut_near(_cursor_pos);
+                link && ! hovered)
+        {
+            // Pointing at a beam, not a joint: take just that beam out.
+            if(_bridge.remove_strut(link.value()))
+            {
+                _show_toast(game_ui::ToastKind::deleted);
+                bn::sound_items::ui.play();
+            }
+        }
         else
         {
             _selected.reset();
         }
     }
 
-    // L/R: CYCLE materials (vision legend).
-    if(bn::keypad::l_pressed() && !bn::keypad::a_held())
-    {
-        _cycle_material(-1);
-    }
-
     if(bn::keypad::r_pressed() && !bn::keypad::a_held() && !bn::keypad::left_held() &&
        !bn::keypad::right_held() && !bn::keypad::up_held() && !bn::keypad::down_held())
     {
-        _cycle_material(1);
+        _cycle_connect_role();
+    }
+
+    if(bn::keypad::l_pressed())
+    {
+        const bridge::UndoResult undone = _bridge.undo_last_edit();
+
+        if(undone == bridge::UndoResult::removed_node)
+        {
+            _selected.reset();
+        }
     }
 
     if(bn::keypad::select_pressed())
@@ -350,20 +430,6 @@ void Game::_update_build()
 
     if(bn::keypad::start_pressed() && !bn::keypad::a_held())
     {
-        // L+R+START: load the host reference layout (playtest / QA assist), then run.
-        if(bn::keypad::l_held() && bn::keypad::r_held())
-        {
-            const engine::Id eng = _bridge.engine();
-            const int level = _bridge.current_level();
-
-            if(level_solutions::build_reference(_bridge, level))
-            {
-                _bridge.set_engine(eng);
-                _selected.reset();
-                _sync_graph_sprites();
-            }
-        }
-
         _enter_test();
     }
 }
@@ -374,6 +440,20 @@ void Game::_handle_confirm(bn::optional<int> hovered, bn::fixed_point place_at)
     {
         _selected.reset();
         return;
+    }
+
+    // Count what this weld would cost before anything is planted.
+    {
+        const bool new_joint = ! hovered;
+        const bool new_link = _selected.has_value();
+        const int cost = (new_joint ? bridge::NODE_COST : 0) +
+                         (new_link ? bridge::link_cost(bridge::material_for_role(_connect_role)) : 0);
+
+        if(cost > session::purse_left(_bridge, _bridge.level_def()))
+        {
+            _show_toast(game_ui::ToastKind::spent);
+            return;
+        }
     }
 
     int node_id;
@@ -390,13 +470,15 @@ void Game::_handle_confirm(bn::optional<int> hovered, bn::fixed_point place_at)
             return;
         }
 
-        if(_bridge.budget_remaining() < bridge::NODE_COST)
+        const bn::fixed_point snapped = game::snap_point(place_at);
+
+        if(_selected &&
+           _link_out_of_reach(physics::distance(_bridge.nodes()[_selected.value()].position, snapped)))
         {
-            _show_toast(game_ui::ToastKind::full);
+            // Do not plant a joint the selected one cannot reach.
+            _show_toast(game_ui::ToastKind::weak);
             return;
         }
-
-        const bn::fixed_point snapped = game::snap_point(place_at);
         const bn::optional<int> created =
             _bridge.add_node(snapped.x(), snapped.y(), false);
 
@@ -412,7 +494,7 @@ void Game::_handle_confirm(bn::optional<int> hovered, bn::fixed_point place_at)
     if(_selected && _selected.value() != node_id)
     {
         const bridge::StrutPreview preview =
-            _bridge.preview_strut(_selected.value(), node_id, _connect_role, _connect_material);
+            _bridge.preview_strut(_selected.value(), node_id, _connect_role);
 
         switch(preview.status)
         {
@@ -424,27 +506,14 @@ void Game::_handle_confirm(bn::optional<int> hovered, bn::fixed_point place_at)
                 _show_toast(game_ui::ToastKind::full);
                 break;
 
+            case bridge::StrutPreviewStatus::too_long:
+                _show_toast(game_ui::ToastKind::weak);
+                return;
+
             case bridge::StrutPreviewStatus::ok:
-            {
-                if(preview.max_tension < _max_train_load())
-                {
-                    _show_toast(game_ui::ToastKind::weak);
-                }
-
-                const int next_cost = bridge::link_cost(_connect_material) +
-                                      (hovered ? 0 : bridge::NODE_COST);
-
-                if(_bridge.budget_remaining() < next_cost)
-                {
-                    _show_toast(game_ui::ToastKind::full);
-                    break;
-                }
-
-                (void)_bridge.add_strut(_selected.value(), node_id, _connect_role,
-                                        _connect_material);
+                (void)_bridge.add_strut(_selected.value(), node_id, _connect_role);
                 bn::sound_items::ui.play();
                 break;
-            }
 
             default:
                 break;
@@ -473,7 +542,7 @@ void Game::_try_chain_weld(bn::optional<int> hovered, bn::fixed_point draw_at)
     if(hovered)
     {
         const bridge::StrutPreview preview =
-            _bridge.preview_strut(from, hovered.value(), _connect_role, _connect_material);
+            _bridge.preview_strut(from, hovered.value(), _connect_role);
 
         if(preview.status == bridge::StrutPreviewStatus::ok)
         {
@@ -518,192 +587,38 @@ void Game::_try_chain_weld(bn::optional<int> hovered, bn::fixed_point draw_at)
 
 void Game::_cycle_connect_role()
 {
-    if(!_bridge.allows_link_role(bridge::LinkRole::brace) &&
-       !_bridge.allows_link_role(bridge::LinkRole::foundation))
+    // Timber, rod, cable, round again — skipping what this track has not unlocked.
+    const bridge::LinkRole before = _connect_role;
+
+    for(int step = 0; step < bridge::LINK_ROLE_COUNT; ++step)
     {
-        _connect_role = bridge::LinkRole::track;
-        _connect_material = bridge::MaterialId::wood;
-        return;
+        _connect_role = bridge::LinkRole((int(_connect_role) + 1) % bridge::LINK_ROLE_COUNT);
+
+        if(_bridge.allows_link_role(_connect_role))
+        {
+            break;
+        }
     }
 
-    _connect_role = _connect_role == bridge::LinkRole::track ?
-        bridge::LinkRole::brace : bridge::LinkRole::track;
-    _connect_material = bridge::material_for_role(_connect_role);
-    bn::sound_items::ui.play();
-}
-
-void Game::_cycle_material(const int direction)
-{
-    bridge::MaterialId next = _connect_material;
-
-    for(int i = 0; i < material::COUNT; ++i)
+    if(_connect_role != before)
     {
-        next = direction >= 0 ? material::next(next) : material::prev(next);
-
-        if(_bridge.allows_material(next))
-        {
-            _connect_material = next;
-            _connect_role = bridge::role_for_material(next);
-
-            // Wood stays track; iron/cable prefer brace when allowed.
-            if(next == bridge::MaterialId::wood)
-            {
-                _connect_role = bridge::LinkRole::track;
-            }
-            else if(next == bridge::MaterialId::iron || next == bridge::MaterialId::cable)
-            {
-                _connect_role = _bridge.allows_link_role(bridge::LinkRole::brace) ?
-                    bridge::LinkRole::brace : bridge::LinkRole::track;
-            }
-            else if(next == bridge::MaterialId::stone)
-            {
-                _connect_role = bridge::LinkRole::foundation;
-            }
-
-            bn::sound_items::ui.play();
-            return;
-        }
+        _tool_tag_flash = game_ui::TOOL_TAG_FLASH_FRAMES;
+        bn::sound_items::ui.play();
     }
 }
 
 int Game::_build_tool_label() const
 {
-    switch(_connect_material)
+    switch(_connect_role)
     {
-        case bridge::MaterialId::iron:
-            return game_ui::LABEL_IRON;
-        case bridge::MaterialId::cable:
+        case bridge::LinkRole::brace:
+            return game_ui::LABEL_ROD;
+
+        case bridge::LinkRole::cable:
             return game_ui::LABEL_CABLE;
-        case bridge::MaterialId::stone:
-            return game_ui::LABEL_STONE;
+
         default:
-            return game_ui::LABEL_WOOD;
-    }
-}
-
-void Game::_update_hud()
-{
-    const bool playing = _screen == Screen::playing;
-    _top_bar.set_visible(false);
-
-    if(_no_go_timer > 0)
-    {
-        --_no_go_timer;
-        _label.set_item(bn::sprite_items::label, game_ui::LABEL_NO_GO);
-        _label.set_position(-96, game_ui::HUD_TOP_Y);
-        _label.set_visible(true);
-    }
-    else if(_play_mode == PlayMode::test)
-    {
-        int status_frame = game_ui::LABEL_RUN;
-
-        switch(_bridge.status())
-        {
-            case bridge::SimStatus::success:
-                status_frame = game_ui::LABEL_WIN;
-                break;
-
-            case bridge::SimStatus::failed_fall:
-                status_frame = game_ui::LABEL_FAIL;
-                break;
-
-            case bridge::SimStatus::no_path:
-                status_frame = game_ui::LABEL_NO_GO;
-                break;
-
-            default:
-                status_frame = game_ui::LABEL_RUN;
-                break;
-        }
-
-        _label.set_item(bn::sprite_items::label, status_frame);
-        _label.set_position(-96, game_ui::HUD_TOP_Y);
-        _label.set_visible(true);
-
-        const int stress_pct = (_bridge.peak_stress() * 100).integer();
-        _hint_label.set_item(bn::sprite_items::label, game_ui::LABEL_STRESS);
-        _hint_label.set_position(-40, game_ui::HUD_TOP_Y);
-        _hint_label.set_visible(true);
-        _set_counter(_node_count_digits, stress_pct, 0);
-        _set_counter(_strut_count_digits, _bridge.struts().size(), 72);
-        _hint_secondary.set_visible(false);
-        _panel.set_visible(false);
-    }
-    else if(_play_mode == PlayMode::build)
-    {
-        _label.set_item(bn::sprite_items::label, game_ui::LABEL_EDIT);
-        _label.set_position(-96, game_ui::HUD_TOP_Y);
-        _label.set_visible(true);
-
-        // BUDGT tag + 4-digit £ remaining across the top sky.
-        const int remaining = _bridge.budget_remaining();
-        const int hi = remaining / 100;
-        const int lo = remaining % 100;
-        _hint_label.set_item(bn::sprite_items::label, game_ui::LABEL_BUDGT);
-        _hint_label.set_position(-48, game_ui::HUD_TOP_Y);
-        _hint_label.set_visible(true);
-        _set_counter(_node_count_digits, hi, -8);
-        _set_counter(_strut_count_digits, lo, 12);
-
-        // Material on the right-edge strip; A DRAW / START (or onboarding) on sky row 2.
-        _panel.set_visible(false);
-        _hint_secondary.set_item(bn::sprite_items::label, _build_tool_label());
-        _hint_secondary.set_position(game_ui::HUD_MAT_X, game_ui::HUD_STRIP_Y);
-        _hint_secondary.set_visible(true);
-
-        int prompt = game_ui::LABEL_A_DRAW;
-
-        if(_bridge.has_track_path())
-        {
-            prompt = game_ui::LABEL_START;
-        }
-
-        if(!_build_hints_seen)
-        {
-            const int phase = (_build_hint_timer / 60) % 3;
-
-            if(phase == 1)
-            {
-                prompt = game_ui::LABEL_B_DEL;
-            }
-            else if(phase == 2)
-            {
-                prompt = game_ui::LABEL_LR_CY;
-            }
-        }
-
-        _legend.set_item(bn::sprite_items::label, prompt);
-        _legend.set_position(-40, game_ui::HUD_STRIP_Y);
-        _legend.set_visible(true);
-    }
-
-    if(_play_mode != PlayMode::build || !playing)
-    {
-        _legend.set_visible(false);
-    }
-
-    _set_weight_digits(_max_train_load().integer(), playing);
-
-    if(playing)
-    {
-        _weight_digits[0].set_position(88, game_ui::HUD_TOP_Y);
-        _weight_digits[1].set_position(96, game_ui::HUD_TOP_Y);
-    }
-}
-
-void Game::_update_build_hints()
-{
-    // Timer only — prompt frames are applied in `_update_hud`.
-    if(_screen != Screen::playing || _play_mode != PlayMode::build || _build_hints_seen)
-    {
-        return;
-    }
-
-    ++_build_hint_timer;
-
-    if(_build_hint_timer >= game_ui::BUILD_HINT_FRAMES || bn::keypad::any_pressed())
-    {
-        _build_hints_seen = true;
+            return game_ui::LABEL_TRACK;
     }
 }
 
@@ -715,15 +630,20 @@ void Game::_enter_test()
     _cursor.set_visible(false);
     _ghost.set_visible(false);
     _ring.set_visible(false);
-    _preview_strut.set_visible(false);
+    _graph.hide_preview();
     _train.set_visible(true);
     _train_prev_x = _bridge.train_position().x();
+    _snaps_seen = 0;
+    _fell_before_departure = false;
     (void)_bridge.begin_test();
     game_ui::set_train_sprite_position(_train, _bridge.train_position());
     _chuff_cooldown = 0;
 
     if(_bridge.status() == bridge::SimStatus::no_path)
     {
+        // Sending the train with nothing built at all gets a different "no".
+        const bool nothing_built = _bridge.player_node_count() == 0 && _bridge.struts().empty();
+        _no_go_label = nothing_built ? game_ui::LABEL_LISTEN : game_ui::LABEL_NO_GO;
         _audio.play(audio::MusicCue::none);
         bn::sound_items::delay.play();
         _no_go_timer = 60;
@@ -759,9 +679,25 @@ void Game::_update_test()
 
     const bridge::SimStatus status = _bridge.status();
 
+    if(_bridge.snapped_count() > _snaps_seen)
+    {
+        // Every link that lets go is heard, whether or not the train was on it.
+        _snaps_seen = _bridge.snapped_count();
+        _fell_before_departure = _fell_before_departure || _bridge.settling();
+        bn::sound_items::snap.play();
+        _trigger_shake();
+
+        if(const bridge::SnapFlash* flash = _bridge.snap_flash())
+        {
+            _spawn_dust(bn::fixed_point((flash->a.x() + flash->b.x()) / 2,
+                                        (flash->a.y() + flash->b.y()) / 2));
+        }
+    }
+
     if(status == bridge::SimStatus::failed_fall && prev_status == bridge::SimStatus::running)
     {
-        _fail_reveal_timer = 12;
+        // Long enough to watch the span come down before Hatt has his say.
+        _fail_reveal_timer = game_ui::FAIL_REVEAL_FRAMES;
         _trigger_shake();
         _spawn_dust(_train.position());
     }
@@ -792,14 +728,11 @@ void Game::_update_test()
 
             if(const bridge::SnapFlash* flash = _bridge.snap_flash())
             {
-                view::position_strut_sprite(_preview_strut, flash->a, flash->b, view::STRUT_SNAP);
-                _preview_strut.set_palette(
-                    bn::sprite_items::strut.palette_item().create_palette());
-                _preview_strut.set_visible(true);
+                _graph.show_preview(flash->a, flash->b, view::STRUT_SNAP);
             }
             else
             {
-                _preview_strut.set_visible(false);
+                _graph.hide_preview();
             }
 
             return;
@@ -813,4 +746,60 @@ void Game::_update_test()
     {
         _leave_test();
     }
+}
+
+void Game::_update_hud()
+{
+    int frame = game_ui::LABEL_BUILD;
+
+    if(_no_go_timer > 0)
+    {
+        --_no_go_timer;
+        frame = _no_go_label;
+    }
+    else if(_play_mode == PlayMode::test)
+    {
+        switch(_bridge.status())
+        {
+            case bridge::SimStatus::success:
+                frame = game_ui::LABEL_USEFUL;
+                break;
+
+            case bridge::SimStatus::failed_fall:
+                frame = game_ui::LABEL_ASHES;
+                break;
+
+            case bridge::SimStatus::no_path:
+                frame = game_ui::LABEL_NO_GO;
+                break;
+
+            default:
+                frame = game_ui::LABEL_TEST;
+                break;
+        }
+    }
+    else if(_play_mode == PlayMode::build)
+    {
+        frame = _build_tool_label();
+    }
+
+    _label.set_item(bn::sprite_items::label, frame);
+
+    if(_play_mode == PlayMode::build)
+    {
+        const session::RunScore live =
+            session::compute_run_score(_bridge, _bridge.level_def());
+        const level::Def& def = _bridge.level_def();
+        _set_counter(_node_count_digits, live.total_cost, -20);
+        _set_counter(_strut_count_digits,
+                     live.total_cost > def.par_cost ? session::purse(def) : def.par_cost, 12);
+    }
+    else
+    {
+        // Load on the hardest-worked link now, and the worst it has been.
+        _set_counter(_node_count_digits, _bridge.stress_percent(), -20);
+        _set_counter(_strut_count_digits, _bridge.peak_stress_percent(), 12);
+    }
+
+    _set_weight_digits(_max_train_load().integer(), true);
 }

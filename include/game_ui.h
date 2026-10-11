@@ -22,6 +22,11 @@ constexpr int CURSOR_REPEAT_DELAY = 10;
 constexpr int CURSOR_REPEAT_RATE = 3;
 constexpr int TOAST_FRAMES = 90;
 constexpr int SHAKE_FRAMES = 10;
+/// How long the collapse plays out before the fail screen covers it.
+constexpr int FAIL_REVEAL_FRAMES = 45;
+/// Failed runs in a row before the fail line turns to AGAIN, then LOOP.
+constexpr int AGAIN_STREAK = 3;
+constexpr int LOOP_STREAK = 5;
 constexpr int DUST_LIFE = 24;
 constexpr int MAX_DUST = 6;
 constexpr int CHUFF_FRAMES = 10;
@@ -29,25 +34,27 @@ constexpr int CHUFF_FRAMES = 10;
 constexpr int TOAST_DUP = 0;
 constexpr int TOAST_WEAK = 1;
 constexpr int TOAST_DEL = 2;
+constexpr int TOAST_SPENT = 3;
 
 constexpr int Z_CURSOR = -32767;
-/// HUD chrome must beat scenery on the same scanline (GBA ≤10 sprites/line).
-constexpr int Z_HUD = -200;
-constexpr int Z_HUD_PANEL = -199;
 constexpr int Z_TOAST = -17;
-constexpr int Z_DIGIT = -201;
+constexpr int Z_DIGIT = -19;
+/// HUD label sits behind the panel (the digits own it); dialog text must not.
+constexpr int Z_HUD_LABEL = -18;
+/// Build hints sit at the top of the screen, clear of the river and its rocks.
+constexpr int BUILD_HINT_Y = -70;
+/// TRACK / ROD tag beside the HUD panel, and how long it blinks after a swap.
+constexpr int TOOL_TAG_X = -50;
+constexpr int TOOL_TAG_Y = 70;
+constexpr int TOOL_TAG_FLASH_FRAMES = 30;
+/// PAR / MAX tag on the other side of the panel: what the right-hand number is.
+constexpr int LIMIT_TAG_X = 50;
+/// The winning engine is drawn no further right than this on the result screen.
+constexpr int RESULT_TRAIN_MAX_X = 100;
+constexpr int Z_DIALOG_LABEL = -21;
 constexpr int Z_RING = 4;
 constexpr int Z_GHOST = 6;
 constexpr int Z_STRUT_PREVIEW = 9;
-
-/// Vision top chrome (8px bar) — digits / target load sit near screen top.
-inline constexpr bn::fixed HUD_TOP_Y = -72;
-/// Second chrome row (material + A DRAW / START) — above dense ground OAM.
-inline constexpr bn::fixed HUD_STRIP_Y = -56;
-/// Legacy bottom hint row (kept clear of ground-tile scanlines).
-inline constexpr bn::fixed HUD_BOTTOM_Y = 40;
-/// Right-edge material stack (vision select strip).
-inline constexpr bn::fixed HUD_MAT_X = 96;
 
 enum class ToastKind
 {
@@ -57,6 +64,7 @@ enum class ToastKind
     deleted,
     full,
     undo,
+    spent,
 };
 
 struct DustPuff
@@ -100,21 +108,11 @@ constexpr int LABEL_LISTEN = 35;
 constexpr int LABEL_CONFUS = 36;
 constexpr int LABEL_LOOP = 37;
 constexpr int LABEL_THIN = 38;
-
-/// Vision chrome frames (appended after lore strings).
-constexpr int LABEL_EDIT = 39;
-constexpr int LABEL_RUN = 40;
-constexpr int LABEL_FAIL = 41;
-constexpr int LABEL_WIN = 42;
-constexpr int LABEL_WOOD = 43;
-constexpr int LABEL_IRON = 44;
-constexpr int LABEL_STONE = 45;
-constexpr int LABEL_CABLE = 46;
-constexpr int LABEL_A_DRAW = 47;
-constexpr int LABEL_B_DEL = 48;
-constexpr int LABEL_LR_CY = 49;
-constexpr int LABEL_BUDGT = 50;
-constexpr int LABEL_STRESS = 51;
+constexpr int LABEL_LOAD = 39;
+constexpr int LABEL_CABLE = 40;
+constexpr int LABEL_PAR = 41;
+constexpr int LABEL_MAX = 42;
+constexpr int LABEL_PEAK = 43;
 
 constexpr int BANNER_LEVEL_SELECT = 0;
 constexpr int BANNER_HATT_OK = 1;
@@ -122,6 +120,10 @@ constexpr int BANNER_DELAY = 2;
 constexpr int BANNER_HATT_PEEP = 3;
 constexpr int BANNER_DELAY_LISTEN = 4;
 constexpr int BANNER_ENGINE_SELECT = 5;
+constexpr int BANNER_CINDERS = 6;
+constexpr int BANNER_BUFFERS = 7;
+constexpr int BANNER_BOTHER = 8;
+constexpr int BANNER_REALLY_USEFUL = 9;
 
 constexpr int PANEL_HUD = 0;
 constexpr int PANEL_DIALOG = 1;

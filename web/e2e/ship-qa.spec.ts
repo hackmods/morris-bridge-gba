@@ -4,11 +4,11 @@ import {
   assertCanvasIsRendering,
   buildGordonHillReferenceBridge,
   buildKnapfordReferenceBridge,
-  buildOverlongKnapfordSpan,
-  buildVicarstownReferenceBridge,
+  buildUnsupportedKnapfordDeck,
+  buildCuldeeFellReferenceBridge,
   navigateToBuildMode,
   navigateToGordonBuildMode,
-  navigateToVicarstownBuildMode,
+  navigateToCuldeeFellBuildMode,
   waitForRenderSettle,
 } from './helpers';
 
@@ -112,11 +112,11 @@ test.describe('Ship QA navigation smoke (M1–M2)', () => {
     await assertCanvasIsRendering(page, 500);
   });
 
-  test('M2: overlong Knapford span fails test run', async ({ page }) => {
+  test('M2: unsupported Knapford deck fails test run', async ({ page }) => {
     test.setTimeout(120_000);
 
     await navigateToBuildMode(page);
-    await buildOverlongKnapfordSpan(page);
+    await buildUnsupportedKnapfordDeck(page);
 
     const beforeTest = await page.locator('#game-canvas').screenshot();
     await page.evaluate(() => window.__TEST__!.tapButton('Start'));
@@ -142,11 +142,11 @@ test.describe('Ship QA navigation smoke (M1–M2)', () => {
     await assertCanvasIsRendering(page, 500);
   });
 
-  test("Vicarstown reference bridge wins with walkthrough save", async ({ page }) => {
+  test("Culdee Fell reference bridge wins with walkthrough save", async ({ page }) => {
     test.setTimeout(270_000);
 
-    await navigateToVicarstownBuildMode(page);
-    await buildVicarstownReferenceBridge(page);
+    await navigateToCuldeeFellBuildMode(page);
+    await buildCuldeeFellReferenceBridge(page);
 
     const beforeTest = await page.locator('#game-canvas').screenshot();
     await page.evaluate(() => window.__TEST__!.tapButton('Start'));

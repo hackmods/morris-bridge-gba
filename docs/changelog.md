@@ -1,5 +1,61 @@
 # Changelog & project history
 
+## 2026-10-11 — Cable, stress colours, the purse
+
+Reconciled with `main` (PR #73 / #74), keeping this branch's simulation and re-implementing the ideas from #73 that still made sense on top of it:
+
+- **Cable:** a third material — cheap, long, strong in tension, slack in compression. Unlocks on Gordon's Hill; the par designs now hang with cable and prop with rod (pars: Hill 10, Crovan's Gate 20, Callan 15, Vicarstown 25)
+- **Delete a beam:** B while pointing at a link removes just that link
+- **Graded stress colours:** amber at half strength, red at four-fifths, in test mode and in the post-run rewind
+- **LOAD / PEAK** readout during a run: worst link now and worst so far, in percent
+- **The purse:** a bridge may cost at most 1.5× par; the HUD's right-hand number switches from PAR to MAX once you pass par
+- Not carried over from #73: the 8×8 grid, unbreakable stone piers, its load-sharing stress model, and the runtime L+R+START cheat (use the `MORRIS_PRELOAD_REFERENCE` QA build)
+
+## 2026-10-11 — Sodor, properly
+
+- **Henry** joins as No. 3 (unlocks on Culdee Fell); engine select runs No. 1 to No. 6. Save format unchanged — Henry is a new bit on the end
+- **Real trains:** Thomas pulls Annie and Clarabel, Gordon the express, Henry the Flying Kipper, Percy a truck; Edward, Henry, James and Gordon have tenders. Engines are redrawn with their wheel arrangements
+- **Troublesome Trucks** jolt their load ±25 % as they bump along, and hop on screen
+- **Gordon's Hill is a hill:** the far bank is 32 px higher and Edward banks every train from behind
+- **Grades matter:** engines slow uphill and run away downhill, sag included
+- **Campaign reordered:** Knapford, Gordon's Hill, Culdee Fell, Tidmouth, Wellsworth, Crovan's Gate, Callan, and Vicarstown — the bridge to the mainland — last. Invented names (Knapford Creek, Wellsworth Gap, Callan Canal, Sodor Summit) are gone; Callan's pylons are castle towers
+- **Catchphrases:** CINDERS AND ASHES!, BUST MY BUFFERS!, BOTHER! and REALLY USEFUL! banners, each tied to how the run ended
+- Unlock order changed: Henry on track 3, James on track 4
+
+## 2026-10-11 — Art that matches the game
+
+- **Terrain per level:** each track has its own ground layer generated from its anchors — banks ending at the bank anchors, rails on ballast, cliffs down to a river, and the rock, crags, ledges, pylons and footing the anchors stand on. Knapford gets its station, Tidmouth its shed, every line a signal
+- **Engines redrawn:** cab, boiler, dome, funnel, number and smokebox face; Thomas is a blue No. 1 tank engine, Percy a green saddle tank, James red with gold lining. Portraits are the face in livery
+- **Coaches:** drawn behind Edward, James and Gordon. The run is won when the last coach is off the bridge, and lost if the link under any part of the train goes
+- **Tool tag:** TRACK / ROD beside the HUD panel, blinking on swap; build hints moved to the top of the screen
+- Engine select shows the whole train's load; Hatt no longer stands on the portrait
+- Level intro and track-card subtitles name what each track asks for (PROP!, HANG!, TRUSS…)
+
+## 2026-10-10 — Real bridge physics
+
+The test run is now a structural simulation instead of a per-span rating.
+
+- **Solver:** fixed-point pin-jointed spring truss ([Physics](physics.md)). Joints have weight and fall, links carry axial force and snap in tension or compression, anchors are the only solid ground, the bridge settles under its own weight before the train leaves, and a snapped link brings its neighbours down with it
+- **Removed:** `Tension = Load × distance / length`, the length rating, the joint-count "reinforcement" multiplier and the triangle bonus. Decks no longer float
+- **Build rules:** timber is limited to the level's beam length, rod to 1.5×; the weld ghost turns red past the limit
+- **Routing:** shortest climbable track route; grades steeper than 1 in 2 are not a route
+- **Levels:** all eight rebuilt around different solid ground (rock, crags, nothing, ledges, pylons, a deep footing), each with a par design proven by host tests — including that removing any one link from it loses the train
+- **Engines:** distinct speeds; coaches are trailing axle loads; each level is timetabled for an engine and a lighter one clears it for 1★
+- **Rewind:** after a test, links that carried ≥ 75 % of their strength glow in build mode
+- **Lore lines** are triggered by what the player did (par win, failure streak, collapse before departure, wrong engine) instead of a 4 % dice roll
+- **Saves:** format unchanged, but best costs recorded against the old levels are stale
+
+Presentation bugs found while checking the new ROM in the emulator, all present before this change:
+
+- **Fail screen soft-lock:** dismissing DELAY! left the game on the fail screen for good; it now returns to the build
+- **Hidden bridge:** every sprite drew behind the ground and hill layers, so a deck was only visible in the 48 px gap in the bank art. Scenery layers now share the back priority
+- **Clipped links:** a link was one 16 px sprite stretched to length, which the GBA clips past 32 px. Links are now runs of segments ([`graph_view.cpp`](../src/graph_view.cpp)); rods stretch their 6 px slug into a line
+- **Mirrored diagonals:** link rotation used screen-down y as counter-clockwise
+- **Result text:** the win/fail line sat behind its dialog panel and was overwritten by the HUD on the frame the run ended
+- Scenery (sky, hills, banks, water) now rises with the deck height of the level
+- Collapse plays for 45 frames before the fail screen; every snap is heard
+> The two entries below (2026-09-24) describe PR #73 and #74 as merged to `main`. #73's materials, £ purse, 8×8 grid and load-path stress model were superseded by the truss solver above when the branches were reconciled; its ideas for cable, beam delete, graded stress colours and a budget were re-implemented on top of it.
+
 ## 2026-09-24 — UI / playability handoff plan
 
 - Lessons from vision mockups vs placeholder ROM: systems ≠ shippable feel/look

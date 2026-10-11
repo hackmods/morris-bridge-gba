@@ -3,11 +3,19 @@
 
 /**
  * @file
- * Node/strut graph and train traversal for Morris Bridge.
+ * Node/strut truss, structural simulation, and train traversal.
+ *
+ * Test mode runs a pin-jointed spring truss: every joint has weight, every
+ * link is an axial spring that snaps past its material strength, anchors are
+ * fixed, and the train is a moving set of axle loads shared between the two
+ * joints of the link it stands on. Nothing is rated up front — a link holds
+ * or breaks because of the force that actually reaches it.
  *
  * Storage is `bn::vector` with compile-time capacities (16 nodes, 32 struts).
- * Nothing here calls `new`/`delete` or the heap.
+ * Nothing here calls `new`/`delete` or the heap, and there is no float.
  */
+
+#include <stdint.h>
 
 #include "bn_fixed.h"
 #include "bn_fixed_point.h"
@@ -17,7 +25,6 @@
 #include "physics.h"
 #include "engine.h"
 #include "level.h"
-#include "material.h"
 
 namespace bridge
 {
@@ -30,7 +37,6 @@ inline constexpr int LEVEL_COUNT = level::COUNT;
 inline constexpr int START_NODE = 0;
 inline constexpr int END_NODE = 1;
 
-inline constexpr bn::fixed TRAIN_SPEED = 1;          // pixels per frame at cruise
 inline constexpr bn::fixed ENGINE_MIN_SPEED = bn::fixed(1) / 4;
 inline constexpr int ACCEL_FRAMES = 24;              // frames to reach cruise from rest
 inline constexpr bn::fixed GRAVITY = bn::fixed(1) / 4;
@@ -38,58 +44,88 @@ inline constexpr bn::fixed FALL_INITIAL_VY = bn::fixed(1) / 2;
 inline constexpr bn::fixed SNAP_RADIUS = 10;
 inline constexpr bn::fixed FALL_Y_LIMIT = 90;
 
+/// Links shorter than this are rejected (joints snap together well before it).
+inline constexpr bn::fixed MIN_LINK_LENGTH = 8;
+
+/// How close the cursor must be to a link to pick it for deletion.
+inline constexpr bn::fixed LINK_PICK_RADIUS = 5;
+
+/// Structure settles under its own weight for this long before the train moves.
+inline constexpr int SETTLE_FRAMES = 40;
+/// Self-weight fades in over this many frames so a new span does not ring.
+inline constexpr int GRAVITY_RAMP_FRAMES = 24;
+/// Solver substeps per frame (gravity is 1/64 px per substep², 1/4 px per frame²).
+inline constexpr int SIM_SUBSTEPS = 4;
+
+/// A train that sags this far below the rail line is in the water.
+inline constexpr bn::fixed SINK_DEPTH = 20;
+
+/// Track steeper than 1-in-`MAX_GRADE_RUN` is not a route — engines stall on it.
+inline constexpr int MAX_GRADE_RUN = 2;
+
+/// A Troublesome Truck's load swings this far either side of its weight, and
+/// flips every `TRUCK_JOLT_FRAMES` as the trucks bump each other along.
+inline constexpr bn::fixed TRUCK_JOLT = bn::fixed(1) / 4;
+inline constexpr int TRUCK_JOLT_FRAMES = 8;
+
+/// Weight of one bare joint (pin, plates) in engine-weight units.
+inline constexpr bn::fixed JOINT_WEIGHT = bn::fixed(1) / 4;
+
 enum class LinkRole : uint8_t
 {
-    track,       ///< Routable deck — train follows these links.
-    brace,       ///< Structural support — not traversable.
-    foundation,  ///< Stone pier / ground anchor member.
+    track,  ///< Routable timber deck — train follows these links.
+    brace,  ///< Structural rod — supports joints, not traversable.
+    cable,  ///< Wire rope — holds in tension only, goes slack if pushed.
 };
 
-using MaterialId = material::Id;
+inline constexpr int LINK_ROLE_COUNT = 3;
 
-/// Joint plate cost in £ (vision budget uses member costs primarily).
-inline constexpr int NODE_COST = 10;
-inline constexpr int TIMBER_LINK_COST = 10; ///< wood
-inline constexpr int ROD_LINK_COST = 25;    ///< iron
-inline constexpr int STONE_LINK_COST = 50;
-inline constexpr int CABLE_LINK_COST = 15;
-inline constexpr bn::fixed ROD_STRENGTH_MUL = bn::fixed(5) / 4;
+enum class MaterialId : uint8_t
+{
+    timber,  ///< Wood beam — cheap, short, carries the rails.
+    rod,     ///< Steel rod — dearer, longer, stronger, not a train route.
+    cable,   ///< Wire rope — cheap, longest, strong in tension, useless in compression.
+};
+
+/**
+ * @brief Structural properties of one material.
+ *
+ * Forces are in engine-weight units (Thomas weighs 4). `stiffness` is the
+ * axial rigidity EA: force = stiffness × strain.
+ */
+struct Material
+{
+    bn::fixed stiffness;
+    bn::fixed strength;       ///< Axial force (tension or compression) that snaps it.
+    bn::fixed weight_per_px;
+    int cost;
+    int reach_num;            ///< Max length = level beam length × num / den.
+    int reach_den;
+    bool tension_only;        ///< Carries no force when shorter than its rest length.
+};
+
+inline constexpr Material TIMBER = { 480, 8, bn::fixed(1) / 128, 1, 1, 1, false };
+inline constexpr Material ROD = { 720, 12, bn::fixed(1) / 128, 2, 3, 2, false };
+inline constexpr Material CABLE = { 720, 12, bn::fixed(1) / 256, 1, 2, 1, true };
+
+inline constexpr int NODE_COST = 1;
+inline constexpr int TIMBER_LINK_COST = TIMBER.cost;
+inline constexpr int ROD_LINK_COST = ROD.cost;
 
 [[nodiscard]] inline constexpr MaterialId material_for_role(const LinkRole role)
 {
-    switch(role)
-    {
-        case LinkRole::foundation:
-            return MaterialId::stone;
-        case LinkRole::brace:
-            return MaterialId::iron;
-        default:
-            return MaterialId::wood;
-    }
+    return role == LinkRole::brace ? MaterialId::rod
+                                   : (role == LinkRole::cable ? MaterialId::cable : MaterialId::timber);
 }
 
-[[nodiscard]] inline constexpr LinkRole role_for_material(const MaterialId material)
+[[nodiscard]] inline constexpr const Material& material(const MaterialId id)
 {
-    switch(material)
-    {
-        case MaterialId::stone:
-            return LinkRole::foundation;
-        case MaterialId::cable:
-        case MaterialId::iron:
-            return LinkRole::brace;
-        default:
-            return LinkRole::track;
-    }
+    return id == MaterialId::rod ? ROD : (id == MaterialId::cable ? CABLE : TIMBER);
 }
 
-[[nodiscard]] inline constexpr int link_cost(const MaterialId mat)
+[[nodiscard]] inline constexpr int link_cost(const MaterialId id)
 {
-    return material::cost(mat);
-}
-
-[[nodiscard]] inline constexpr bn::fixed material_strength(const MaterialId mat)
-{
-    return material::get(mat).stiffness_mul;
+    return material(id).cost;
 }
 
 [[nodiscard]] inline constexpr uint8_t link_role_bit(const LinkRole role)
@@ -97,32 +133,13 @@ inline constexpr bn::fixed ROD_STRENGTH_MUL = bn::fixed(5) / 4;
     return uint8_t(1) << int(role);
 }
 
-[[nodiscard]] inline constexpr bool is_routable(const LinkRole role)
-{
-    return role == LinkRole::track;
-}
-
-[[nodiscard]] inline constexpr uint8_t link_material_bit(const MaterialId mat)
-{
-    return uint8_t(1) << int(mat);
-}
-
 enum class SimStatus
 {
-    idle,        ///< EDIT_MODE; simulation is not running.
-    running,     ///< SIMULATION_MODE; train is traversing struts.
-    success,     ///< RESULT_MODE success — reached the right bank.
-    failed_fall, ///< RESULT_MODE failure — snapped / DERAILED.
-    no_path      ///< Start and end are not connected.
-};
-
-/// Train state during / after simulation (vision: DERAILED on collapse).
-enum class TrainState : uint8_t
-{
-    waiting,   ///< EDIT_MODE — parked on left bank.
-    crossing,  ///< SIMULATION_MODE — on track.
-    arrived,   ///< RESULT success.
-    derailed,  ///< RESULT failure — bridge collapse / fall.
+    idle,        ///< Build mode; simulation is not running.
+    running,     ///< Structure is loaded and the train is settling or crossing.
+    success,     ///< The whole train is on the far bank.
+    failed_fall, ///< The road under the train snapped, vanished, or sank.
+    no_path      ///< No climbable track joins the two banks.
 };
 
 enum class StrutPreviewStatus
@@ -133,6 +150,7 @@ enum class StrutPreviewStatus
     duplicate,
     struts_full,
     zero_length,
+    too_long,
 };
 
 struct SnapFlash
@@ -146,7 +164,7 @@ struct StrutPreview
 {
     StrutPreviewStatus status = StrutPreviewStatus::invalid_node;
     bn::fixed length = 0;
-    bn::fixed max_tension = 0;
+    bn::fixed max_length = 0;
 };
 
 enum class UndoResult
@@ -175,17 +193,50 @@ struct Strut
     int node_a = 0;
     int node_b = 0;
     LinkRole role = LinkRole::track;
-    MaterialId material = MaterialId::wood;
-    bn::fixed length = 0;
-    bn::fixed current_tension = 0; ///< Axial |F| from the truss load-path solve.
-    bn::fixed max_tension = 0;     ///< Rated yield (collapse when stress >= 1).
-    bn::fixed stress = 0;          ///< current_tension / max_tension.
-    bool triangulated = false;
+    MaterialId material = MaterialId::timber;
+    bn::fixed length = 0;           ///< Rest length (as built).
+    bn::fixed current_tension = 0;  ///< |axial force| this frame.
+    bn::fixed max_tension = 0;      ///< Material strength.
+    bn::fixed peak_tension = 0;     ///< Worst |axial force| of the last test run.
+    bool compressed = false;        ///< Current force is compression, not tension.
+
+    // Solver cache, filled by begin_test().
+    int32_t inv_rest2 = 0;          ///< 2^56 / rest² (rest in bn::fixed data units).
+    int32_t inv_rest = 0;           ///< 2^32 / rest.
+    int32_t ea_q4 = 0;              ///< Stiffness × 16.
+    bool tension_only = false;      ///< Cable: no force in compression.
 };
 
-[[nodiscard]] inline bool strut_warns_for_load(const Strut& strut, const bn::fixed load)
+/// How hard a link is working, for colouring: calm, warm (half its strength)
+/// or hot (four-fifths, close to snapping).
+enum class Heat : uint8_t
 {
-    return strut.max_tension < load;
+    calm,
+    warm,
+    hot,
+};
+
+[[nodiscard]] inline Heat heat_for(const bn::fixed force, const bn::fixed strength)
+{
+    if(force * 5 >= strength * 4)
+    {
+        return Heat::hot;
+    }
+
+    return force * 2 >= strength ? Heat::warm : Heat::calm;
+}
+
+/// Heat from the force a link carries right now (test mode).
+[[nodiscard]] inline Heat strut_heat(const Strut& strut)
+{
+    return heat_for(strut.current_tension, strut.max_tension);
+}
+
+/// Heat from the worst force of the last test run (build mode); a link that
+/// snapped reads as hot.
+[[nodiscard]] inline Heat strut_peak_heat(const Strut& strut)
+{
+    return heat_for(strut.peak_tension, strut.max_tension);
 }
 
 class BridgeSystem
@@ -211,14 +262,10 @@ public:
         return _struts;
     }
 
-    [[nodiscard]] bn::vector<Node, MAX_NODES>& nodes()
+    /// The bridge as welded: unlike struts(), links snapped mid-test still count.
+    [[nodiscard]] const bn::vector<Strut, MAX_STRUTS>& built_struts() const
     {
-        return _nodes;
-    }
-
-    [[nodiscard]] bn::vector<Strut, MAX_STRUTS>& struts()
-    {
-        return _struts;
+        return _test_ran ? _saved_struts : _struts;
     }
 
     /**
@@ -227,60 +274,43 @@ public:
     [[nodiscard]] bn::optional<int> add_node(bn::fixed x, bn::fixed y, bool is_anchored = false);
 
     /**
-     * @brief Connect two nodes with a strut.
+     * @brief Connect two nodes with a link of the role's material.
      *
-     * Rejects identical endpoints, missing IDs, duplicates, and a full vector.
-     * Length and `max_tension` are computed immediately.
+     * Rejects identical endpoints, missing IDs, duplicates, a full vector, and
+     * links shorter than `MIN_LINK_LENGTH` or longer than the material reach.
      */
     [[nodiscard]] bn::optional<int> add_strut(int node_a, int node_b,
-                                              LinkRole role = LinkRole::track,
-                                              MaterialId material = MaterialId::wood);
+                                              LinkRole role = LinkRole::track);
 
     [[nodiscard]] bool allows_link_role(LinkRole role) const;
 
-    [[nodiscard]] bool allows_material(MaterialId material) const;
+    /// Longest link of this role the level's yard can supply.
+    [[nodiscard]] bn::fixed max_link_length(LinkRole role) const;
 
     /**
      * @brief Nearest node within `SNAP_RADIUS`, using squared distance.
      */
     [[nodiscard]] bn::optional<int> find_node_near(bn::fixed_point point) const;
 
-    /**
-     * @brief Nearest strut whose segment is within `SNAP_RADIUS` of `point`.
-     */
-    [[nodiscard]] bn::optional<int> find_strut_near(bn::fixed_point point) const;
-
     [[nodiscard]] bn::optional<int> find_strut(int node_a, int node_b) const;
 
-    [[nodiscard]] StrutPreview preview_strut(int node_a, int node_b,
-                                               LinkRole role = LinkRole::track,
-                                               MaterialId material = MaterialId::wood) const;
+    /// Link passing within `LINK_PICK_RADIUS` of @p point (nearest wins).
+    [[nodiscard]] bn::optional<int> find_strut_near(bn::fixed_point point) const;
 
-    /// Capacity used by the weld ghost when the cursor is not over a joint.
-    [[nodiscard]] bn::fixed span_preview_capacity(bn::fixed length, LinkRole role,
-                                                    MaterialId material = MaterialId::wood) const;
-
-    /**
-     * @brief Delete a player-built strut by index (EDIT_MODE B: DELETE).
-     */
+    /// Remove one link in build mode. False while testing or for a bad index.
     [[nodiscard]] bool remove_strut(int strut_index);
 
-    /**
-     * @brief Remaining £ budget (level purse minus spent members / joints).
-     */
-    [[nodiscard]] int budget_remaining() const;
+    /// Worst load on any standing link right now, as a percentage of its strength.
+    [[nodiscard]] int stress_percent() const;
 
-    [[nodiscard]] int budget_spent() const;
-
-    [[nodiscard]] TrainState train_state() const
+    /// Worst `stress_percent()` seen so far in this test run.
+    [[nodiscard]] int peak_stress_percent() const
     {
-        return _train_state;
+        return _peak_stress_percent;
     }
 
-    /**
-     * @brief Peak stress ratio across live members (HUD STRESS % during SIM).
-     */
-    [[nodiscard]] bn::fixed peak_stress() const;
+    [[nodiscard]] StrutPreview preview_strut(int node_a, int node_b,
+                                               LinkRole role = LinkRole::track) const;
 
     [[nodiscard]] UndoResult undo_last_edit();
 
@@ -304,20 +334,26 @@ public:
 
     [[nodiscard]] bool is_player_node(int node_id) const;
 
+    /// True when this link is track an engine can climb (grade within limit).
+    [[nodiscard]] bool is_routable(const Strut& strut) const;
+
     [[nodiscard]] bool has_track_path() const;
 
     /**
-     * @brief Begin test mode: snapshot struts, BFS a path, spawn the train.
+     * @brief Begin test mode: snapshot the build, pick the shortest climbable
+     * track route, weigh the structure, and park the train on the start bank.
      */
     SimStatus begin_test();
 
     /**
-     * @brief Leave test mode and restore struts to their pre-test snapshot.
+     * @brief Leave test mode and restore the build to its pre-test snapshot.
+     *
+     * Each restored link keeps the worst force it saw as `peak_tension`.
      */
     void end_test();
 
     /**
-     * @brief Advance the train one frame. No-op unless status is `running`.
+     * @brief Advance the structure and the train one frame.
      */
     SimStatus update();
 
@@ -328,12 +364,42 @@ public:
 
     [[nodiscard]] bn::fixed_point train_position() const
     {
-        return _train_position;
+        return _axle_position[0];
+    }
+
+    /// Engine (0) plus one axle per car behind it.
+    [[nodiscard]] int axle_count() const
+    {
+        return 1 + _cars.size();
+    }
+
+    /// What the car on axle @p axle (1..) is.
+    [[nodiscard]] engine::CarKind car_kind(const int axle) const
+    {
+        return _cars[axle - 1].kind;
+    }
+
+    /// Rail position of the engine (0) or a car (1..), on the bridge or a bank.
+    [[nodiscard]] bn::fixed_point axle_position(const int axle) const
+    {
+        return _axle_position[axle];
     }
 
     [[nodiscard]] bool train_falling() const
     {
         return _falling;
+    }
+
+    /// True while the structure is still settling and the train has not left.
+    [[nodiscard]] bool settling() const
+    {
+        return _status == SimStatus::running && _settle_frames > 0;
+    }
+
+    /// Links snapped so far in this test run.
+    [[nodiscard]] int snapped_count() const
+    {
+        return _snapped_count;
     }
 
     [[nodiscard]] int path_length() const
@@ -353,6 +419,9 @@ public:
         return _train_weight;
     }
 
+    /// Engine, cars and any banker — the full load the bridge must carry.
+    [[nodiscard]] bn::fixed train_total_weight() const;
+
     [[nodiscard]] bn::fixed train_link_t() const
     {
         return _train_t;
@@ -370,22 +439,10 @@ public:
         return _train_speed;
     }
 
-    [[nodiscard]] bn::fixed safe_length() const
-    {
-        return _safe_length;
-    }
-
-    [[nodiscard]] int coach_count() const
-    {
-        return _coach_count;
-    }
-
     [[nodiscard]] const level::Def& level_def() const
     {
         return level::get(_level_index);
     }
-
-    [[nodiscard]] bn::fixed effective_weight_at(bn::fixed distance_along, bn::fixed strut_length) const;
 
     [[nodiscard]] const SnapFlash* snap_flash() const;
 
@@ -397,44 +454,67 @@ private:
         strut,
     };
 
+    /// Per-node solver state; only meaningful between begin_test() and end_test().
+    struct NodeSim
+    {
+        int32_t vx = 0;           ///< Velocity, px × 2^20 per substep.
+        int32_t vy = 0;
+        int32_t fx = 0;           ///< Force accumulator, bn::fixed data.
+        int32_t fy = 0;
+        int32_t weight = 0;       ///< Dead weight (joint + half of each link).
+        int32_t inv_inertia = 0;  ///< 1 / inertial mass, bn::fixed data.
+    };
+
     void _seed_level();
-    void _recompute_strut_ratings();
-    int _connection_count(int node_id) const;
-    bool _strut_is_triangulated(int strut_index) const;
-    bn::fixed _current_train_load() const;
-    bn::fixed _current_train_speed() const;
-    void _break_strut(int strut_index);
-    void _clear_member_forces();
-    void _solve_truss_stress(int active_strut, bn::fixed distance_along);
-    bool _cascade_collapse(int active_strut);
-    void _apply_tension(int strut_index, bn::fixed distance_along);
     void _remove_strut_at(int strut_index);
     void _record_node_edit(int node_id);
     void _record_strut_edit(int strut_index);
-    bool _bfs_path();
+    bool _find_route();
+    void _prepare_solver();
+    void _refresh_inertia();
+    void _apply_axle(bn::fixed distance, bn::fixed weight);
+    void _apply_train_load();
+    void _substep(int gravity_q8, int damping_shift);
+    void _break_strut(int strut_index);
     void _start_falling();
-    [[nodiscard]] bool _pier_placement_ok(int node_a, int node_b) const;
+    void _place_train();
+    [[nodiscard]] bn::fixed _axle_distance(int axle) const;
+    [[nodiscard]] int _segment_at(bn::fixed distance) const;
+    void _park_train();
+    void _rebuild_train();
+    [[nodiscard]] bn::fixed _axle_weight(int axle) const;
+    [[nodiscard]] bn::fixed _grade_factor() const;
+    bn::fixed _current_train_speed() const;
 
     bn::vector<Node, MAX_NODES> _nodes;
     bn::vector<Strut, MAX_STRUTS> _struts;
+    bn::vector<Node, MAX_NODES> _saved_nodes;
     bn::vector<Strut, MAX_STRUTS> _saved_struts;
     bn::vector<int, MAX_NODES> _path;
+    bn::fixed _path_cum[MAX_NODES] = {};  ///< Rest distance from start to each path node.
+    NodeSim _sim[MAX_NODES] = {};
+    int32_t _load[MAX_NODES] = {};        ///< Train load per node this frame, bn::fixed data.
 
     SimStatus _status = SimStatus::idle;
-    TrainState _train_state = TrainState::waiting;
-    bn::fixed_point _train_position;
-    bn::fixed _train_t = 0;     ///< 0..1 along the current strut.
-    int _path_index = 0;        ///< Index of the node the train is leaving.
+    bn::fixed_point _axle_position[1 + engine::MAX_CARS];
+    bn::fixed _train_distance = 0;  ///< Engine distance along the route.
+    bn::fixed _train_t = 0;         ///< 0..1 along the current strut.
+    int _path_index = 0;            ///< Index of the node the train is leaving.
     int _accel_frames = 0;
+    int _settle_frames = 0;
+    int _test_frames = 0;
+    int _snapped_count = 0;
+    int _peak_stress_percent = 0;
     bn::fixed _fall_vy = 0;
     bool _falling = false;
+    bool _test_ran = false;
     int _level_index = 0;
     int _anchored_node_count = 0;
     engine::Id _engine = engine::default_engine();
-    bn::fixed _train_weight = physics::BASE_WEIGHT;
-    bn::fixed _train_speed = TRAIN_SPEED;
-    bn::fixed _safe_length = physics::SAFE_LENGTH;
-    int _coach_count = 0;
+    bn::fixed _train_weight = 0;
+    bn::fixed _train_speed = 1;
+    bn::fixed _beam_length = level::DEFAULT_BEAM_LENGTH;
+    bn::vector<engine::Car, engine::MAX_CARS> _cars;
     LastEdit _last_edit = LastEdit::none;
     int _last_edit_index = -1;
     bn::optional<SnapFlash> _snap_flash;
