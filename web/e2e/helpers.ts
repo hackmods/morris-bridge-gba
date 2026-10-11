@@ -176,7 +176,13 @@ export async function buildKnapfordReferenceBridge(page: Page): Promise<void> {
   await page.waitForTimeout(300);
 }
 
-/** Gordon's Hill par design: the deck climbs 32 px, each joint hung from a crag on a rod. */
+/**
+ * Gordon's Hill par design: the deck climbs 32 px, each joint hung from a crag on a cable.
+ *
+ * B deletes whatever joint or beam it is pointing at, so it is only used to
+ * drop the selection while the cursor is on an anchor. Each cable is welded
+ * joint-first so the weld ends on a crag.
+ */
 export async function buildGordonHillReferenceBridge(page: Page): Promise<void> {
   const { tap, move } = createInputHelpers(page);
 
@@ -201,19 +207,20 @@ export async function buildGordonHillReferenceBridge(page: Page): Promise<void> 
   await tap('A');
   await tap('B');
 
-  // Left crag (-36, -24) down to the left joint (-40, 36).
+  // Left joint (-40, 36) up to the left crag (-36, -24).
   await move('Left', 76);
-  await move('Down', 12);
+  await move('Down', 72);
   await tap('A');
-  await move('Down', 60);
+  await move('Up', 60);
   await tap('A');
   await tap('B');
 
-  // Left crag again, across and down to the middle joint (0, 28).
-  await move('Up', 60);
-  await tap('A');
-  await move('Right', 36);
+  // Middle joint (0, 28) up and across to the left crag.
+  await move('Right', 40);
   await move('Down', 52);
+  await tap('A');
+  await move('Left', 36);
+  await move('Up', 52);
   await tap('A');
   await tap('B');
 
@@ -262,7 +269,8 @@ export async function buildCuldeeFellReferenceBridge(page: Page): Promise<void> 
   await move('Up', 30);
   await move('Right', 20);
   await tap('A');
-  await tap('B');
+  // A on the selected joint drops the selection; B here would delete the joint.
+  await tap('A');
 
   await move('Left', 20);
   await move('Down', 30);
@@ -276,11 +284,10 @@ export async function buildCuldeeFellReferenceBridge(page: Page): Promise<void> 
   await move('Up', 30);
   await move('Left', 20);
   await tap('A');
-  await tap('B');
 
-  // Rods: left end post, the top chord, right end post.
+  // Rods: left end post (still welding from the top-left joint), the top
+  // chord, right end post.
   await tap('R');
-  await tap('A');
   await move('Left', 20);
   await move('Down', 30);
   await tap('A');

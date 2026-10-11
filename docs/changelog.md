@@ -1,5 +1,12 @@
 # Changelog & project history
 
+## 2026-10-11 — v2.0.3: final polish
+
+- **Names in full:** engine and pause menu rows are twice as wide (THOMAS, EDWARD, GORDON, RESTART no longer cut to five letters); track cards read GORDON'S HILL, CULDEE FELL and CROVAN'S GATE on two lines
+- **COST** tag on the left of the build HUD, opposite PAR / MAX
+- **The whole train on the win screen:** coaches, tender and trucks line up behind the engine
+- **Tests that check the outcome:** the Knapford emulator tests now read the save to confirm a real win (and a real failure for the unsupported deck), not just that the picture changed. Doing so exposed that the Gordon's Hill and Culdee Fell input macros had been deleting their own joints with B; they are fixed and renamed "build and run", since timed input is not precise enough to assert a win on a 13-step build
+
 ## 2026-10-11 — Quality of life
 
 - **Undo keeps going:** L takes back the newest weld, and pressing it again keeps unwinding, joint by beam, down to bare anchors

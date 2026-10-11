@@ -68,6 +68,8 @@ Game::Game() :
                                                      game_ui::LABEL_TRACK)),
     _limit_tag(bn::sprite_items::label.create_sprite(game_ui::LIMIT_TAG_X, game_ui::TOOL_TAG_Y,
                                                       game_ui::LABEL_PAR)),
+    _cost_tag(bn::sprite_items::label.create_sprite(game_ui::TOOL_TAG_X, game_ui::TOOL_TAG_Y,
+                                                     game_ui::LABEL_COST)),
     _palette_ring(bn::sprite_items::ring.create_sprite(0, 0)),
     _palette_cost(bn::sprite_items::digit.create_sprite(game_ui::PALETTE_COST_X,
                                                          game_ui::PALETTE_NAME_Y, 1)),
@@ -102,6 +104,8 @@ Game::Game() :
     _tool_tag.set_visible(false);
     _limit_tag.set_z_order(game_ui::Z_DIALOG_LABEL);
     _limit_tag.set_visible(false);
+    _cost_tag.set_z_order(game_ui::Z_DIALOG_LABEL);
+    _cost_tag.set_visible(false);
 
     // Palette icons reuse the link art: a beam, and the rod and cable slugs
     // stretched so they read at icon size.
@@ -421,14 +425,17 @@ engine::Id Game::_active_engine() const
 
 void Game::_sync_overlays()
 {
-    // The rest of the train follows the engine only while it is on the line.
+    // The rest of the train follows the engine while it is on the line, and
+    // lines up behind it on the win screen (unless a newly unlocked engine
+    // is being shown off in its place).
     const bool on_line = _screen == Screen::playing && _play_mode == PlayMode::test;
+    const bool arrived = _screen == Screen::level_complete && ! _show_unlock_flash;
 
     for(int i = 0; i < _cars.size(); ++i)
     {
         bn::sprite_ptr& car = _cars[i];
         const int axle = i + 1;
-        const bool shown = on_line && axle < _bridge.axle_count();
+        const bool shown = (on_line || arrived) && axle < _bridge.axle_count();
 
         if(shown)
         {
@@ -455,7 +462,16 @@ void Game::_sync_overlays()
                 at.set_y(at.y() - 1);
             }
 
-            game_ui::set_train_sprite_position(car, at);
+            if(arrived)
+            {
+                // Buffered up behind wherever the engine was drawn.
+                car.set_position(_train.x() - engine::CAR_SPACING * axle, _train.y());
+            }
+            else
+            {
+                game_ui::set_train_sprite_position(car, at);
+            }
+
             car.set_horizontal_flip(! _train_facing_right);
         }
 
@@ -494,6 +510,9 @@ void Game::_sync_overlays()
                            building ? game_ui::PALETTE_NAME_Y : game_ui::TOOL_TAG_Y);
     _tool_tag.set_visible(on_line || building);
     _limit_tag.set_visible(on_line || building);
+    // With the material name up by the palette, the left of the panel is free
+    // to say what its number is.
+    _cost_tag.set_visible(building);
 
     // The palette: every material this track allows, left to right, with a
     // ring on the one R has in hand and its price beside the name.
@@ -749,7 +768,7 @@ void Game::_enter_pause()
     _menu_row.set_item(bn::sprite_items::menu, game_ui::MENU_PAUSE_BASE + int(_pause_option));
     _menu_row.set_position(0, 0);
     _menu_arrow.set_visible(true);
-    _menu_arrow.set_position(-38, 8);
+    _menu_arrow.set_position(-42, 8);
     _cursor.set_visible(false);
     _hatt.set_visible(true);
     _hatt.set_position(56, 8);
