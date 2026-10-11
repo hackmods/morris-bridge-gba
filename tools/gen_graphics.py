@@ -1671,12 +1671,13 @@ def make_labels() -> None:
         "CONFUS",
         "LOOP!",
         "THIN!",
-        # 39-43: HUD tags.
+        # 39-44: HUD tags.
         "LOAD",
         "CABLE",
         "PAR",
         "MAX",
         "PEAK",
+        "WOOD",
     )
     w, fh = 32, 8
     px = fill(w, fh * len(texts))
@@ -1684,7 +1685,7 @@ def make_labels() -> None:
         2, 2, 2, 3, 2, 3, 2, 3, 2, 2, 2, 3, 3, 2, 3, 3, 3, 2, 2, 2, 2, 3, 3, 2, 3,
         2, 3, 2, 3, 2, 3, 2, 3, 2, 3,
         3, 9, 3, 3,
-        2, 2, 3, 9, 9,
+        2, 2, 3, 9, 9, 2,
     )
     for i, text in enumerate(texts):
         y0 = i * fh

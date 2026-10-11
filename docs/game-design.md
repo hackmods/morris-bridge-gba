@@ -37,7 +37,7 @@ The ROM teaches controls directly:
 
 - **Title:** static hint labels (**HOLD A**, **A WELD**) above the dialog panel
 - **First build session:** rotating hints (`HOLD A` → `A WELD` → `PAUSE`) for a few seconds, dismissible with any button
-- **Tool tag:** **TRACK**, **ROD** or **CABLE** beside the HUD panel shows what the next weld uses; **R** cycles through what the track has unlocked.
+- **Material palette:** icons at the top right show every material this track allows, with a ring on the one in hand and its name (**WOOD**, **ROD**, **CABLE**) and price underneath. **R** cycles through them.
 - **Build HUD:** **A WELD** while a joint is selected, **START** once a road links both banks; digits show **cost vs par** (3★ if cost ≤ par). The weld ghost turns **red** when the link is longer than the yard can supply. After a test, links that carried ≥ 75 % of their strength (or snapped) glow **hot**.
 - **Hold A + drag:** plants joints every 24 px so a span can be chain-welded in one stroke; tap A still joins one joint at a time
 

@@ -1,5 +1,10 @@
 # Changelog & project history
 
+## 2026-10-11 — v2.0.1: slack-cable crash, material palette
+
+- **Fixed a crash** ("32bit integer division by zero") during a run on any track with cable. A slack cable can fold up shorter than a pixel; the link renderer then worked out that it needed zero sprite segments and divided by that. Links under 2 px are no longer drawn and the segment count is never zero (`physics::segments_for`, host-tested)
+- **Material palette:** build mode shows every material the track allows as icons at the top right, a ring on the one in hand, and its name and price underneath. The timber tag now reads WOOD
+
 ## 2026-10-11 — Cable, stress colours, the purse
 
 Reconciled with `main` (PR #73 / #74), keeping this branch's simulation and re-implementing the ideas from #73 that still made sense on top of it:

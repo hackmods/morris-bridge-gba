@@ -68,6 +68,10 @@ Game::Game() :
                                                      game_ui::LABEL_TRACK)),
     _limit_tag(bn::sprite_items::label.create_sprite(game_ui::LIMIT_TAG_X, game_ui::TOOL_TAG_Y,
                                                       game_ui::LABEL_PAR)),
+    _palette_ring(bn::sprite_items::ring.create_sprite(0, 0)),
+    _palette_cost(bn::sprite_items::digit.create_sprite(game_ui::PALETTE_COST_X,
+                                                         game_ui::PALETTE_NAME_Y, 1)),
+    _palette_mat(bn::sprite_affine_mat_ptr::create()),
     _camera(bn::camera_ptr::create())
 {
     bn::bg_palettes::set_transparent_color(bn::color(8, 14, 20));
@@ -98,6 +102,28 @@ Game::Game() :
     _tool_tag.set_visible(false);
     _limit_tag.set_z_order(game_ui::Z_DIALOG_LABEL);
     _limit_tag.set_visible(false);
+
+    // Palette icons reuse the link art: a beam, and the rod and cable slugs
+    // stretched so they read at icon size.
+    _palette_mat.set_scale(bn::fixed(5) / 2, 2);
+
+    for(const int frame : { view::STRUT_IDLE, view::STRUT_BRACE_IDLE, view::STRUT_CABLE })
+    {
+        _palette_icons.push_back(bn::sprite_items::strut.create_sprite(0, 0, frame));
+        bn::sprite_ptr& icon = _palette_icons.back();
+        icon.set_z_order(game_ui::Z_DIALOG_LABEL);
+        icon.set_visible(false);
+
+        if(frame != view::STRUT_IDLE)
+        {
+            icon.set_affine_mat(_palette_mat);
+        }
+    }
+
+    _palette_ring.set_z_order(game_ui::Z_DIALOG_LABEL - 1);
+    _palette_ring.set_visible(false);
+    _palette_cost.set_z_order(game_ui::Z_DIALOG_LABEL);
+    _palette_cost.set_visible(false);
 
     for(int i = 0; i < engine::MAX_CARS; ++i)
     {
@@ -462,8 +488,49 @@ void Game::_sync_overlays()
         _limit_tag.set_item(bn::sprite_items::label, game_ui::LABEL_PEAK);
     }
 
-    _tool_tag.set_visible(on_line || (building && (_tool_tag_flash / 4) % 2 == 0));
+    // In build mode the name sits under the palette; during a run the same
+    // sprite is the LOAD caption beside the HUD.
+    _tool_tag.set_position(building ? game_ui::PALETTE_NAME_X : game_ui::TOOL_TAG_X,
+                           building ? game_ui::PALETTE_NAME_Y : game_ui::TOOL_TAG_Y);
+    _tool_tag.set_visible(on_line || building);
     _limit_tag.set_visible(on_line || building);
+
+    // The palette: every material this track allows, left to right, with a
+    // ring on the one R has in hand and its price beside the name.
+    int slot = 0;
+    _palette_ring.set_visible(false);
+
+    for(int role = 0; role < _palette_icons.size(); ++role)
+    {
+        bn::sprite_ptr& icon = _palette_icons[role];
+        const bool offered = building && _bridge.allows_link_role(bridge::LinkRole(role));
+        icon.set_visible(offered);
+
+        if(! offered)
+        {
+            continue;
+        }
+
+        icon.set_position(game_ui::PALETTE_X + slot * game_ui::PALETTE_SPACING, game_ui::PALETTE_Y);
+        ++slot;
+
+        if(bridge::LinkRole(role) == _connect_role)
+        {
+            _palette_ring.set_position(icon.position());
+            // The ring swells for a moment when the material changes.
+            _palette_ring.set_scale(_tool_tag_flash > 0 && (_tool_tag_flash / 4) % 2 == 0 ?
+                                        bn::fixed(5) / 4 : bn::fixed(1));
+            _palette_ring.set_visible(true);
+        }
+    }
+
+    _palette_cost.set_visible(building);
+
+    if(building)
+    {
+        _palette_cost.set_item(bn::sprite_items::digit,
+                               bridge::link_cost(bridge::material_for_role(_connect_role)));
+    }
 }
 
 void Game::_sync_train_sprite()

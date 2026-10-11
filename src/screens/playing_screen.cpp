@@ -618,7 +618,7 @@ int Game::_build_tool_label() const
             return game_ui::LABEL_CABLE;
 
         default:
-            return game_ui::LABEL_TRACK;
+            return game_ui::LABEL_WOOD;
     }
 }
 
