@@ -163,6 +163,20 @@ int main()
         expect_near(mid.y(), 0, 0, "lerp midpoint y");
     }
 
+    {
+        // A slack cable can fold up to a fraction of a pixel. The segment
+        // count the link renderer divides by must never reach zero (it did:
+        // "32bit integer division by zero" on Gordon's Hill).
+        assert(physics::segments_for(bn::fixed(1) / 4, 24) == 1);
+        assert(physics::segments_for(0, 16) == 1);
+        assert(physics::segments_for(24, 24) == 1);
+        assert(physics::segments_for(25, 24) == 2);
+        assert(physics::segments_for(72, 24) == 3);
+        assert(physics::segments_for(16, 16) == 1);
+        assert(physics::segments_for(48, 16) == 3);
+        std::cout << "  ok link segment count is never zero\n";
+    }
+
     // --- Build rules --------------------------------------------------------
 
     {

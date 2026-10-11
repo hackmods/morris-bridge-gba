@@ -22,6 +22,7 @@ constexpr int Z_STRUT = 10;
 constexpr int Z_STRUT_PREVIEW = 9;
 constexpr int ROD_ART_WIDTH = 6;
 constexpr int ROD_SEGMENT_REACH = 24;
+constexpr int MIN_DRAWN_SPAN = 2;
 
 bn::sprite_ptr make_sprite(const bn::sprite_item& item, bn::fixed x, bn::fixed y, int z_order)
 {
@@ -151,7 +152,9 @@ void LinkStrip::draw(const bn::fixed_point a, const bn::fixed_point b, const int
 {
     const bn::fixed span = physics::distance(a, b);
 
-    if(span <= 0)
+    // Timber and rod snap long before they get this short, but a slack cable
+    // can fold up to nothing. There is nothing to draw, and no angle to take.
+    if(span < MIN_DRAWN_SPAN)
     {
         return;
     }
@@ -173,7 +176,7 @@ void LinkStrip::draw(const bn::fixed_point a, const bn::fixed_point b, const int
         // double-size 16 px sprite can show.
         const int reach = rod ? ROD_SEGMENT_REACH : 32;
         const int art_width = rod ? ROD_ART_WIDTH : STRUT_SPRITE_WIDTH;
-        const int count = ((span + (reach - 1)) / reach).integer();
+        const int count = physics::segments_for(span, reach);
         const bn::fixed scale = (span / count).safe_division(art_width);
         mat->set_rotation_angle_safe(strut_angle_deg(a, b));
         mat->set_scale(scale, 1);
@@ -200,7 +203,7 @@ void LinkStrip::draw(const bn::fixed_point a, const bn::fixed_point b, const int
 
     // Shallow (or out of matrices): plain 16 px tiles stepped along the slope,
     // the first and last flush with the joints.
-    const int count = span <= STRUT_SPRITE_WIDTH ? 1 : ((span + 15) / 16).integer();
+    const int count = physics::segments_for(span, STRUT_SPRITE_WIDTH);
     const bn::fixed half = bn::fixed(STRUT_SPRITE_WIDTH) / 2;
 
     for(int i = 0; i < count; ++i)

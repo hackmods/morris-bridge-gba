@@ -23,6 +23,18 @@ namespace physics
     return value < 0 ? -value : value;
 }
 
+/**
+ * @brief How many sprite segments of at most @p reach pixels cover @p length.
+ *
+ * Never zero: a slack cable can shrink to a fraction of a pixel, and a zero
+ * count is a division by zero in the code that spaces the segments.
+ */
+[[nodiscard]] constexpr int segments_for(const bn::fixed length, const int reach)
+{
+    const int count = ((length + (reach - 1)) / reach).integer();
+    return count < 1 ? 1 : count;
+}
+
 [[nodiscard]] int isqrt64(int64_t value);
 
 [[nodiscard]] bn::fixed approx_sqrt(bn::fixed value);

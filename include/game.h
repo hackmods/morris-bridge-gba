@@ -8,6 +8,7 @@
 
 #include "bn_camera_ptr.h"
 #include "bn_optional.h"
+#include "bn_sprite_affine_mat_ptr.h"
 #include "bn_sprite_ptr.h"
 #include "bn_vector.h"
 
@@ -164,6 +165,10 @@ private:
     bn::sprite_ptr _portrait;
     bn::sprite_ptr _tool_tag;
     bn::sprite_ptr _limit_tag;
+    bn::vector<bn::sprite_ptr, bridge::LINK_ROLE_COUNT> _palette_icons;
+    bn::sprite_ptr _palette_ring;
+    bn::sprite_ptr _palette_cost;
+    bn::sprite_affine_mat_ptr _palette_mat;
     bn::vector<bn::sprite_ptr, engine::MAX_CARS> _cars;
     bn::camera_ptr _camera;
     bn::vector<game_ui::DustPuff, game_ui::MAX_DUST> _dust;

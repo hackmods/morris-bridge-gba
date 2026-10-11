@@ -49,6 +49,14 @@ constexpr int TOOL_TAG_Y = 70;
 constexpr int TOOL_TAG_FLASH_FRAMES = 30;
 /// PAR / MAX tag on the other side of the panel: what the right-hand number is.
 constexpr int LIMIT_TAG_X = 50;
+/// Material palette, top right in build mode: one icon per unlocked material,
+/// a ring on the one in hand, and its name and price underneath.
+constexpr int PALETTE_X = 74;
+constexpr int PALETTE_SPACING = 19;
+constexpr int PALETTE_Y = -68;
+constexpr int PALETTE_NAME_X = 86;
+constexpr int PALETTE_NAME_Y = -54;
+constexpr int PALETTE_COST_X = 110;
 /// The winning engine is drawn no further right than this on the result screen.
 constexpr int RESULT_TRAIN_MAX_X = 100;
 constexpr int Z_DIALOG_LABEL = -21;
@@ -113,6 +121,7 @@ constexpr int LABEL_CABLE = 40;
 constexpr int LABEL_PAR = 41;
 constexpr int LABEL_MAX = 42;
 constexpr int LABEL_PEAK = 43;
+constexpr int LABEL_WOOD = 44;
 
 constexpr int BANNER_LEVEL_SELECT = 0;
 constexpr int BANNER_HATT_OK = 1;
