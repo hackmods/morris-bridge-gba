@@ -109,6 +109,9 @@ test.describe('Ship QA navigation smoke (M1–M2)', () => {
 
     const afterTest = await page.locator('#game-canvas').screenshot();
     expect(beforeTest.equals(afterTest)).toBe(false);
+    // A real win, not just a changed picture: the save now has Knapford cleared.
+    const save = await page.evaluate(() => window.__TEST__!.readSaveProgress());
+    expect((save?.clearedLevels ?? 0) & 1).toBe(1);
     await assertCanvasIsRendering(page, 500);
   });
 
@@ -124,10 +127,16 @@ test.describe('Ship QA navigation smoke (M1–M2)', () => {
 
     const afterTest = await page.locator('#game-canvas').screenshot();
     expect(beforeTest.equals(afterTest)).toBe(false);
+    // And a real failure: nothing was cleared.
+    const save = await page.evaluate(() => window.__TEST__!.readSaveProgress());
+    expect((save?.clearedLevels ?? 0) & 1).toBe(0);
     await assertCanvasIsRendering(page, 500);
   });
 
-  test("Gordon's Hill reference bridge wins with walkthrough save", async ({ page }) => {
+  // Not a win check: timed D-pad input drifts a few pixels per move, which a
+  // 13-step build does not survive reliably. Knapford (M1/M2) asserts the real
+  // outcome from the save; these two only prove the build and run do not hang.
+  test("Gordon's Hill: build and run with walkthrough save", async ({ page }) => {
     test.setTimeout(240_000);
 
     await navigateToGordonBuildMode(page);
@@ -142,7 +151,7 @@ test.describe('Ship QA navigation smoke (M1–M2)', () => {
     await assertCanvasIsRendering(page, 500);
   });
 
-  test("Culdee Fell reference bridge wins with walkthrough save", async ({ page }) => {
+  test("Culdee Fell: build and run with walkthrough save", async ({ page }) => {
     test.setTimeout(270_000);
 
     await navigateToCuldeeFellBuildMode(page);

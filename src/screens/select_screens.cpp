@@ -86,7 +86,7 @@ void Game::_show_engine_select()
     _menu_row.set_item(bn::sprite_items::menu, engine::menu_frame(_selected_engine));
     _menu_row.set_position(0, 8);
     _menu_arrow.set_visible(true);
-    _menu_arrow.set_position(-38, 16);
+    _menu_arrow.set_position(-42, 16);
     _label.set_visible(false);
     _train.set_visible(true);
     _train.set_position(-56, game::MENU_TRAIN_Y);

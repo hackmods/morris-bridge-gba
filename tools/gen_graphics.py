@@ -1671,13 +1671,14 @@ def make_labels() -> None:
         "CONFUS",
         "LOOP!",
         "THIN!",
-        # 39-44: HUD tags.
+        # 39-45: HUD tags.
         "LOAD",
         "CABLE",
         "PAR",
         "MAX",
         "PEAK",
         "WOOD",
+        "COST",
     )
     w, fh = 32, 8
     px = fill(w, fh * len(texts))
@@ -1685,7 +1686,7 @@ def make_labels() -> None:
         2, 2, 2, 3, 2, 3, 2, 3, 2, 2, 2, 3, 3, 2, 3, 3, 3, 2, 2, 2, 2, 3, 3, 2, 3,
         2, 3, 2, 3, 2, 3, 2, 3, 2, 3,
         3, 9, 3, 3,
-        2, 2, 3, 9, 9, 2,
+        2, 2, 3, 9, 9, 2, 2,
     )
     for i, text in enumerate(texts):
         y0 = i * fh
@@ -1703,7 +1704,7 @@ def make_banner() -> None:
         ("DELAY!", "CONFUSION", 9),
         ("HATT OK!", "PEEP PEEP", 11),
         ("DELAY!", "LISTEN", 9),
-        ("PICK ENGIN", "LOAD", 7),
+        ("PICK AN", "ENGINE", 7),
         ("CINDERS", "AND ASHES!", 9),
         ("BUST MY", "BUFFERS!", 9),
         ("BOTHER!", "FELL DOWN", 9),
@@ -1722,32 +1723,38 @@ def make_banner() -> None:
 
 
 def make_track_card() -> None:
-    """Level-select cards: full track name + subtitle, 64×32 (replaces tiny menu row)."""
+    """Level-select cards, 64×32: track number, then the name in full.
+
+    One-word names get their hint underneath; two-word names use both lines.
+    """
     w, fh = 64, 32
     entries = (
-        ("1", "KNAPFORD", "PROP!", 11),
-        ("2", "GORDONS HL", "BANK!", 3),
-        ("3", "CULDEE FEL", "TRUSS", 9),
-        ("4", "TIDMOUTH", "WOOD", 11),
-        ("5", "WELLSWORTH", "STRUT", 3),
-        ("6", "CROVANS GT", "ROCK", 9),
-        ("7", "CALLAN", "STAYS", 11),
-        ("8", "VICARSTOWN", "AWAY!", 3),
+        ("1", "KNAPFORD", "PROP!", False, 11),
+        ("2", "GORDON'S", "HILL", True, 3),
+        ("3", "CULDEE", "FELL", True, 9),
+        ("4", "TIDMOUTH", "WOOD", False, 11),
+        ("5", "WELLSWORTH", "STRUT", False, 3),
+        ("6", "CROVAN'S", "GATE", True, 9),
+        ("7", "CALLAN", "STAYS", False, 11),
+        ("8", "VICARSTOWN", "AWAY!", False, 3),
     )
     px = fill(w, fh * len(entries))
-    for i, (num, title, sub, accent) in enumerate(entries):
+    for i, (num, line1, line2, name_continues, accent) in enumerate(entries):
         y0 = i * fh
         panel_box(px, w, 2, y0 + 2, 62, y0 + 30)
         rect(px, w, 4, y0 + 4, 60, y0 + 10, accent)
         center_text(px, w, num, y0 + 5, 7, 13)
-        title_advance = 5 if len(title) >= 9 else 6
-        center_text(px, w, title, y0 + 12, 1, 13, title_advance)
-        center_text(px, w, sub, y0 + 22, 3, 1)
+        center_text(px, w, line1, y0 + 12, 1, 13, 5 if len(line1) >= 10 else 6)
+        if name_continues:
+            center_text(px, w, line2, y0 + 21, 1, 13)
+        else:
+            center_text(px, w, line2, y0 + 22, 3, 1)
     write_indexed_bmp(os.path.join(GFX, "track_card.bmp"), w, fh * len(entries), px)
 
 
 def make_menu() -> None:
-    w, fh = 32, 32
+    """Menu rows, 64×32, wide enough for every engine and pause option in full."""
+    w, fh = 64, 32
     names = (
         "KNAPFORD",
         "GORDON",
@@ -1769,22 +1776,22 @@ def make_menu() -> None:
         is_level = i < 3
         is_engine = 7 <= i <= 12
         outer = 13 if is_level else (11 if is_engine else 7)
-        inner = 2 if is_level else (15 if is_engine else 15)
+        inner = 2 if is_level else 15
         accent = 11 if i != 1 else 3
         if is_engine:
             accent = (6, 11, 6, 9, 7, 14)[i - 7]
-        rect(px, w, 1, y0 + 3, 31, y0 + 29, outer)
-        rect(px, w, 3, y0 + 5, 29, y0 + 27, inner)
+        rect(px, w, 1, y0 + 3, 63, y0 + 29, outer)
+        rect(px, w, 3, y0 + 5, 61, y0 + 27, inner)
         if is_level or is_engine:
-            rect(px, w, 3, y0 + 5, 29, y0 + 9, accent)
+            rect(px, w, 3, y0 + 5, 61, y0 + 14, accent)
         if is_level:
-            label = f"{i + 1}"
-            center_text(px, w, label, y0 + 7, 7, 13)
+            center_text(px, w, f"{i + 1}", y0 + 7, 7, 13)
         elif is_engine:
-            center_text(px, w, "NO " + "162543"[i - 7], y0 + 7, 2 if i - 7 in (2, 4) else 1, 13)
+            center_text(px, w, "NO " + "162543"[i - 7], y0 + 7, 2, 13)
         else:
             center_text(px, w, ">", y0 + 7, 1, 13)
-        center_text(px, w, name[:5], y0 + 17, 1 if is_level or is_engine else 7, 13 if is_level or is_engine else 1)
+        dark_text = is_level or is_engine
+        center_text(px, w, name, y0 + 18, 1 if dark_text else 7, 13 if dark_text else 1)
     write_indexed_bmp(os.path.join(GFX, "menu.bmp"), w, fh * len(names), px)
 
 

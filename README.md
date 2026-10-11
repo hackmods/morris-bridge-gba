@@ -69,6 +69,8 @@ Each track is timetabled for one engine. A lighter engine will get you across fo
 
 ## The line
 
+![Track select: Gordon's Hill](docs/images/level-select.png)
+
 | # | Track | What you get | What it asks for |
 |---|-------|--------------|------------------|
 | 1 | Knapford | A rock in the river | A prop |

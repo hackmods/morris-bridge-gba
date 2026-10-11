@@ -165,6 +165,7 @@ private:
     bn::sprite_ptr _portrait;
     bn::sprite_ptr _tool_tag;
     bn::sprite_ptr _limit_tag;
+    bn::sprite_ptr _cost_tag;
     bn::vector<bn::sprite_ptr, bridge::LINK_ROLE_COUNT> _palette_icons;
     bn::sprite_ptr _palette_ring;
     bn::sprite_ptr _palette_cost;
