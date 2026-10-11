@@ -38,15 +38,19 @@ RunScore compute_run_score(const bridge::BridgeSystem& system, const level::Def&
         {
             ++score.brace_links;
         }
+        else if(strut.role == bridge::LinkRole::cable)
+        {
+            ++score.cable_links;
+        }
         else
         {
             ++score.track_links;
         }
+
+        score.total_cost += bridge::link_cost(strut.material);
     }
 
-    score.total_cost = score.player_nodes * bridge::NODE_COST +
-                       score.track_links * bridge::TIMBER_LINK_COST +
-                       score.brace_links * bridge::ROD_LINK_COST;
+    score.total_cost += score.player_nodes * bridge::NODE_COST;
 
     if(def.par_cost > 0)
     {
@@ -66,6 +70,16 @@ RunScore compute_run_score(const bridge::BridgeSystem& system, const level::Def&
     }
 
     return score;
+}
+
+int purse(const level::Def& def)
+{
+    return def.par_cost + (def.par_cost + 1) / 2;
+}
+
+int purse_left(const bridge::BridgeSystem& system, const level::Def& def)
+{
+    return purse(def) - compute_run_score(system, def).total_cost;
 }
 
 } // namespace session

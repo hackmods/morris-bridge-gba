@@ -424,6 +424,68 @@ bn::optional<int> BridgeSystem::find_strut(int node_a, int node_b) const
     return bn::optional<int>();
 }
 
+bn::optional<int> BridgeSystem::find_strut_near(const bn::fixed_point point) const
+{
+    bn::optional<int> best;
+    bn::fixed best_d2 = LINK_PICK_RADIUS * LINK_PICK_RADIUS;
+
+    for(int i = 0; i < _struts.size(); ++i)
+    {
+        const bn::fixed_point& a = _nodes[_struts[i].node_a].position;
+        const bn::fixed_point& b = _nodes[_struts[i].node_b].position;
+        const bn::fixed_point along = b - a;
+        const bn::fixed length2 = physics::squared_distance(a, b);
+
+        if(length2 <= 0)
+        {
+            continue;
+        }
+
+        // Closest point on the segment, clamped to its ends.
+        bn::fixed t = ((point.x() - a.x()).safe_multiplication(along.x()) +
+                       (point.y() - a.y()).safe_multiplication(along.y()))
+                          .safe_division(length2);
+        t = t < 0 ? bn::fixed(0) : (t > 1 ? bn::fixed(1) : t);
+        const bn::fixed d2 = physics::squared_distance(point, physics::lerp(a, b, t));
+
+        if(d2 <= best_d2)
+        {
+            best_d2 = d2;
+            best = i;
+        }
+    }
+
+    return best;
+}
+
+bool BridgeSystem::remove_strut(const int strut_index)
+{
+    if(_status != SimStatus::idle || strut_index < 0 || strut_index >= _struts.size())
+    {
+        return false;
+    }
+
+    _remove_strut_at(strut_index);
+    return true;
+}
+
+int BridgeSystem::stress_percent() const
+{
+    int worst = 0;
+
+    for(const Strut& strut : _struts)
+    {
+        const int percent = (strut.current_tension * 100).safe_division(strut.max_tension).integer();
+
+        if(percent > worst)
+        {
+            worst = percent;
+        }
+    }
+
+    return worst;
+}
+
 bool BridgeSystem::is_routable(const Strut& strut) const
 {
     if(strut.role != LinkRole::track)
@@ -566,6 +628,7 @@ void BridgeSystem::_prepare_solver()
         strut.inv_rest2 = int32_t((int64_t(1) << 56) / (rest * rest));
         strut.inv_rest = int32_t((int64_t(1) << 32) / rest);
         strut.ea_q4 = mat.stiffness.data() >> (bn::fixed::precision() - 4);
+        strut.tension_only = mat.tension_only;
         strut.max_tension = mat.strength;
         strut.current_tension = 0;
         strut.peak_tension = 0;
@@ -634,6 +697,7 @@ SimStatus BridgeSystem::begin_test()
     _accel_frames = 0;
     _test_frames = 0;
     _snapped_count = 0;
+    _peak_stress_percent = 0;
     _snap_flash.reset();
     _park_train();
 
@@ -888,7 +952,14 @@ void BridgeSystem::_substep(const int gravity_q8, const int damping_shift)
         // strain = sqrt(1 + x) − 1 ≈ x/2 − x²/8 + x³/16 — no sqrt, no divide.
         const int32_t x2 = (x * x) >> 16;
         const int32_t strain = (x >> 1) - (x2 >> 3) + (((x2 * x) >> 16) >> 4);
-        const int32_t force = (strut.ea_q4 * strain) >> 8;  // + tension, − compression
+        int32_t force = (strut.ea_q4 * strain) >> 8;  // + tension, − compression
+
+        if(strut.tension_only && force < 0)
+        {
+            // A cable pushed shorter than its length just hangs slack.
+            force = 0;
+        }
+
         const int32_t magnitude = force < 0 ? -force : force;
 
         strut.current_tension = bn::fixed::from_data(magnitude);
@@ -1102,6 +1173,13 @@ SimStatus BridgeSystem::update()
     for(int step = 0; step < SIM_SUBSTEPS; ++step)
     {
         _substep(gravity_q8, damping_shift);
+    }
+
+    const int stress = stress_percent();
+
+    if(stress > _peak_stress_percent)
+    {
+        _peak_stress_percent = stress;
     }
 
     _place_train();

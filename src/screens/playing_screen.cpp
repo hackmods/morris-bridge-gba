@@ -116,6 +116,10 @@ void Game::_show_toast(game_ui::ToastKind kind)
             _toast.set_item(bn::sprite_items::toast, game_ui::TOAST_DEL);
             break;
 
+        case game_ui::ToastKind::spent:
+            _toast.set_item(bn::sprite_items::toast, game_ui::TOAST_SPENT);
+            break;
+
         default:
             break;
     }
@@ -183,6 +187,10 @@ void Game::_update_preview()
         if(_connect_role == bridge::LinkRole::brace)
         {
             frame = weak ? view::STRUT_BRACE_HOT : view::STRUT_BRACE_IDLE;
+        }
+        else if(_connect_role == bridge::LinkRole::cable)
+        {
+            frame = weak ? view::STRUT_BRACE_HOT : view::STRUT_CABLE;
         }
         else
         {
@@ -383,6 +391,16 @@ void Game::_update_build()
                 _show_toast(game_ui::ToastKind::deleted);
             }
         }
+        else if(const bn::optional<int> link = _bridge.find_strut_near(_cursor_pos);
+                link && ! hovered)
+        {
+            // Pointing at a beam, not a joint: take just that beam out.
+            if(_bridge.remove_strut(link.value()))
+            {
+                _show_toast(game_ui::ToastKind::deleted);
+                bn::sound_items::ui.play();
+            }
+        }
         else
         {
             _selected.reset();
@@ -422,6 +440,20 @@ void Game::_handle_confirm(bn::optional<int> hovered, bn::fixed_point place_at)
     {
         _selected.reset();
         return;
+    }
+
+    // Count what this weld would cost before anything is planted.
+    {
+        const bool new_joint = ! hovered;
+        const bool new_link = _selected.has_value();
+        const int cost = (new_joint ? bridge::NODE_COST : 0) +
+                         (new_link ? bridge::link_cost(bridge::material_for_role(_connect_role)) : 0);
+
+        if(cost > session::purse_left(_bridge, _bridge.level_def()))
+        {
+            _show_toast(game_ui::ToastKind::spent);
+            return;
+        }
     }
 
     int node_id;
@@ -555,26 +587,39 @@ void Game::_try_chain_weld(bn::optional<int> hovered, bn::fixed_point draw_at)
 
 void Game::_cycle_connect_role()
 {
-    if(!_bridge.allows_link_role(bridge::LinkRole::brace))
+    // Timber, rod, cable, round again — skipping what this track has not unlocked.
+    const bridge::LinkRole before = _connect_role;
+
+    for(int step = 0; step < bridge::LINK_ROLE_COUNT; ++step)
     {
-        _connect_role = bridge::LinkRole::track;
-        return;
+        _connect_role = bridge::LinkRole((int(_connect_role) + 1) % bridge::LINK_ROLE_COUNT);
+
+        if(_bridge.allows_link_role(_connect_role))
+        {
+            break;
+        }
     }
 
-    _connect_role = _connect_role == bridge::LinkRole::track ?
-        bridge::LinkRole::brace : bridge::LinkRole::track;
-    _tool_tag_flash = game_ui::TOOL_TAG_FLASH_FRAMES;
-    bn::sound_items::ui.play();
+    if(_connect_role != before)
+    {
+        _tool_tag_flash = game_ui::TOOL_TAG_FLASH_FRAMES;
+        bn::sound_items::ui.play();
+    }
 }
 
 int Game::_build_tool_label() const
 {
-    if(_bridge.allows_link_role(bridge::LinkRole::brace))
+    switch(_connect_role)
     {
-        return _connect_role == bridge::LinkRole::track ? game_ui::LABEL_TRACK : game_ui::LABEL_ROD;
-    }
+        case bridge::LinkRole::brace:
+            return game_ui::LABEL_ROD;
 
-    return game_ui::LABEL_BUILD;
+        case bridge::LinkRole::cable:
+            return game_ui::LABEL_CABLE;
+
+        default:
+            return game_ui::LABEL_TRACK;
+    }
 }
 
 void Game::_enter_test()
@@ -744,13 +789,16 @@ void Game::_update_hud()
     {
         const session::RunScore live =
             session::compute_run_score(_bridge, _bridge.level_def());
+        const level::Def& def = _bridge.level_def();
         _set_counter(_node_count_digits, live.total_cost, -20);
-        _set_counter(_strut_count_digits, _bridge.level_def().par_cost, 12);
+        _set_counter(_strut_count_digits,
+                     live.total_cost > def.par_cost ? session::purse(def) : def.par_cost, 12);
     }
     else
     {
-        _set_counter(_node_count_digits, _bridge.player_node_count(), -20);
-        _set_counter(_strut_count_digits, _bridge.struts().size(), 12);
+        // Load on the hardest-worked link now, and the worst it has been.
+        _set_counter(_node_count_digits, _bridge.stress_percent(), -20);
+        _set_counter(_strut_count_digits, _bridge.peak_stress_percent(), 12);
     }
 
     _set_weight_digits(_max_train_load().integer(), true);

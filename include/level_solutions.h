@@ -44,6 +44,7 @@ namespace detail
 
 inline constexpr bridge::LinkRole T = bridge::LinkRole::track;
 inline constexpr bridge::LinkRole R = bridge::LinkRole::brace;
+inline constexpr bridge::LinkRole C = bridge::LinkRole::cable;
 
 // Knapford — anchors: 0 start, 1 end, 2 riverbed rock.
 // One deck joint over the rock, propped by a timber post.
@@ -51,11 +52,11 @@ inline constexpr Joint KNAPFORD_JOINTS[] = { { 0, 12 } };
 inline constexpr Link KNAPFORD_LINKS[] = { { 0, 3, T }, { 3, 1, T }, { 2, 3, T } };
 
 // Gordon's Hill — anchors: 0 start, 1 end, 2 left crag, 3 right crag.
-// The deck climbs 32 px; every joint hangs from a crag on a rod.
+// The deck climbs 32 px; every joint hangs from a crag on a cable.
 inline constexpr Joint GORDON_HILL_JOINTS[] = { { -40, 36 }, { 0, 28 }, { 40, 20 } };
 inline constexpr Link GORDON_HILL_LINKS[] = {
     { 0, 4, T }, { 4, 5, T }, { 5, 6, T }, { 6, 1, T },
-    { 2, 4, R }, { 2, 5, R }, { 3, 6, R },
+    { 2, 4, C }, { 2, 5, C }, { 3, 6, C },
 };
 
 // Culdee Fell — anchors: 0 start, 1 end. A Warren through-truss: rods for the
@@ -92,16 +93,16 @@ inline constexpr Joint CROVAN_JOINTS[] = {
 inline constexpr Link CROVAN_LINKS[] = {
     { 0, 3, T }, { 3, 4, T }, { 4, 5, T }, { 5, 6, T }, { 6, 1, T },
     { 2, 3, R }, { 2, 4, T }, { 2, 5, R },
-    { 5, 7, R }, { 7, 1, R }, { 7, 6, R },
+    { 5, 7, R }, { 7, 1, R }, { 7, 6, C },
 };
 
 // Callan — anchors: 0 start, 1 end, 2 left tower, 3 right tower.
-// Stays from the castle towers hold the outer joints; a rod king post between them
-// carries the middle one.
+// Cable stays from the castle towers hold the outer joints; a king post between
+// them (rod rafters, cable hanger) carries the middle one.
 inline constexpr Joint CALLAN_JOINTS[] = { { -36, 40 }, { 0, 40 }, { 36, 40 }, { 0, 4 } };
 inline constexpr Link CALLAN_LINKS[] = {
     { 0, 4, T }, { 4, 5, T }, { 5, 6, T }, { 6, 1, T },
-    { 2, 4, R }, { 3, 6, R }, { 4, 7, R }, { 6, 7, R }, { 7, 5, R },
+    { 2, 4, C }, { 3, 6, C }, { 4, 7, R }, { 6, 7, R }, { 7, 5, C },
 };
 
 // Vicarstown — anchors: 0 start, 1 end, 2 pier in the channel.
@@ -112,7 +113,7 @@ inline constexpr Joint VICARSTOWN_JOINTS[] = {
 inline constexpr Link VICARSTOWN_LINKS[] = {
     { 0, 3, T }, { 3, 4, T }, { 4, 5, T }, { 5, 6, T }, { 6, 1, T },
     { 2, 4, R }, { 2, 5, R },
-    { 0, 7, R }, { 7, 4, R }, { 5, 8, R }, { 8, 1, R }, { 7, 3, R }, { 8, 6, R },
+    { 0, 7, R }, { 7, 4, R }, { 5, 8, R }, { 8, 1, R }, { 7, 3, C }, { 8, 6, C },
 };
 
 #define MORRIS_DESIGN(name) \

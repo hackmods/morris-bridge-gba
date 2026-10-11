@@ -163,6 +163,7 @@ private:
     bn::sprite_ptr _toast;
     bn::sprite_ptr _portrait;
     bn::sprite_ptr _tool_tag;
+    bn::sprite_ptr _limit_tag;
     bn::vector<bn::sprite_ptr, engine::MAX_CARS> _cars;
     bn::camera_ptr _camera;
     bn::vector<game_ui::DustPuff, game_ui::MAX_DUST> _dust;

@@ -349,6 +349,7 @@ FONT = {
     "U": ["10001", "10001", "10001", "10001", "01110"],
     "V": ["10001", "10001", "10001", "01010", "01010"],
     "W": ["10001", "10001", "10101", "10101", "01010"],
+    "X": ["10001", "01010", "00100", "01010", "10001"],
     "Y": ["10001", "01010", "00100", "00100", "00100"],
     "'": ["00100", "00100", "01000", "00000", "00000"],
     "!": ["00100", "00100", "00100", "00000", "00100"],
@@ -1372,7 +1373,7 @@ def draw_timber_beam(px: list[int], w: int, y0: int, body: int, hi: int, lo: int
 
 
 def make_strut() -> None:
-    w, h = 16, 112
+    w, h = 16, 128
     px = fill(w, h)
     track_frames = (
         (5, 12, 13, 10),
@@ -1409,6 +1410,12 @@ def make_strut() -> None:
     put(px, w, 7, y0 + 7, 4)
     put(px, w, 8, y0 + 8, 1)
     put(px, w, 7, y0 + 9, 4)
+    # Frame 7 — cable: a thin wire slug, stretched along the link like the rod.
+    y0 = 7 * 16
+    hline(px, w, 5, 11, y0 + 8, 10)
+    hline(px, w, 5, 11, y0 + 9, 1)
+    put(px, w, 6, y0 + 8, 2)
+    put(px, w, 9, y0 + 8, 2)
     write_indexed_bmp(os.path.join(GFX, "strut.bmp"), w, h, px)
 
 
@@ -1447,9 +1454,9 @@ def make_digit() -> None:
 
 def make_toast() -> None:
     w, fh = 32, 8
-    texts = ("DUP!", "WEAK", "DEL")
+    texts = ("DUP!", "WEAK", "DEL", "SPENT")
     px = fill(w, fh * len(texts))
-    colors = (9, 3, 10)
+    colors = (9, 3, 10, 9)
     for i, text in enumerate(texts):
         y0 = i * fh
         panel_box(px, w, 1, y0 + 1, 31, y0 + 7)
@@ -1664,6 +1671,12 @@ def make_labels() -> None:
         "CONFUS",
         "LOOP!",
         "THIN!",
+        # 39-43: HUD tags.
+        "LOAD",
+        "CABLE",
+        "PAR",
+        "MAX",
+        "PEAK",
     )
     w, fh = 32, 8
     px = fill(w, fh * len(texts))
@@ -1671,6 +1684,7 @@ def make_labels() -> None:
         2, 2, 2, 3, 2, 3, 2, 3, 2, 2, 2, 3, 3, 2, 3, 3, 3, 2, 2, 2, 2, 3, 3, 2, 3,
         2, 3, 2, 3, 2, 3, 2, 3, 2, 3,
         3, 9, 3, 3,
+        2, 2, 3, 9, 9,
     )
     for i, text in enumerate(texts):
         y0 = i * fh

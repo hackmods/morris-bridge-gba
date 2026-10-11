@@ -26,6 +26,7 @@ inline constexpr int STRUT_PREVIEW_WEAK = 3;
 inline constexpr int STRUT_BRACE_IDLE = 4;
 inline constexpr int STRUT_BRACE_HOT = 5;
 inline constexpr int STRUT_SNAP = 6;
+inline constexpr int STRUT_CABLE = 7;
 
 /// Sprites available to draw every link on screen.
 inline constexpr int MAX_LINK_SPRITES = 64;
@@ -48,7 +49,7 @@ class LinkStrip
 public:
     void begin();
 
-    void draw(bn::fixed_point a, bn::fixed_point b, int frame, bool hot, int z_order);
+    void draw(bn::fixed_point a, bn::fixed_point b, int frame, bridge::Heat heat, int z_order);
 
     /// Hide whatever the frame did not use.
     void end(bool visible);
@@ -70,8 +71,9 @@ public:
                     const bn::optional<int>& selected, bn::sprite_ptr& ring);
 
     /**
-     * Test mode heats links by the force they carry right now; build mode
-     * heats the ones the last test run nearly (or actually) snapped.
+     * Links are tinted by how hard they work: plain, amber from half their
+     * strength, red from four-fifths. Test mode uses the force right now;
+     * build mode uses the worst of the last run (a snapped link reads red).
      */
     void sync_struts(const bridge::BridgeSystem& bridge, bool visible, bool test_mode);
 

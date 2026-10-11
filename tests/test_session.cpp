@@ -33,9 +33,10 @@ int main()
             session::compute_run_score(system, system.level_def());
         assert(score.player_nodes == 3);
         assert(score.track_links == 4);
-        assert(score.brace_links == 3);
-        assert(score.total_cost == 13);
-        std::cout << "  ok rods cost 2 each on Gordon's Hill\n";
+        assert(score.cable_links == 3);
+        assert(score.brace_links == 0);
+        assert(score.total_cost == 10);
+        std::cout << "  ok cables cost 1 each on Gordon's Hill\n";
     }
 
     {
@@ -105,6 +106,20 @@ int main()
             session::compute_run_score(system, system.level_def());
         assert(after.total_cost == before.total_cost);
         std::cout << "  ok score counts the bridge as built\n";
+    }
+
+    {
+        // The purse is half as much again as par, and every par design fits.
+        for(int level_index = 0; level_index < level::COUNT; ++level_index)
+        {
+            bridge::BridgeSystem system;
+            assert(level_solutions::build_reference(system, level_index));
+            const level::Def& def = system.level_def();
+            assert(session::purse(def) == def.par_cost + (def.par_cost + 1) / 2);
+            assert(session::purse_left(system, def) == session::purse(def) - def.par_cost);
+        }
+
+        std::cout << "  ok the purse leaves room over par on every track\n";
     }
 
     std::cout << "All session tests passed.\n";

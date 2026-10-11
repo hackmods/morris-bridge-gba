@@ -19,10 +19,13 @@ constexpr int COUNT = 8;
 /// Longest timber beam when a level does not set its own.
 inline constexpr bn::fixed DEFAULT_BEAM_LENGTH = 48;
 
-/// Bit flags — align with bridge::LinkRole order (track = bit 0, brace = bit 1).
+/// Bit flags — align with bridge::LinkRole order (track = bit 0, brace = bit 1, cable = bit 2).
 inline constexpr uint8_t ALLOW_TRACK = 1;
 inline constexpr uint8_t ALLOW_BRACE = 2;
+inline constexpr uint8_t ALLOW_CABLE = 4;
 inline constexpr uint8_t ALLOW_TRACK_AND_BRACE = ALLOW_TRACK | ALLOW_BRACE;
+inline constexpr uint8_t ALLOW_TRACK_AND_CABLE = ALLOW_TRACK | ALLOW_CABLE;
+inline constexpr uint8_t ALLOW_ALL = ALLOW_TRACK | ALLOW_BRACE | ALLOW_CABLE;
 
 struct Seed
 {

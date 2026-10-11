@@ -1,5 +1,16 @@
 # Changelog & project history
 
+## 2026-10-11 — Cable, stress colours, the purse
+
+Reconciled with `main` (PR #73 / #74), keeping this branch's simulation and re-implementing the ideas from #73 that still made sense on top of it:
+
+- **Cable:** a third material — cheap, long, strong in tension, slack in compression. Unlocks on Gordon's Hill; the par designs now hang with cable and prop with rod (pars: Hill 10, Crovan's Gate 20, Callan 15, Vicarstown 25)
+- **Delete a beam:** B while pointing at a link removes just that link
+- **Graded stress colours:** amber at half strength, red at four-fifths, in test mode and in the post-run rewind
+- **LOAD / PEAK** readout during a run: worst link now and worst so far, in percent
+- **The purse:** a bridge may cost at most 1.5× par; the HUD's right-hand number switches from PAR to MAX once you pass par
+- Not carried over from #73: the 8×8 grid, unbreakable stone piers, its load-sharing stress model, and the runtime L+R+START cheat (use the `MORRIS_PRELOAD_REFERENCE` QA build)
+
 ## 2026-10-11 — Sodor, properly
 
 - **Henry** joins as No. 3 (unlocks on Culdee Fell); engine select runs No. 1 to No. 6. Save format unchanged — Henry is a new bit on the end

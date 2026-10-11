@@ -279,12 +279,12 @@ int main()
         const bn::optional<int> b = system.add_node(0, 36, false);
         const bn::optional<int> c = system.add_node(40, 36, false);
         assert(a && b && c);
-        assert(system.add_strut(bridge::START_NODE, a.value(), bridge::LinkRole::brace));
-        assert(system.add_strut(a.value(), b.value(), bridge::LinkRole::brace));
-        assert(system.add_strut(b.value(), c.value(), bridge::LinkRole::brace));
-        assert(system.add_strut(c.value(), bridge::END_NODE, bridge::LinkRole::brace));
+        assert(system.add_strut(bridge::START_NODE, a.value(), bridge::LinkRole::cable));
+        assert(system.add_strut(a.value(), b.value(), bridge::LinkRole::cable));
+        assert(system.add_strut(b.value(), c.value(), bridge::LinkRole::cable));
+        assert(system.add_strut(c.value(), bridge::END_NODE, bridge::LinkRole::cable));
         assert(system.begin_test() == bridge::SimStatus::no_path);
-        std::cout << "  ok rods are not a train route\n";
+        std::cout << "  ok cables and rods are not a train route\n";
     }
 
     {
@@ -471,11 +471,90 @@ int main()
 
         for(const bridge::Strut& strut : system.struts())
         {
-            any_overworked = any_overworked || bridge::strut_was_overworked(strut);
+            any_overworked = any_overworked ||
+                             bridge::strut_peak_heat(strut) == bridge::Heat::hot;
         }
 
         assert(any_overworked);
         std::cout << "  ok a failed test rewinds the build and marks the links that gave way\n";
+    }
+
+    // --- Cable, heat, and picking a link -----------------------------------
+
+    {
+        // A cable holds what hangs from it and nothing that pushes on it: the
+        // same link that carries the Knapford joint from above as a hanger is
+        // useless as a prop from below.
+        bridge::BridgeSystem hung;
+        hung.load_level(1);
+        hung.set_engine(engine::Id::thomas);
+        assert(level_solutions::build(hung, level_solutions::reference(1)));
+        run(hung);
+        assert(hung.status() == bridge::SimStatus::success);
+
+        for(const bridge::Strut& strut : hung.struts())
+        {
+            if(strut.role == bridge::LinkRole::cable)
+            {
+                assert(strut.peak_tension > bn::fixed(0));
+            }
+        }
+
+        // Wellsworth's par design props the deck from ledges below. Swap the
+        // rods for cables and there is nothing holding it up.
+        const level_solutions::Design& design = level_solutions::reference(4);
+        bridge::BridgeSystem propped;
+        propped.load_level(4);
+        propped.set_engine(level::get(4).scheduled_engine);
+
+        for(int i = 0; i < design.joint_count; ++i)
+        {
+            assert(propped.add_node(design.joints[i].x, design.joints[i].y, false));
+        }
+
+        for(int i = 0; i < design.link_count; ++i)
+        {
+            const level_solutions::Link& link = design.links[i];
+            const bridge::LinkRole role =
+                link.role == bridge::LinkRole::brace ? bridge::LinkRole::cable : link.role;
+            assert(propped.add_strut(link.a, link.b, role));
+        }
+
+        run(propped);
+        assert(propped.status() == bridge::SimStatus::failed_fall);
+        assert(bridge::CABLE.cost < bridge::ROD.cost);
+        std::cout << "  ok cable hangs a deck but cannot prop one\n";
+    }
+
+    {
+        assert(bridge::heat_for(3, 8) == bridge::Heat::calm);
+        assert(bridge::heat_for(4, 8) == bridge::Heat::warm);
+        assert(bridge::heat_for(6, 8) == bridge::Heat::warm);
+        assert(bridge::heat_for(bn::fixed(13) / 2, 8) == bridge::Heat::hot);
+
+        bridge::BridgeSystem system;
+        assert(level_solutions::build_reference(system, 0));
+        assert(system.stress_percent() == 0);
+        run(system);
+        assert(system.status() == bridge::SimStatus::success);
+        assert(system.peak_stress_percent() > 50);
+        assert(system.peak_stress_percent() < 100);
+        std::cout << "  ok heat bands and the stress readout (Knapford peaks at "
+                  << system.peak_stress_percent() << "%)\n";
+    }
+
+    {
+        bridge::BridgeSystem system;
+        assert(level_solutions::build_reference(system, 0));
+        // The post runs from the joint at (0, 12) down to the rock at (0, 40).
+        const bn::optional<int> post = system.find_strut_near(bn::fixed_point(2, 26));
+        assert(post.has_value());
+        assert(system.struts()[post.value()].node_a == 2);
+        assert(!system.find_strut_near(bn::fixed_point(20, 30)).has_value());
+        assert(system.remove_strut(post.value()));
+        assert(system.struts().size() == 2);
+        assert(!system.remove_strut(7));
+        std::cout << "  ok a link can be picked by pointing at it and removed\n";
     }
 
     std::cout << "All host physics tests passed.\n";

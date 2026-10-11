@@ -34,6 +34,7 @@ constexpr int CHUFF_FRAMES = 10;
 constexpr int TOAST_DUP = 0;
 constexpr int TOAST_WEAK = 1;
 constexpr int TOAST_DEL = 2;
+constexpr int TOAST_SPENT = 3;
 
 constexpr int Z_CURSOR = -32767;
 constexpr int Z_TOAST = -17;
@@ -46,6 +47,8 @@ constexpr int BUILD_HINT_Y = -70;
 constexpr int TOOL_TAG_X = -50;
 constexpr int TOOL_TAG_Y = 70;
 constexpr int TOOL_TAG_FLASH_FRAMES = 30;
+/// PAR / MAX tag on the other side of the panel: what the right-hand number is.
+constexpr int LIMIT_TAG_X = 50;
 /// The winning engine is drawn no further right than this on the result screen.
 constexpr int RESULT_TRAIN_MAX_X = 100;
 constexpr int Z_DIALOG_LABEL = -21;
@@ -61,6 +64,7 @@ enum class ToastKind
     deleted,
     full,
     undo,
+    spent,
 };
 
 struct DustPuff
@@ -104,6 +108,11 @@ constexpr int LABEL_LISTEN = 35;
 constexpr int LABEL_CONFUS = 36;
 constexpr int LABEL_LOOP = 37;
 constexpr int LABEL_THIN = 38;
+constexpr int LABEL_LOAD = 39;
+constexpr int LABEL_CABLE = 40;
+constexpr int LABEL_PAR = 41;
+constexpr int LABEL_MAX = 42;
+constexpr int LABEL_PEAK = 43;
 
 constexpr int BANNER_LEVEL_SELECT = 0;
 constexpr int BANNER_HATT_OK = 1;

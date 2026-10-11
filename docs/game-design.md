@@ -37,7 +37,7 @@ The ROM teaches controls directly:
 
 - **Title:** static hint labels (**HOLD A**, **A WELD**) above the dialog panel
 - **First build session:** rotating hints (`HOLD A` → `A WELD` → `PAUSE`) for a few seconds, dismissible with any button
-- **Tool tag:** **TRACK** or **ROD** beside the HUD panel shows what the next weld uses; it blinks when **R** swaps it.
+- **Tool tag:** **TRACK**, **ROD** or **CABLE** beside the HUD panel shows what the next weld uses; **R** cycles through what the track has unlocked.
 - **Build HUD:** **A WELD** while a joint is selected, **START** once a road links both banks; digits show **cost vs par** (3★ if cost ≤ par). The weld ghost turns **red** when the link is longer than the yard can supply. After a test, links that carried ≥ 75 % of their strength (or snapped) glow **hot**.
 - **Hold A + drag:** plants joints every 24 px so a span can be chain-welded in one stroke; tap A still joins one joint at a time
 
@@ -49,6 +49,9 @@ Test mode is a structural simulation ([Physics](physics.md)), not a rating table
 - **Joints** you place have weight and fall unless something holds them.
 - **Timber** carries the rails. It is cheap (1), short, and snaps at 8.
 - **Rod** is a brace only. It costs 2, reaches 1.5× as far, and snaps at 12.
+- **Cable** costs 1, reaches twice as far, and holds 12 — but only in tension.
+  Pushed shorter than its length it hangs slack and carries nothing. Hang with
+  cable; prop with timber or rod.
 - Links snap in **tension or compression**. A snapped link dumps its load on the
   neighbours.
 - The bridge **settles** under its own weight before the train leaves.
@@ -56,6 +59,12 @@ Test mode is a structural simulation ([Physics](physics.md)), not a rating table
   a route, so timber can be a post without the engine trying to drive down it.
 - A train that sags 20 px below the line is in the water.
 - The run is won when the **whole train** is across — engine and every coach.
+- **Colours:** a link turns amber at half its strength and red at four-fifths.
+  During a run the HUD shows **LOAD** (worst link now, %) and **PEAK** (worst so far).
+- **The purse:** a bridge may cost at most half as much again as par. Past that
+  the yard will not weld: **SPENT**. The right-hand number reads **PAR** until you
+  are over it, then **MAX**.
+- **B** on a joint deletes the joint; **B** on a beam deletes just that beam.
 
 ## Engines and unlocks
 
@@ -89,13 +98,13 @@ Each level offers different solid ground, so each asks for a different structure
 | # | Track | Engine | Tools | Ground you get | What it teaches | Par |
 |---|-------|--------|-------|----------------|-----------------|-----|
 | 1 | Knapford | Thomas | Timber | Rock on the riverbed | Prop the deck | 4 |
-| 2 | Gordon's Hill | Thomas, banked by Edward | Timber + rod | Two crags above a climbing line | Hang the deck; a banker is extra load at the back | 13 |
-| 3 | Culdee Fell | Edward | Timber + rod | Nothing | Warren truss; rods where timber fails | 20 |
+| 2 | Gordon's Hill | Thomas, banked by Edward | Timber + cable | Two crags above a climbing line | Hang the deck; a banker is extra load at the back | 10 |
+| 3 | Culdee Fell | Edward | All | Nothing | Warren truss; rods where timber fails | 20 |
 | 4 | Tidmouth | Percy | Timber | Nothing | Queen-post truss; why the diagonal matters | 13 |
-| 5 | Wellsworth | Henry | Timber + rod | Ledges low on each wall | Strut from below, under bumping trucks | 9 |
-| 6 | Crovan's Gate | Edward | Timber + rod | One off-centre rock | Trestle plus a free span | 21 |
-| 7 | Callan | James | Timber + rod | A castle tower over each bank | Stays and a king post | 18 |
-| 8 | Vicarstown | Henry | Timber + rod | One pier in the channel | The bridge to the mainland: everything, at length | 27 |
+| 5 | Wellsworth | Henry | All | Ledges low on each wall | Strut from below, under bumping trucks | 9 |
+| 6 | Crovan's Gate | Edward | All | One off-centre rock | Trestle plus a free span | 20 |
+| 7 | Callan | James | All | A castle tower over each bank | Cable stays and a king post | 15 |
+| 8 | Vicarstown | Henry | All | One pier in the channel | The bridge to the mainland: everything, at length | 25 |
 
 Vicarstown is last on purpose: it is the way off the island.
 

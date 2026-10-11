@@ -28,6 +28,10 @@ Forces are in engine-weight units — Thomas weighs 4.
 |----------|------|----------------|----------|-------------|------|-------|
 | Timber | Track (routable) | 480 | 8 | 1/128 | 1 | level beam length |
 | Rod | Brace | 720 | 12 | 1/128 | 2 | 1.5 × beam length |
+| Cable | Cable | 720 | 12, tension only | 1/256 | 1 | 2 × beam length |
+
+A cable's force is clamped to zero whenever it is shorter than its rest length,
+so it holds what hangs from it and nothing that pushes on it.
 
 Consequences that fall out of the model rather than being scripted:
 
@@ -90,8 +94,10 @@ deck never steals the train from the deck.
 
 `end_test()` restores the build exactly as welded. Each link keeps
 `peak_tension`, the worst force it carried; a link that snapped reads as full.
-Build mode heats links at ≥ 75 % (`strut_was_overworked`), so after a failed
-run the bridge shows where it gave way.
+Links are tinted by `bridge::Heat`: amber from 50 % of strength, red from 80 %.
+Test mode uses the force right now; build mode uses `peak_tension`, so after a
+failed run the bridge shows where it gave way. `stress_percent()` and
+`peak_stress_percent()` feed the LOAD / PEAK numbers on the HUD.
 
 ## Engines and trains
 

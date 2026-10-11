@@ -47,6 +47,9 @@ inline constexpr bn::fixed FALL_Y_LIMIT = 90;
 /// Links shorter than this are rejected (joints snap together well before it).
 inline constexpr bn::fixed MIN_LINK_LENGTH = 8;
 
+/// How close the cursor must be to a link to pick it for deletion.
+inline constexpr bn::fixed LINK_PICK_RADIUS = 5;
+
 /// Structure settles under its own weight for this long before the train moves.
 inline constexpr int SETTLE_FRAMES = 40;
 /// Self-weight fades in over this many frames so a new span does not ring.
@@ -72,12 +75,16 @@ enum class LinkRole : uint8_t
 {
     track,  ///< Routable timber deck — train follows these links.
     brace,  ///< Structural rod — supports joints, not traversable.
+    cable,  ///< Wire rope — holds in tension only, goes slack if pushed.
 };
+
+inline constexpr int LINK_ROLE_COUNT = 3;
 
 enum class MaterialId : uint8_t
 {
     timber,  ///< Wood beam — cheap, short, carries the rails.
     rod,     ///< Steel rod — dearer, longer, stronger, not a train route.
+    cable,   ///< Wire rope — cheap, longest, strong in tension, useless in compression.
 };
 
 /**
@@ -94,10 +101,12 @@ struct Material
     int cost;
     int reach_num;            ///< Max length = level beam length × num / den.
     int reach_den;
+    bool tension_only;        ///< Carries no force when shorter than its rest length.
 };
 
-inline constexpr Material TIMBER = { 480, 8, bn::fixed(1) / 128, 1, 1, 1 };
-inline constexpr Material ROD = { 720, 12, bn::fixed(1) / 128, 2, 3, 2 };
+inline constexpr Material TIMBER = { 480, 8, bn::fixed(1) / 128, 1, 1, 1, false };
+inline constexpr Material ROD = { 720, 12, bn::fixed(1) / 128, 2, 3, 2, false };
+inline constexpr Material CABLE = { 720, 12, bn::fixed(1) / 256, 1, 2, 1, true };
 
 inline constexpr int NODE_COST = 1;
 inline constexpr int TIMBER_LINK_COST = TIMBER.cost;
@@ -105,12 +114,13 @@ inline constexpr int ROD_LINK_COST = ROD.cost;
 
 [[nodiscard]] inline constexpr MaterialId material_for_role(const LinkRole role)
 {
-    return role == LinkRole::brace ? MaterialId::rod : MaterialId::timber;
+    return role == LinkRole::brace ? MaterialId::rod
+                                   : (role == LinkRole::cable ? MaterialId::cable : MaterialId::timber);
 }
 
 [[nodiscard]] inline constexpr const Material& material(const MaterialId id)
 {
-    return id == MaterialId::rod ? ROD : TIMBER;
+    return id == MaterialId::rod ? ROD : (id == MaterialId::cable ? CABLE : TIMBER);
 }
 
 [[nodiscard]] inline constexpr int link_cost(const MaterialId id)
@@ -194,18 +204,39 @@ struct Strut
     int32_t inv_rest2 = 0;          ///< 2^56 / rest² (rest in bn::fixed data units).
     int32_t inv_rest = 0;           ///< 2^32 / rest.
     int32_t ea_q4 = 0;              ///< Stiffness × 16.
+    bool tension_only = false;      ///< Cable: no force in compression.
 };
 
-/// Fraction of its strength a link is carrying right now (test mode), 0..1+.
-[[nodiscard]] inline bool strut_is_strained(const Strut& strut)
+/// How hard a link is working, for colouring: calm, warm (half its strength)
+/// or hot (four-fifths, close to snapping).
+enum class Heat : uint8_t
 {
-    return strut.current_tension * 2 > strut.max_tension;
+    calm,
+    warm,
+    hot,
+};
+
+[[nodiscard]] inline Heat heat_for(const bn::fixed force, const bn::fixed strength)
+{
+    if(force * 5 >= strength * 4)
+    {
+        return Heat::hot;
+    }
+
+    return force * 2 >= strength ? Heat::warm : Heat::calm;
 }
 
-/// True when the last test run pushed this link close to (or past) snapping.
-[[nodiscard]] inline bool strut_was_overworked(const Strut& strut)
+/// Heat from the force a link carries right now (test mode).
+[[nodiscard]] inline Heat strut_heat(const Strut& strut)
 {
-    return strut.peak_tension * 4 >= strut.max_tension * 3;
+    return heat_for(strut.current_tension, strut.max_tension);
+}
+
+/// Heat from the worst force of the last test run (build mode); a link that
+/// snapped reads as hot.
+[[nodiscard]] inline Heat strut_peak_heat(const Strut& strut)
+{
+    return heat_for(strut.peak_tension, strut.max_tension);
 }
 
 class BridgeSystem
@@ -262,6 +293,21 @@ public:
     [[nodiscard]] bn::optional<int> find_node_near(bn::fixed_point point) const;
 
     [[nodiscard]] bn::optional<int> find_strut(int node_a, int node_b) const;
+
+    /// Link passing within `LINK_PICK_RADIUS` of @p point (nearest wins).
+    [[nodiscard]] bn::optional<int> find_strut_near(bn::fixed_point point) const;
+
+    /// Remove one link in build mode. False while testing or for a bad index.
+    [[nodiscard]] bool remove_strut(int strut_index);
+
+    /// Worst load on any standing link right now, as a percentage of its strength.
+    [[nodiscard]] int stress_percent() const;
+
+    /// Worst `stress_percent()` seen so far in this test run.
+    [[nodiscard]] int peak_stress_percent() const
+    {
+        return _peak_stress_percent;
+    }
 
     [[nodiscard]] StrutPreview preview_strut(int node_a, int node_b,
                                                LinkRole role = LinkRole::track) const;
@@ -458,6 +504,7 @@ private:
     int _settle_frames = 0;
     int _test_frames = 0;
     int _snapped_count = 0;
+    int _peak_stress_percent = 0;
     bn::fixed _fall_vy = 0;
     bool _falling = false;
     bool _test_ran = false;

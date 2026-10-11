@@ -66,6 +66,8 @@ Game::Game() :
     _portrait(bn::sprite_items::portrait.create_sprite(56, 44)),
     _tool_tag(bn::sprite_items::label.create_sprite(game_ui::TOOL_TAG_X, game_ui::TOOL_TAG_Y,
                                                      game_ui::LABEL_TRACK)),
+    _limit_tag(bn::sprite_items::label.create_sprite(game_ui::LIMIT_TAG_X, game_ui::TOOL_TAG_Y,
+                                                      game_ui::LABEL_PAR)),
     _camera(bn::camera_ptr::create())
 {
     bn::bg_palettes::set_transparent_color(bn::color(8, 14, 20));
@@ -94,6 +96,8 @@ Game::Game() :
     _portrait.set_visible(false);
     _tool_tag.set_z_order(game_ui::Z_DIALOG_LABEL);
     _tool_tag.set_visible(false);
+    _limit_tag.set_z_order(game_ui::Z_DIALOG_LABEL);
+    _limit_tag.set_visible(false);
 
     for(int i = 0; i < engine::MAX_CARS; ++i)
     {
@@ -442,12 +446,24 @@ void Game::_sync_overlays()
 
     if(building)
     {
-        _tool_tag.set_item(bn::sprite_items::label,
-                           _connect_role == bridge::LinkRole::brace ? game_ui::LABEL_ROD
-                                                                    : game_ui::LABEL_TRACK);
+        _tool_tag.set_item(bn::sprite_items::label, _build_tool_label());
+
+        // The right-hand number is par until the bridge costs more than
+        // that; after that it is the purse, the most the yard will pay.
+        const level::Def& def = _bridge.level_def();
+        const bool over_par = session::compute_run_score(_bridge, def).total_cost > def.par_cost;
+        _limit_tag.set_item(bn::sprite_items::label,
+                            over_par ? game_ui::LABEL_MAX : game_ui::LABEL_PAR);
+    }
+    else if(on_line)
+    {
+        // During a run the two numbers are load now and worst load, in percent.
+        _tool_tag.set_item(bn::sprite_items::label, game_ui::LABEL_LOAD);
+        _limit_tag.set_item(bn::sprite_items::label, game_ui::LABEL_PEAK);
     }
 
-    _tool_tag.set_visible(building && (_tool_tag_flash / 4) % 2 == 0);
+    _tool_tag.set_visible(on_line || (building && (_tool_tag_flash / 4) % 2 == 0));
+    _limit_tag.set_visible(on_line || building);
 }
 
 void Game::_sync_train_sprite()

@@ -43,6 +43,25 @@ const bn::sprite_palette_ptr& stress_strut_palette()
         pal.set_color(5, bn::color(22, 6, 5));
         pal.set_color(6, bn::color(26, 7, 6));
         pal.set_color(12, bn::color(27, 11, 7));
+        pal.set_color(10, bn::color(28, 8, 6));
+    }
+
+    return palette.value();
+}
+
+const bn::sprite_palette_ptr& warm_strut_palette()
+{
+    static bn::optional<bn::sprite_palette_ptr> palette;
+
+    if(! palette.has_value())
+    {
+        palette = bn::sprite_items::strut.palette_item().create_new_palette();
+        bn::sprite_palette_ptr& pal = palette.value();
+        // Amber: timber body / highlight / shadow, then rod and cable metal.
+        pal.set_color(5, bn::color(27, 19, 5));
+        pal.set_color(12, bn::color(31, 27, 12));
+        pal.set_color(13, bn::color(19, 12, 3));
+        pal.set_color(10, bn::color(28, 21, 6));
     }
 
     return palette.value();
@@ -128,7 +147,7 @@ bn::sprite_affine_mat_ptr* LinkStrip::_next_mat()
 }
 
 void LinkStrip::draw(const bn::fixed_point a, const bn::fixed_point b, const int frame,
-                     const bool hot, const int z_order)
+                     const bridge::Heat heat, const int z_order)
 {
     const bn::fixed span = physics::distance(a, b);
 
@@ -137,12 +156,15 @@ void LinkStrip::draw(const bn::fixed_point a, const bn::fixed_point b, const int
         return;
     }
 
-    const bn::sprite_palette_ptr& palette = hot ? stress_strut_palette() : normal_strut_palette();
+    const bn::sprite_palette_ptr& palette =
+        heat == bridge::Heat::hot ? stress_strut_palette()
+                                  : (heat == bridge::Heat::warm ? warm_strut_palette()
+                                                                : normal_strut_palette());
     const bn::fixed dx = physics::abs(b.x() - a.x());
     const bn::fixed dy = physics::abs(b.y() - a.y());
     // Rod art is a 6 px slug in the middle of the tile, drawn to be stretched;
     // timber fills the tile and only needs a matrix when it is steep.
-    const bool rod = frame == STRUT_BRACE_IDLE || frame == STRUT_BRACE_HOT;
+    const bool rod = frame == STRUT_BRACE_IDLE || frame == STRUT_BRACE_HOT || frame == STRUT_CABLE;
     bn::sprite_affine_mat_ptr* mat = rod || dy * 4 > dx ? _next_mat() : nullptr;
 
     if(mat)
@@ -280,17 +302,22 @@ void GraphView::sync_struts(const bridge::BridgeSystem& bridge, const bool visib
     {
         for(const bridge::Strut& strut : bridge.struts())
         {
-            const bool hot = test_mode ? bridge::strut_is_strained(strut)
-                                        : bridge::strut_was_overworked(strut);
+            const bridge::Heat heat = test_mode ? bridge::strut_heat(strut)
+                                                : bridge::strut_peak_heat(strut);
+            const bool hot = heat == bridge::Heat::hot;
             int strut_frame = hot ? STRUT_HOT : STRUT_IDLE;
 
             if(strut.role == bridge::LinkRole::brace)
             {
                 strut_frame = hot ? STRUT_BRACE_HOT : STRUT_BRACE_IDLE;
             }
+            else if(strut.role == bridge::LinkRole::cable)
+            {
+                strut_frame = STRUT_CABLE;
+            }
 
             _links.draw(nodes[strut.node_a].position, nodes[strut.node_b].position, strut_frame,
-                        hot, Z_STRUT);
+                        heat, Z_STRUT);
         }
     }
 
@@ -300,7 +327,7 @@ void GraphView::sync_struts(const bridge::BridgeSystem& bridge, const bool visib
 void GraphView::show_preview(const bn::fixed_point a, const bn::fixed_point b, const int frame)
 {
     _preview.begin();
-    _preview.draw(a, b, frame, false, Z_STRUT_PREVIEW);
+    _preview.draw(a, b, frame, bridge::Heat::calm, Z_STRUT_PREVIEW);
     _preview.end(true);
 }
 
