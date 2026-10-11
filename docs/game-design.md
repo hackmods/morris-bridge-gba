@@ -64,7 +64,9 @@ Test mode is a structural simulation ([Physics](physics.md)), not a rating table
 - **The purse:** a bridge may cost at most half as much again as par. Past that
   the yard will not weld: **SPENT**. The right-hand number reads **PAR** until you
   are over it, then **MAX**.
-- **B** on a joint deletes the joint; **B** on a beam deletes just that beam.
+- **B** on a joint deletes the joint; **B** on a beam deletes just that beam. **L** undoes the newest weld and keeps unwinding if you keep pressing.
+- Hold **A** during a run for double speed.
+- On the win screen, **A** goes to the next track and **B** goes back to the workshop with the bridge intact, to trim it for more stars.
 
 ## Engines and unlocks
 

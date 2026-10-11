@@ -29,8 +29,8 @@ The bridge is simulated as a real structure. Joints have weight, beams carry for
 | **A** | Z | Select a joint, then weld to another spot. Hold and drag to chain-weld |
 | **B** | X | Delete the joint or beam under the cursor |
 | **R** | R | Next material: timber → rod → cable. Hold with the D-pad to move faster |
-| **L** | L | Undo the last weld |
-| **Start** | Enter | Send the train. Press again to call it back |
+| **L** | L | Undo the newest weld; keep pressing to unwind further |
+| **Start** | Enter | Send the train. Press again to call it back. Hold **A** during the run for double speed |
 | **Select** | Backspace | Pause |
 
 ## How a bridge works

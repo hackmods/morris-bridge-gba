@@ -35,6 +35,7 @@ constexpr int TOAST_DUP = 0;
 constexpr int TOAST_WEAK = 1;
 constexpr int TOAST_DEL = 2;
 constexpr int TOAST_SPENT = 3;
+constexpr int TOAST_LONG = 4;
 
 constexpr int Z_CURSOR = -32767;
 constexpr int Z_TOAST = -17;
@@ -73,6 +74,7 @@ enum class ToastKind
     full,
     undo,
     spent,
+    too_long,
 };
 
 struct DustPuff

@@ -29,7 +29,8 @@ inline constexpr int STRUT_SNAP = 6;
 inline constexpr int STRUT_CABLE = 7;
 
 /// Sprites available to draw every link on screen.
-inline constexpr int MAX_LINK_SPRITES = 64;
+/// Kept under the GBA's 128-sprite ceiling with every other sprite alive.
+inline constexpr int MAX_LINK_SPRITES = 56;
 /// Affine matrices for steep links (the GBA has 32 in total).
 inline constexpr int MAX_LINK_MATS = 26;
 

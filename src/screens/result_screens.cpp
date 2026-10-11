@@ -188,9 +188,11 @@ void Game::_update_level_complete()
 
     if(bn::keypad::b_pressed())
     {
-        _bridge.end_test();
-        _play_mode = PlayMode::build;
-        _show_level_select();
+        // Back to the workshop with the winning bridge still standing, to
+        // shave its cost for a better star. Pause has the way out to the map.
+        _leave_test();
+        _screen = Screen::playing;
+        _show_gameplay();
     }
 }
 

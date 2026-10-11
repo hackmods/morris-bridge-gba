@@ -255,11 +255,27 @@ int main()
         assert(system.add_strut(bridge::START_NODE, mid.value()));
         assert(system.undo_last_edit() == bridge::UndoResult::removed_strut);
         assert(system.struts().empty());
+        // Undo keeps unwinding: the joint that beam reached goes next.
+        assert(system.undo_last_edit() == bridge::UndoResult::removed_node);
+        assert(system.player_node_count() == 0);
         assert(system.undo_last_edit() == bridge::UndoResult::nothing);
 
         const bn::optional<int> solo = system.add_node(-8, 0, false);
         assert(solo.has_value());
         assert(system.undo_last_edit() == bridge::UndoResult::removed_node);
+
+        // A whole par bridge unwinds to bare anchors, one press at a time.
+        assert(level_solutions::build_reference(system, 2));
+        int presses = 0;
+
+        while(system.undo_last_edit() != bridge::UndoResult::nothing)
+        {
+            ++presses;
+        }
+
+        assert(presses == 5 + 11);
+        assert(system.struts().empty() && system.player_node_count() == 0);
+        system.load_level(0);
         assert(system.remove_player_node(bridge::START_NODE) == bridge::RemoveNodeResult::anchored);
 
         const int budget = system.player_node_budget() - system.player_node_count();
