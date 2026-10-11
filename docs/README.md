@@ -2,12 +2,16 @@
 
 Knowledge base for **Thomas's Bridge** (ROM codename `thomas_bridge`): a Game Boy Advance bridge-building game built with [Butano](https://github.com/GValiente/butano). The whole point is the GBA ROM; the browser is an mGBA playtest. See [AGENTS.md](../AGENTS.md).
 
+**Current state (2026-10-11):** the game runs on a real truss simulation with three materials, six engines and eight tracks. [Game design](game-design.md), [Physics](physics.md), [Graphics](graphics.md) and the [Changelog](changelog.md) describe it as it is. The planning documents — [Master plan](master-plan.md), [Session goal](session-goal.md), [Future expansion](future-expansion.md), [Diagnosis](diagnosis-vision.md), [UI & playability plan](ui-playability-plan.md) — are history: they record how it got here and are partly out of date.
+
 ## Quick links
 
 | I want to… | Start here |
 |------------|------------|
 | Play the ROM right now | [Getting started](getting-started.md) |
 | Understand the game | [Game design](game-design.md) |
+| Understand why my bridge fell down | [Physics](physics.md) |
+| Change a level or its art | [Graphics → Level terrain](graphics.md#level-terrain) |
 | Optional creepy lore (PG, friends-only) | [Lore leak](lore-leak.md) |
 | Full game + graphics roadmap | [Future expansion](future-expansion.md) |
 | **Engine v2 master plan + ship goal** | [Master plan](master-plan.md) · [Session goal](session-goal.md) |
@@ -39,8 +43,9 @@ docs/
 ├── ui-playability-plan.md Lessons + feel/chrome/art plan (next local session)
 ├── knowledge.md           Session learnings, pitfalls, backlog
 ├── diagnosis-vision.md    Materials / truss / EDIT-SIM-RESULT systems pass
-├── physics.md             Fixed-point math and tension model
-├── graphics.md            Sprites, palettes, asset pipeline
+├── physics.md             The truss solver: materials, trains, failure, the rewind
+├── graphics.md            Sprites, generated level terrain, asset pipeline
+├── images/                Screenshots used by the root README
 ├── audio.md               Original parody score, SFX, Maxmod import
 ├── building-rom.md        devkitARM, Butano, Makefile, Docker
 ├── testing.md             Host unit tests and manual QA
@@ -58,5 +63,5 @@ docs/
 ## Repository
 
 - **GitHub:** [`hackmods/morris-bridge-gba`](https://github.com/hackmods/morris-bridge-gba)
-- **ROM output:** `rom/thomas_bridge.gba` (~330 KB / 338,236 bytes as of 2026-08-29)
-- **License:** zlib (same as Butano) — see root [README](../README.md)
+- **ROM output:** `rom/thomas_bridge.gba` (about 420 KB as of 2026-10-11)
+- **Licence:** Butano, the engine, is zlib-licensed. This repository has no `LICENSE` file of its own yet.
