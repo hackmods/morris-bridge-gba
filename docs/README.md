@@ -11,6 +11,7 @@ Knowledge base for **Thomas's Bridge** (ROM codename `thomas_bridge`): a Game Bo
 | Optional creepy lore (PG, friends-only) | [Lore leak](lore-leak.md) |
 | Full game + graphics roadmap | [Future expansion](future-expansion.md) |
 | **Engine v2 master plan + ship goal** | [Master plan](master-plan.md) · [Session goal](session-goal.md) |
+| **UI / playability fix track (next)** | [UI & playability plan](ui-playability-plan.md) |
 | Session learnings & backlog | [Session knowledge](knowledge.md) |
 | Build the GBA ROM | [Building the ROM](building-rom.md) |
 | Run physics tests on PC | [Testing](testing.md) |
@@ -35,7 +36,9 @@ docs/
 ├── future-expansion.md    Engines, progression, graphics roadmap
 ├── master-plan.md         Engine v2 architecture → ship (READ FIRST for v2)
 ├── session-goal.md        Copy-paste goal for full implementation session
+├── ui-playability-plan.md Lessons + feel/chrome/art plan (next local session)
 ├── knowledge.md           Session learnings, pitfalls, backlog
+├── diagnosis-vision.md    Materials / truss / EDIT-SIM-RESULT systems pass
 ├── physics.md             Fixed-point math and tension model
 ├── graphics.md            Sprites, palettes, asset pipeline
 ├── audio.md               Original parody score, SFX, Maxmod import

@@ -43,6 +43,21 @@ Presentation bugs found while checking the new ROM in the emulator, all present 
 - **Result text:** the win/fail line sat behind its dialog panel and was overwritten by the HUD on the frame the run ended
 - Scenery (sky, hills, banks, water) now rises with the deck height of the level
 - Collapse plays for 45 frames before the fail screen; every snap is heard
+> The two entries below (2026-09-24) describe PR #73 and #74 as merged to `main`. #73's materials, £ purse, 8×8 grid and load-path stress model were superseded by the truss solver above when the branches were reconciled; its ideas for cable, beam delete, graded stress colours and a budget were re-implemented on top of it.
+
+## 2026-09-24 — UI / playability handoff plan
+
+- Lessons from vision mockups vs placeholder ROM: systems ≠ shippable feel/look
+- New track doc: [ui-playability-plan.md](ui-playability-plan.md) (menus → feel → chrome → Knapford art)
+- Linked from [docs/README.md](README.md), [session-goal.md](session-goal.md), [knowledge.md](knowledge.md)
+
+## 2026-09-24 — Vision refactor: materials, truss stress, EDIT/SIM/RESULT
+
+- **Materials:** Wood £10 / Iron £25 / Stone £50 / Cable £15 with level £ budgets
+- **Physics:** Load-path truss stress (`F/yield`), 4-band heatmap, cascade collapse → DERAILED
+- **EDIT controls:** 8×8 grid; A draw, B delete beam, L/R cycle material, START run
+- **Docs:** [diagnosis-vision.md](diagnosis-vision.md), rewritten [physics.md](physics.md)
+- Host `make -C tests` green (all level playthroughs); ROM binary refresh via CI
 
 ## 2026-08-30 — GBA is the product (not a web workshop)
 

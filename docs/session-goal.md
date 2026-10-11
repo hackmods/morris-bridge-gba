@@ -2,6 +2,8 @@
 
 Copy everything inside the **GOAL** block below into a new Cloud Agent session (or local Cursor chat) to drive full implementation. Read [master-plan.md](master-plan.md) first.
 
+**For the immediate UI / playability / mockup-look track**, prefer the shorter goal in [ui-playability-plan.md](ui-playability-plan.md) §9 (menus → feel → chrome → Knapford art). Use this full Gold goal when that track’s exit criteria are met.
+
 ---
 
 ## GOAL
