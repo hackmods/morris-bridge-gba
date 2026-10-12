@@ -75,7 +75,9 @@ const bn::sprite_palette_ptr& normal_strut_palette()
     return palette;
 }
 
-bn::fixed strut_angle_deg(bn::fixed_point a, bn::fixed_point b)
+} // namespace
+
+bn::fixed link_angle_deg(bn::fixed_point a, bn::fixed_point b)
 {
     const bn::fixed dx = b.x() - a.x();
     const bn::fixed dy = b.y() - a.y();
@@ -91,8 +93,6 @@ bn::fixed strut_angle_deg(bn::fixed_point a, bn::fixed_point b)
 
     return angle;
 }
-
-} // namespace
 
 void LinkStrip::begin()
 {
@@ -178,7 +178,7 @@ void LinkStrip::draw(const bn::fixed_point a, const bn::fixed_point b, const int
         const int art_width = rod ? ROD_ART_WIDTH : STRUT_SPRITE_WIDTH;
         const int count = physics::segments_for(span, reach);
         const bn::fixed scale = (span / count).safe_division(art_width);
-        mat->set_rotation_angle_safe(strut_angle_deg(a, b));
+        mat->set_rotation_angle_safe(link_angle_deg(a, b));
         mat->set_scale(scale, 1);
 
         for(int i = 0; i < count; ++i)
@@ -296,17 +296,18 @@ void GraphView::sync_nodes(const bridge::BridgeSystem& bridge, const bool visibl
 }
 
 void GraphView::sync_struts(const bridge::BridgeSystem& bridge, const bool visible,
-                            const bool test_mode)
+                            const bool test_mode, const int flagged)
 {
     const auto& nodes = bridge.nodes();
     _links.begin();
 
     if(visible)
     {
-        for(const bridge::Strut& strut : bridge.struts())
+        for(int index = 0; index < bridge.struts().size(); ++index)
         {
-            const bridge::Heat heat = test_mode ? bridge::strut_heat(strut)
-                                                : bridge::strut_peak_heat(strut);
+            const bridge::Strut& strut = bridge.struts()[index];
+            const bridge::Heat heat = index == flagged ? bridge::Heat::hot :
+                (test_mode ? bridge::strut_heat(strut) : bridge::strut_peak_heat(strut));
             const bool hot = heat == bridge::Heat::hot;
             int strut_frame = hot ? STRUT_HOT : STRUT_IDLE;
 

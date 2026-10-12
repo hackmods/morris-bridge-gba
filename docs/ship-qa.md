@@ -91,8 +91,8 @@ cd web && WALKTHROUGH_DIR=../artifacts/walkthrough npm run test:e2e -- e2e/walkt
 | `05_gordons_hill_select` | PICK TRACK on Gordon's Hill (save unlock) |
 | `06_gordons_hill_build_track` | BUILD on hill theme (track tool) |
 | `07_gordons_hill_build_rod` | ROD/brace tool toggled (R button) |
-| `08_vicarstown_select` | PICK TRACK on Vicarstown (all_unlocked save) |
-| `09_vicarstown_build` | BUILD on viaduct theme (James) |
+| `08_culdee_fell_select` | PICK TRACK on Culdee Fell (all_unlocked save) |
+| `09_culdee_fell_build` | BUILD on Culdee Fell (Edward) |
 
 - Web playtest seeds Gordon's Hill unlock via `?walkthrough=gordon` (`uploadSaveOrSaveState` before first `loadGame`; E2E `gordon-save.spec.ts`). Vicarstown uses `?walkthrough=vicarstown` with `all_unlocked.sav`.
 

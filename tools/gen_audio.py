@@ -446,7 +446,7 @@ YARD_UNLOCK_A = ["G-2", "-", "B-2", "-", "C-3", "-", "E-3", "-",
 YARD_UNLOCK_B = ["E-3", "-", "G-3", "-", "C-4", "-", "G-3", "-",
                  "E-3", "-", "C-3", "-", "G-2", "-", "C-2", "-"]
 
-# Per-engine idle motifs — engine select (patterns 4–13, pairs loop via Bxx).
+# Per-engine idle motifs — engine select (patterns 4–15, pairs loop via Bxx).
 ENGINE_MOTIFS: list[tuple[list[str], list[str]]] = [
     (["C-3", "-", "E-3", "-", "G-3", "-", "C-4", "-",
       "E-3", "-", "G-3", "-", "C-3", "-", "G-2", "-"],
@@ -468,6 +468,10 @@ ENGINE_MOTIFS: list[tuple[list[str], list[str]]] = [
       "G-2", "-", "E-2", "-", "C-2", "-", "G-1", "-"],
      ["G-2", "-", "C-3", "-", "E-3", "-", "C-3", "-",
       "G-2", "-", "E-2", "-", "C-2", "-", "G-1", "-"]),  # Gordon
+    (["F-2", "-", "A-2", "-", "C-3", "-", "F-3", "-",
+      "D-3", "-", "C-3", "-", "A-2", "-", "F-2", "-"],
+     ["A-2", "-", "C-3", "-", "F-3", "-", "A-3", "-",
+      "G-3", "-", "F-3", "-", "C-3", "-", "F-2", "-"]),  # Henry
 ]
 
 # Workshop Shed — slower thinking music for build mode.

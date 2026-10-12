@@ -1,5 +1,19 @@
 # Changelog & project history
 
+## 2026-10-11 — v2.1.0: gradients and looser limits
+
+Gordon's Hill was close to unbuildable by hand. The par design's beams were 41 px long against a 48 px limit, so a joint placed 8 px off the par layout made a beam too long 70 % of the time, and an uneven deck tripped the 1-in-2 grade rule with nothing to say why. Measured over 2,000 randomly nudged builds, the win rate at ±8 px went from 24 % to 96 %.
+
+- **Longer beams:** timber reaches 60 px (56 on Culdee Fell and Tidmouth), up from 48 / 44; rod and cable scale with it
+- **Joints land at full reach:** pointing past the end of a beam no longer refuses the weld. The ghost stops at the limit and A plants the joint there
+- **Bigger purse:** twice par, up from 1.5×
+- **Gentler grade rule:** track up to 2 in 3 is climbable (was 1 in 2)
+- **STEEP!** when the deck is complete but a beam is too steep, with that beam blinking red, instead of a bare NO GO
+- **Trains lean on gradients:** each vehicle tilts with the rail under it
+- **Henry has his own tune** on the engine menu
+- Night-theme stone is moonlit grey and blue instead of patchy brown
+- Web playtest page: the how-to text matches the current controls
+
 ## 2026-10-11 — v2.0.3: final polish
 
 - **Names in full:** engine and pause menu rows are twice as wide (THOMAS, EDWARD, GORDON, RESTART no longer cut to five letters); track cards read GORDON'S HILL, CULDEE FELL and CROVAN'S GATE on two lines

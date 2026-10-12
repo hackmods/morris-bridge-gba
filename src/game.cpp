@@ -124,6 +124,12 @@ Game::Game() :
         }
     }
 
+    // One matrix per axle, so each vehicle leans with the grade under it.
+    for(int axle = 0; axle <= engine::MAX_CARS; ++axle)
+    {
+        _lean_mats.push_back(bn::sprite_affine_mat_ptr::create());
+    }
+
     _palette_ring.set_z_order(game_ui::Z_DIALOG_LABEL - 1);
     _palette_ring.set_visible(false);
     _palette_cost.set_z_order(game_ui::Z_DIALOG_LABEL);
@@ -181,7 +187,15 @@ void Game::_sync_graph_sprites()
         visible && _play_mode == PlayMode::build ? _selected : bn::optional<int>();
 
     _graph.sync_nodes(_bridge, visible, _frame, selected, _ring);
-    _graph.sync_struts(_bridge, visible, _play_mode == PlayMode::test);
+    // In the workshop the one beam too steep for the train blinks red.
+    int flagged = -1;
+
+    if(_screen == Screen::playing && _play_mode == PlayMode::build && (_frame / 12) % 2 == 0)
+    {
+        flagged = _bridge.steep_strut().value_or(-1);
+    }
+
+    _graph.sync_struts(_bridge, visible, _play_mode == PlayMode::test, flagged);
 
     if(! visible)
     {
@@ -300,6 +314,50 @@ bn::fixed Game::_max_train_load() const
 bool Game::_link_out_of_reach(const bn::fixed length) const
 {
     return length > _bridge.max_link_length(_connect_role);
+}
+
+bn::fixed_point Game::_within_reach(const bn::fixed_point from, const bn::fixed_point to) const
+{
+    // Pointing past the end of the beam still builds: the joint lands on the
+    // grid as far along that line as the material goes.
+    const bn::fixed reach = _bridge.max_link_length(_connect_role);
+    const bn::fixed length = physics::distance(from, to);
+    bn::fixed_point at = to;
+
+    for(bn::fixed span = reach; physics::distance(from, at) > reach && span > 0; span -= game::GRID_STEP)
+    {
+        at = game::snap_point(physics::lerp(from, to, span.safe_division(length)));
+    }
+
+    return at;
+}
+
+bool Game::_deck_too_steep() const
+{
+    return ! _bridge.has_track_path() && _bridge.has_track_path(true);
+}
+
+void Game::_lean_on_grade(bn::sprite_ptr& sprite, const int axle, const bn::fixed_point rail)
+{
+    const bn::fixed_point heading = _bridge.axle_heading(axle);
+
+    // Near enough level (a sagging flat deck included): leave the sprite crisp.
+    if(physics::abs(heading.y()) * 12 < physics::abs(heading.x()) || heading.x() <= 0)
+    {
+        sprite.remove_affine_mat();
+        game_ui::set_train_sprite_position(sprite, rail);
+        return;
+    }
+
+    const bn::fixed_point origin(0, 0);
+    const bn::fixed length = physics::distance(origin, heading);
+    bn::sprite_affine_mat_ptr& mat = _lean_mats[axle];
+    mat.set_rotation_angle_safe(view::link_angle_deg(origin, heading));
+    sprite.set_affine_mat(mat);
+    // Stand the sprite off the rail square to the slope, not straight up.
+    const bn::fixed off = -game::TRAIN_Y_OFFSET;
+    sprite.set_position(rail.x() + (heading.y() * off).safe_division(length),
+                        rail.y() - (heading.x() * off).safe_division(length));
 }
 
 void Game::_load_progress()
@@ -431,6 +489,15 @@ void Game::_sync_overlays()
     const bool on_line = _screen == Screen::playing && _play_mode == PlayMode::test;
     const bool arrived = _screen == Screen::level_complete && ! _show_unlock_flash;
 
+    if(on_line)
+    {
+        _lean_on_grade(_train, 0, _bridge.train_position());
+    }
+    else
+    {
+        _train.remove_affine_mat();
+    }
+
     for(int i = 0; i < _cars.size(); ++i)
     {
         bn::sprite_ptr& car = _cars[i];
@@ -465,11 +532,12 @@ void Game::_sync_overlays()
             if(arrived)
             {
                 // Buffered up behind wherever the engine was drawn.
+                car.remove_affine_mat();
                 car.set_position(_train.x() - engine::CAR_SPACING * axle, _train.y());
             }
             else
             {
-                game_ui::set_train_sprite_position(car, at);
+                _lean_on_grade(car, axle, at);
             }
 
             car.set_horizontal_flip(! _train_facing_right);

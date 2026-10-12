@@ -17,7 +17,7 @@ namespace level
 constexpr int COUNT = 8;
 
 /// Longest timber beam when a level does not set its own.
-inline constexpr bn::fixed DEFAULT_BEAM_LENGTH = 48;
+inline constexpr bn::fixed DEFAULT_BEAM_LENGTH = 60;
 
 /// Bit flags — align with bridge::LinkRole order (track = bit 0, brace = bit 1, cable = bit 2).
 inline constexpr uint8_t ALLOW_TRACK = 1;

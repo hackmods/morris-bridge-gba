@@ -34,6 +34,9 @@ inline constexpr int MAX_LINK_SPRITES = 56;
 /// Affine matrices for steep links (the GBA has 32 in total).
 inline constexpr int MAX_LINK_MATS = 26;
 
+/// Sprite rotation, in degrees, that lays a sprite along the line from @p a to @p b.
+[[nodiscard]] bn::fixed link_angle_deg(bn::fixed_point a, bn::fixed_point b);
+
 /**
  * @brief Draws links as runs of 16 px sprite segments.
  *
@@ -76,7 +79,9 @@ public:
      * strength, red from four-fifths. Test mode uses the force right now;
      * build mode uses the worst of the last run (a snapped link reads red).
      */
-    void sync_struts(const bridge::BridgeSystem& bridge, bool visible, bool test_mode);
+    /// @p flagged is a link index to show in the breaking colour, or -1.
+    void sync_struts(const bridge::BridgeSystem& bridge, bool visible, bool test_mode,
+                     int flagged = -1);
 
     /// One extra link drawn over the graph: the weld ghost, or a snap flash.
     void show_preview(bn::fixed_point a, bn::fixed_point b, int frame);

@@ -26,10 +26,10 @@ struct RunScore
 [[nodiscard]] RunScore compute_run_score(const bridge::BridgeSystem& system, const level::Def& def);
 
 /**
- * @brief The most a bridge on this level may cost: half as much again as par.
+ * @brief The most a bridge on this level may cost: twice par.
  *
  * Par earns the stars; the purse is the hard limit that stops a level being
- * brute-forced with a wall of timber.
+ * brute-forced with a wall of timber, with room left to over-build and learn.
  */
 [[nodiscard]] int purse(const level::Def& def);
 

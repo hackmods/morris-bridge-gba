@@ -23,7 +23,7 @@ A **Game Boy Advance** bridge-building puzzle game. The player places **joints**
 
 - Build mode: place nodes, connect struts, chain-building
 - Test mode: fixed-point truss simulation ([Physics](physics.md)) — self-weight, moving axle loads, links snap in tension or compression
-- Train takes the shortest climbable track route; grades steeper than 1 in 2 are not a route
+- Train takes the shortest climbable track route; grades steeper than 2 in 3 are not a route
 - Eight levels, each a different structural problem (prop, hang, truss, strut, trestle, stay)
 - Thomas choo-choo SFX (chuff, whistle, peep) plus original parody BGM via Maxmod
 - Host physics tests (PC, no GBA toolchain)

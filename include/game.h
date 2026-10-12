@@ -45,6 +45,9 @@ private:
     [[nodiscard]] int _pick_fail_banner() const;
     [[nodiscard]] bn::fixed _max_train_load() const;
     [[nodiscard]] bool _link_out_of_reach(bn::fixed length) const;
+    [[nodiscard]] bn::fixed_point _within_reach(bn::fixed_point from, bn::fixed_point to) const;
+    [[nodiscard]] bool _deck_too_steep() const;
+    void _lean_on_grade(bn::sprite_ptr& sprite, int axle, bn::fixed_point rail);
 
     void _load_progress();
     void _persist_progress();
@@ -170,6 +173,7 @@ private:
     bn::sprite_ptr _palette_ring;
     bn::sprite_ptr _palette_cost;
     bn::sprite_affine_mat_ptr _palette_mat;
+    bn::vector<bn::sprite_affine_mat_ptr, 1 + engine::MAX_CARS> _lean_mats;
     bn::vector<bn::sprite_ptr, engine::MAX_CARS> _cars;
     bn::camera_ptr _camera;
     bn::vector<game_ui::DustPuff, game_ui::MAX_DUST> _dust;

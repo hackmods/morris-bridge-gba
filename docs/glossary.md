@@ -20,7 +20,7 @@
 | **EverDrive GBA** | GBA flash cartridge (not EverDrive GB) |
 | **devkitARM** | Official GBA/homebrew toolchain from devkitPro |
 | **grit** | Asset converter in Butano pipeline (BMP → GBA tiles) |
-| **Beam length** | Longest timber the level's yard supplies (`level::Def::safe_length`); rods reach 1.5× |
+| **Beam length** | Longest timber the level's yard supplies (`level::Def::safe_length`); rods reach 1.5×, cable 2× |
 | **Par** | Build cost (joints + timber + 2× rods) of the reference design; meeting it is 3★ |
 | **Scheduled engine** | The engine the level is timetabled for; lighter engines clear it for 1★ only |
 | **Rewind** | Leaving a test restores the build; links remember the worst force they carried |

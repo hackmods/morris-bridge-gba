@@ -173,14 +173,9 @@ void Game::_update_preview()
     }
     else if(!hovered)
     {
-        to = game::snap_point(_cursor_pos);
-        const bn::fixed length = physics::distance(from, to);
-
-        if(length > 0)
-        {
-            weak = _link_out_of_reach(length);
-            show = true;
-        }
+        // Past the end of the beam the ghost stops where the joint will land.
+        to = _within_reach(from, game::snap_point(_cursor_pos));
+        show = physics::distance(from, to) > 0;
     }
 
     if(show)
@@ -247,6 +242,11 @@ void Game::_update_build_hints()
     if(_bridge.has_track_path())
     {
         _hint_label.set_item(bn::sprite_items::label, game_ui::LABEL_START);
+    }
+    else if(_deck_too_steep())
+    {
+        // The deck is whole, but some of it is steeper than an engine can climb.
+        _hint_label.set_item(bn::sprite_items::label, game_ui::LABEL_STEEP);
     }
     else if(_selected)
     {
@@ -474,25 +474,45 @@ void Game::_handle_confirm(bn::optional<int> hovered, bn::fixed_point place_at)
             return;
         }
 
-        const bn::fixed_point snapped = game::snap_point(place_at);
+        bn::fixed_point snapped = game::snap_point(place_at);
 
-        if(_selected &&
-           _link_out_of_reach(physics::distance(_bridge.nodes()[_selected.value()].position, snapped)))
+        if(_selected)
         {
-            // Do not plant a joint the selected one cannot reach.
-            _show_toast(game_ui::ToastKind::too_long);
-            return;
-        }
-        const bn::optional<int> created =
-            _bridge.add_node(snapped.x(), snapped.y(), false);
+            // Never plant a joint the selected one cannot reach: bring it in
+            // to the end of the beam, and onto a joint that is already there.
+            const bn::fixed_point from = _bridge.nodes()[_selected.value()].position;
+            snapped = _within_reach(from, snapped);
 
-        if(!created)
+            if(snapped == from)
+            {
+                _show_toast(game_ui::ToastKind::too_long);
+                return;
+            }
+
+            if(const bn::optional<int> landed = _bridge.find_node_near(snapped);
+               landed && landed.value() != _selected.value())
+            {
+                hovered = landed;
+            }
+        }
+
+        if(hovered)
         {
-            _show_toast(game_ui::ToastKind::full);
-            return;
+            node_id = hovered.value();
         }
+        else
+        {
+            const bn::optional<int> created =
+                _bridge.add_node(snapped.x(), snapped.y(), false);
 
-        node_id = created.value();
+            if(!created)
+            {
+                _show_toast(game_ui::ToastKind::full);
+                return;
+            }
+
+            node_id = created.value();
+        }
     }
 
     if(_selected && _selected.value() != node_id)
@@ -647,7 +667,8 @@ void Game::_enter_test()
     {
         // Sending the train with nothing built at all gets a different "no".
         const bool nothing_built = _bridge.player_node_count() == 0 && _bridge.struts().empty();
-        _no_go_label = nothing_built ? game_ui::LABEL_LISTEN : game_ui::LABEL_NO_GO;
+        _no_go_label = nothing_built ? game_ui::LABEL_LISTEN :
+            (_deck_too_steep() ? game_ui::LABEL_STEEP : game_ui::LABEL_NO_GO);
         _audio.play(audio::MusicCue::none);
         bn::sound_items::delay.play();
         _no_go_timer = 60;

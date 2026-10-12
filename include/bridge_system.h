@@ -60,8 +60,10 @@ inline constexpr int SIM_SUBSTEPS = 4;
 /// A train that sags this far below the rail line is in the water.
 inline constexpr bn::fixed SINK_DEPTH = 20;
 
-/// Track steeper than 1-in-`MAX_GRADE_RUN` is not a route — engines stall on it.
-inline constexpr int MAX_GRADE_RUN = 2;
+/// Track steeper than `MAX_GRADE_RISE` in `MAX_GRADE_RUN` is not a route —
+/// engines stall on it.
+inline constexpr int MAX_GRADE_RISE = 2;
+inline constexpr int MAX_GRADE_RUN = 3;
 
 /// A Troublesome Truck's load swings this far either side of its weight, and
 /// flips every `TRUCK_JOLT_FRAMES` as the trucks bump each other along.
@@ -339,7 +341,20 @@ public:
     /// True when this link is track an engine can climb (grade within limit).
     [[nodiscard]] bool is_routable(const Strut& strut) const;
 
-    [[nodiscard]] bool has_track_path() const;
+    /**
+     * @brief True when track joins the two banks.
+     *
+     * With @p ignore_grade the climb limit is waived: a bridge that only
+     * passes that way is complete but too steep somewhere.
+     */
+    [[nodiscard]] bool has_track_path(bool ignore_grade = false) const;
+
+    /**
+     * @brief The one track link that is all that stops the train: too steep
+     * to climb, with climbable track from the start bank to one end of it
+     * and from the other end to the far bank.
+     */
+    [[nodiscard]] bn::optional<int> steep_strut() const;
 
     /**
      * @brief Begin test mode: snapshot the build, pick the shortest climbable
@@ -386,6 +401,13 @@ public:
     {
         return _axle_position[axle];
     }
+
+    /**
+     * @brief Direction of the rail under an axle, as it is sagging now.
+     *
+     * Level (1, 0) on either bank and before a run.
+     */
+    [[nodiscard]] bn::fixed_point axle_heading(int axle) const;
 
     [[nodiscard]] bool train_falling() const
     {
@@ -486,6 +508,7 @@ private:
     void _rebuild_train();
     [[nodiscard]] bn::fixed _axle_weight(int axle) const;
     [[nodiscard]] bn::fixed _grade_factor() const;
+    void _mark_climbable(int from, bool* reached) const;
     bn::fixed _current_train_speed() const;
 
     bn::vector<Node, MAX_NODES> _nodes;

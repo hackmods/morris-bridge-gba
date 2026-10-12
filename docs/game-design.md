@@ -38,7 +38,7 @@ The ROM teaches controls directly:
 - **Title:** static hint labels (**HOLD A**, **A WELD**) above the dialog panel
 - **First build session:** rotating hints (`HOLD A` → `A WELD` → `PAUSE`) for a few seconds, dismissible with any button
 - **Material palette:** icons at the top right show every material this track allows, with a ring on the one in hand and its name (**WOOD**, **ROD**, **CABLE**) and price underneath. **R** cycles through them.
-- **Build HUD:** **A WELD** while a joint is selected, **START** once a road links both banks; digits show **cost vs par** (3★ if cost ≤ par). The weld ghost turns **red** when the link is longer than the yard can supply. After a test, links that carried ≥ 75 % of their strength (or snapped) glow **hot**.
+- **Build HUD:** **A WELD** while a joint is selected, **START** once a road links both banks; digits show **cost vs par** (3★ if cost ≤ par). Point past the end of a beam and the weld ghost stops where the joint will land: **A** plants it there, at full reach. (Only a weld between two existing joints that are too far apart is refused: **LONG!**) A finished deck with a beam too steep to climb shows **STEEP!** and that beam blinks red. After a test, links that carried ≥ 75 % of their strength (or snapped) glow **hot**.
 - **Hold A + drag:** plants joints every 24 px so a span can be chain-welded in one stroke; tap A still joins one joint at a time
 
 ## How a bridge works
@@ -55,17 +55,18 @@ Test mode is a structural simulation ([Physics](physics.md)), not a rating table
 - Links snap in **tension or compression**. A snapped link dumps its load on the
   neighbours.
 - The bridge **settles** under its own weight before the train leaves.
-- The train takes the **shortest track route**; track steeper than 1 in 2 is not
+- The train takes the **shortest track route**; track steeper than 2 in 3 is not
   a route, so timber can be a post without the engine trying to drive down it.
 - A train that sags 20 px below the line is in the water.
 - The run is won when the **whole train** is across — engine and every coach.
 - **Colours:** a link turns amber at half its strength and red at four-fifths.
   During a run the HUD shows **LOAD** (worst link now, %) and **PEAK** (worst so far).
-- **The purse:** a bridge may cost at most half as much again as par. Past that
+- **The purse:** a bridge may cost at most twice par. Past that
   the yard will not weld: **SPENT**. The right-hand number reads **PAR** until you
   are over it, then **MAX**.
 - **B** on a joint deletes the joint; **B** on a beam deletes just that beam. **L** undoes the newest weld and keeps unwinding if you keep pressing.
 - Hold **A** during a run for double speed.
+- On a gradient every vehicle leans with the rail under it.
 - On the win screen, **A** goes to the next track and **B** goes back to the workshop with the bridge intact, to trim it for more stars.
 
 ## Engines and unlocks
