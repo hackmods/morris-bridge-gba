@@ -353,6 +353,7 @@ FONT = {
     "Y": ["10001", "01010", "00100", "00100", "00100"],
     "'": ["00100", "00100", "01000", "00000", "00000"],
     "!": ["00100", "00100", "00100", "00000", "00100"],
+    ".": ["00000", "00000", "00000", "00000", "00100"],
     " ": ["00000", "00000", "00000", "00000", "00000"],
     "0": ["01110", "10001", "10001", "10001", "01110"],
     "1": ["00100", "01100", "00100", "00100", "01110"],
@@ -1635,19 +1636,19 @@ def make_labels() -> None:
         "BUILD",
         "TEST!",
         "DELAY",
-        "USEFUL",
+        "GRAND",
         "NO GO",
         "PEEP!",
-        "ASHES!",
+        "ASHES",
         "START",
-        "HOLD A",
-        "A WELD",
+        "A PIN",
+        "WELD!",
         "PAUSE",
-        "CHUFF!",
+        "CHUFF",
         "TOOT!",
         "OOPS!",
         "WAIT!",
-        "AGAIN!",
+        "AGAIN",
         "NEW!",
         "TRACK",
         "ROD",
@@ -1667,8 +1668,8 @@ def make_labels() -> None:
         "STAYS",
         "AWAY!",
         "HARD",
-        "LISTEN",
-        "CONFUS",
+        "HARK!",
+        "OH NO",
         "LOOP!",
         "THIN!",
         # 39-45: HUD tags. 46: a finished deck no engine can climb.
@@ -1679,7 +1680,7 @@ def make_labels() -> None:
         "PEAK",
         "WOOD",
         "COST",
-        "STEEP!",
+        "STEEP",
     )
     w, fh = 32, 8
     px = fill(w, fh * len(texts))
@@ -1690,6 +1691,8 @@ def make_labels() -> None:
         2, 2, 3, 9, 9, 2, 2, 9,
     )
     for i, text in enumerate(texts):
+        # Five glyphs is all a 32 px label holds.
+        assert len(text) <= 5, text
         y0 = i * fh
         rect(px, w, 0, y0, 32, y0 + fh, 7 if i < 8 else 13)
         rect(px, w, 1, y0 + 1, 31, y0 + fh - 1, 6 if i < 8 else 7)
@@ -1710,6 +1713,7 @@ def make_banner() -> None:
         ("BUST MY", "BUFFERS!", 9),
         ("BOTHER!", "FELL DOWN", 9),
         ("REALLY", "USEFUL!", 11),
+        ("PAUSED", "", 7),
     )
     px = fill(w, fh * len(entries))
     for frame, (title, sub, bg) in enumerate(entries):
@@ -1721,6 +1725,73 @@ def make_banner() -> None:
         if sub:
             center_text(px, w, sub, y0 + 20, 3, 1)
     write_indexed_bmp(os.path.join(GFX, "banner.bmp"), w, fh * len(entries), px)
+
+
+OPTIONS = ("RESUME", "RESTART", "LEVELS", "TITLE", "NEXT", "REBUILD", "RETRY")
+
+
+def make_option() -> None:
+    """Menu rows that stack 16 px apart: a 64×16 plate in the middle of a 64×32
+    frame (the GBA has no 64×16 sprite). Two frames per option: idle, chosen.
+    """
+    w, fh = 64, 32
+    px = fill(w, fh * len(OPTIONS) * 2)
+    for i, name in enumerate(OPTIONS):
+        for chosen in (0, 1):
+            y0 = (i * 2 + chosen) * fh + 8
+            rect(px, w, 1, y0 + 1, 63, y0 + 15, 1 if chosen else 7)
+            rect(px, w, 2, y0 + 2, 62, y0 + 14, 3 if chosen else 2)
+            if chosen:
+                rect(px, w, 2, y0 + 12, 62, y0 + 14, 12)
+            center_text(px, w, name, y0 + 5, 1, 2 if chosen else 15)
+    write_indexed_bmp(os.path.join(GFX, "option.bmp"), w, fh * len(OPTIONS) * 2, px)
+
+
+def make_version() -> None:
+    """Title-screen build plate, read from the VERSION file at the repo root."""
+    with open(os.path.join(ROOT, "VERSION"), encoding="utf-8") as f:
+        version = f.read().strip()
+    w, h = 64, 32
+    px = fill(w, h)
+    text = "VER " + version
+    half = (len(text) * 6 + 5) // 2
+    rect(px, w, 32 - half - 1, 11, 32 + half + 1, 21, 7)
+    rect(px, w, 32 - half, 12, 32 + half, 20, 1)
+    center_text(px, w, text, 14, 15, 1)
+    write_indexed_bmp(os.path.join(GFX, "version.bmp"), w, h, px)
+
+
+def make_stars() -> None:
+    """Star rating, 32×16: frames for 0 to 3 stars earned out of three."""
+    w, fh = 32, 16
+    star = (
+        "....#....",
+        "....#....",
+        "...###...",
+        "#########",
+        ".#######.",
+        "..#####..",
+        "..#####..",
+        ".###.###.",
+        ".#.....#.",
+    )
+    px = fill(w, fh * 4)
+    for earned in range(4):
+        y0 = earned * fh
+        for slot in range(3):
+            x0 = 1 + slot * 10
+            lit = slot < earned
+            # Dark outline first, then the body.
+            for dy, row in enumerate(star):
+                for dx, cell in enumerate(row):
+                    if cell == "#":
+                        for ox, oy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                            put(px, w, x0 + dx + ox, y0 + 3 + dy + oy, 1)
+            for dy, row in enumerate(star):
+                for dx, cell in enumerate(row):
+                    if cell == "#":
+                        put(px, w, x0 + dx, y0 + 3 + dy, 3 if lit else 10)
+    write_indexed_bmp(os.path.join(GFX, "stars.bmp"), w, fh * 4, px)
 
 
 def make_track_card() -> None:
@@ -1915,6 +1986,9 @@ def generate() -> None:
     make_labels()
     make_banner()
     make_menu()
+    make_option()
+    make_version()
+    make_stars()
     make_track_card()
 
     for name, extra in (
@@ -1945,6 +2019,9 @@ def generate() -> None:
         ("label.json", {"height": 8}),
         ("banner.json", {"height": 32}),
         ("menu.json", {"height": 32}),
+        ("option.json", {"height": 32}),
+        ("version.json", None),
+        ("stars.json", {"height": 16}),
         ("track_card.json", {"height": 32}),
     ):
         write_json(name, extra)

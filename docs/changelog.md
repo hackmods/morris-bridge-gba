@@ -1,5 +1,16 @@
 # Changelog & project history
 
+## 2026-10-11 — v2.2.0: the train always goes, real menus
+
+- **The train always departs.** Start used to refuse with a sound and NO GO when the track was not joined up. Now the train sets off regardless: with nothing built it rolls off the bank, on a half-built deck it runs to the end of the rails and each vehicle follows the engine over, and at a beam too steep to climb it stalls with its wheels spinning (`SimStatus::stalled`, `ran_off()`, host-tested)
+- **Pause is a menu:** RESUME, RESTART, LEVELS and TITLE are all on screen under a PAUSED banner. It used to show one row at a time under PICK TRACK
+- **Win and fail screens have menus:** NEXT / REBUILD / LEVELS after a win, RETRY / LEVELS after a failure. The way back to the map from a win, lost when B became "keep the bridge", is back
+- **Stars are drawn as stars** on the win screen and the track map, instead of a bare digit
+- **Version on the title screen**, generated from the `VERSION` file
+- **Labels no longer clipped:** six-letter labels were cut off at the edge of their 32 px plate (A WELD, HOLD A, LISTEN, USEFUL, STEEP!). They are now A PIN, WELD!, HARK!, GRAND, STEEP, and the generator refuses any label over five letters
+- Stray HUD digits no longer show on the title and pause screens; the title's START prompt is drawn in front of the splash art
+- Link sprites capped at 52 to pay for the menu rows
+
 ## 2026-10-11 — v2.1.0: gradients and looser limits
 
 Gordon's Hill was close to unbuildable by hand. The par design's beams were 41 px long against a 48 px limit, so a joint placed 8 px off the par layout made a beam too long 70 % of the time, and an uneven deck tripped the 1-in-2 grade rule with nothing to say why. Measured over 2,000 randomly nudged builds, the win rate at ±8 px went from 24 % to 96 %.

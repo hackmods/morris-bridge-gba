@@ -17,15 +17,19 @@ import {
  * M1/M2 simulation wins are covered by host playthrough tests (see docs/ship-qa.md).
  */
 test.describe('Ship QA screen flows (M3–M5)', () => {
-  test('M3: empty bridge returns to build after NO GO', async ({ page }) => {
+  test('M3: with nothing built the train still departs, falls in, and RETRY returns to build', async ({ page }) => {
     await navigateToBuildMode(page);
     await assertCanvasIsRendering(page);
 
+    // The train rolls off the bank; the fail menu opens on RETRY.
     await page.evaluate(() => window.__TEST__!.tapButton('Start'));
-    await page.waitForTimeout(2_500);
-
-    // Auto-return from failed test — canvas should still render in build mode.
+    await page.waitForTimeout(4_500);
     await assertCanvasIsRendering(page, 500);
+
+    await page.evaluate(() => window.__TEST__!.tapButton('A'));
+    await page.waitForTimeout(1_000);
+    await assertCanvasIsRendering(page, 500);
+    expect(await page.evaluate(() => window.__TEST__!.readSaveProgress()?.clearedLevels ?? 0)).toBe(0);
   });
 
   test('M4: pause menu opens and resumes', async ({ page }) => {

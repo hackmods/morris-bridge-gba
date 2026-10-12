@@ -75,7 +75,7 @@ Percy counted wheels wrong on purpose.
 It is an ERROR CODE.
 Vicarstown lift bridge = EXIT DOOR.
 Build with zero nodes once.
-NO GO becomes a different kind of no.
+The train goes anyway. HARK!
 (I am probably lying.)
 ```
 

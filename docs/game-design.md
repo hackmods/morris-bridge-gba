@@ -17,7 +17,8 @@ Launch title: **Thomas's Bridge**. (Tank Bridge is too generic; Morris was the w
 | Splash | Illustrated canyon + THOMAS'S BRIDGE logo |
 | Win | HATT OK! + a line that depends on how you won (see [Lore lines](#lore-lines)) |
 | Snap / fall | DELAY! + a line that depends on how you lost |
-| No route | NO GO |
+| Unfinished track | The train goes anyway and runs off the end |
+| Too steep | The engine stalls at the foot of the beam: DELAY! |
 
 Optional **PG lore** for friends: [Lore leak](lore-leak.md) (creepy copypasta backstory; safe on the surface for kids).
 
@@ -25,20 +26,23 @@ Optional **PG lore** for friends: [Lore leak](lore-leak.md) (creepy copypasta ba
 
 | Screen | Controls |
 |--------|----------|
-| **Title** | Full splash artwork; hints for **HOLD A** and **A WELD**; Start / A → levels |
+| **Title** | Full splash artwork, blinking **START**, build version at the top right; Start / A → levels |
 | **Level select** | Up/Down (locked tracks skipped), A → engine pick, B back — track name shown in menu row |
 | **Engine select** | Up/Down (locked engines skipped), weight shown; A start, B back |
-| **Build** | **D-pad** cursor · **A** tap join / **hold-A drag** chain-weld · **B** undo last node · **L** undo last strut · **R** timber / rod · **Select** pause · **Start** send the train · HUD **cost vs par** |
+| **Build** | **D-pad** cursor (hold **R** to move faster) · **A** pick a joint, **A** again to weld / **hold-A drag** chain-weld · **B** delete the joint or beam under the cursor, or drop the selection · **L** undo · **R** tap: next material · **Select** pause · **Start** send the train · HUD **cost vs par** |
+| **Run** | hold **A** double speed · **Start** / **B** stop and go back to the workshop |
+| **Pause** | **RESUME / RESTART / LEVELS / TITLE**, all on screen: Up/Down, **A** picks, **B** or **Select** resumes |
+| **Win** | Stars earned, then **NEXT / REBUILD / LEVELS**. REBUILD (or **B**) goes back to the workshop with the bridge standing, to trim it for more stars |
+| **Fail** | **RETRY / LEVELS**. RETRY (or **B**) goes back to the workshop with the bridge as built |
 | **Test** | Train runs; B cancel |
 
 ## Onboarding
 
 The ROM teaches controls directly:
 
-- **Title:** static hint labels (**HOLD A**, **A WELD**) above the dialog panel
-- **First build session:** rotating hints (`HOLD A` → `A WELD` → `PAUSE`) for a few seconds, dismissible with any button
+- **First build session:** rotating hints (`A PIN` → `WELD!` → `PAUSE`) for a few seconds, dismissible with any button
 - **Material palette:** icons at the top right show every material this track allows, with a ring on the one in hand and its name (**WOOD**, **ROD**, **CABLE**) and price underneath. **R** cycles through them.
-- **Build HUD:** **A WELD** while a joint is selected, **START** once a road links both banks; digits show **cost vs par** (3★ if cost ≤ par). Point past the end of a beam and the weld ghost stops where the joint will land: **A** plants it there, at full reach. (Only a weld between two existing joints that are too far apart is refused: **LONG!**) A finished deck with a beam too steep to climb shows **STEEP!** and that beam blinks red. After a test, links that carried ≥ 75 % of their strength (or snapped) glow **hot**.
+- **Build HUD:** **WELD!** while a joint is selected, **START** once a road links both banks; digits show **cost vs par** (3★ if cost ≤ par). Point past the end of a beam and the weld ghost stops where the joint will land: **A** plants it there, at full reach. (Only a weld between two existing joints that are too far apart is refused: **LONG!**) A finished deck with a beam too steep to climb shows **STEEP!** and that beam blinks red. After a test, links that carried ≥ 75 % of their strength (or snapped) glow **hot**.
 - **Hold A + drag:** plants joints every 24 px so a span can be chain-welded in one stroke; tap A still joins one joint at a time
 
 ## How a bridge works
@@ -132,12 +136,14 @@ The odd lines on the result screens are not random. Each answers what you did.
 | **WAIT!** | The bridge collapsed under its own weight before the train left |
 | **OOPS!** | Nothing snapped — the deck sagged into the water |
 | **AGAIN** | Third failure in a row |
-| **LOOP** + banner LISTEN | Fifth failure in a row |
+| **LOOP** + banner DELAY! LISTEN | Fifth failure in a row |
 | **ASHES!** + banner CINDERS AND ASHES! | A link snapped under the train |
 | banner BUST MY BUFFERS! | Nothing snapped — the train sagged into the water |
 | banner BOTHER! FELL DOWN | The bridge came down before the train left |
 | banner DELAY! CONFUSION | Third failure in a row: Hatt has stopped being patient |
-| **LISTEN** (build HUD) | Sent the train with nothing built at all, instead of NO GO |
+| **HARK!** + banner BOTHER! FELL DOWN | Sent the train with nothing built at all: it rolls off the bank |
+| **OOPS!** + banner BOTHER! FELL DOWN | Ran off the end of unfinished track |
+| **STEEP** + banner DELAY! CONFUSION | Stalled at a beam too steep to climb |
 
 The failure-streak lines are the rewind from the [lore](lore-leak.md): every
 failed test puts the bridge back exactly as it was, and the game notices.

@@ -675,14 +675,41 @@ bool BridgeSystem::_find_route()
         }
     }
 
-    if(dist[END_NODE] == UNREACHED)
+    _route_complete = dist[END_NODE] != UNREACHED;
+    _stall_at_end = false;
+    int target = END_NODE;
+
+    if(!_route_complete)
     {
-        return false;
+        // No way across: the train takes the track as far right as it goes.
+        target = START_NODE;
+
+        for(int i = 0; i < _nodes.size(); ++i)
+        {
+            if(dist[i] != UNREACHED && _nodes[i].position.x() > _nodes[target].position.x())
+            {
+                target = i;
+            }
+        }
+
+        // A beam leading on from there that is too steep stops the engine
+        // rather than dropping it.
+        for(const Strut& strut : _struts)
+        {
+            if(strut.role != LinkRole::track || is_routable(strut) ||
+               (strut.node_a != target && strut.node_b != target))
+            {
+                continue;
+            }
+
+            const int other = strut.node_a == target ? strut.node_b : strut.node_a;
+            _stall_at_end = _stall_at_end || _nodes[other].position.x() > _nodes[target].position.x();
+        }
     }
 
     bn::vector<int, MAX_NODES> reverse;
 
-    for(int cursor = END_NODE; cursor != -1; cursor = parent[cursor])
+    for(int cursor = target; cursor != -1; cursor = parent[cursor])
     {
         reverse.push_back(cursor);
     }
@@ -693,7 +720,7 @@ bool BridgeSystem::_find_route()
         _path.push_back(reverse[i]);
     }
 
-    return _path.size() >= 2;
+    return _route_complete;
 }
 
 void BridgeSystem::_prepare_solver()
@@ -785,12 +812,14 @@ SimStatus BridgeSystem::begin_test()
     _peak_stress_percent = 0;
     _snap_flash.reset();
     _park_train();
+    _ran_off = false;
 
-    if(!_find_route())
+    for(bn::fixed& speed : _axle_fall)
     {
-        _status = SimStatus::no_path;
-        return _status;
+        speed = 0;
     }
+
+    (void)_find_route();
 
     _saved_nodes = _nodes;
     _saved_struts = _struts;
@@ -1140,9 +1169,27 @@ void BridgeSystem::_place_train()
     const bn::fixed_point start = _nodes[START_NODE].position;
     const bn::fixed_point end = _nodes[END_NODE].position;
 
-    // The run is won when the last coach is off the bridge, not the engine.
-    if(_axle_distance(axle_count() - 1) >= total)
+    if(!_route_complete)
     {
+        if(_train_distance >= total && !settling())
+        {
+            if(_stall_at_end)
+            {
+                _train_distance = total;
+                _status = SimStatus::stalled;
+            }
+            else
+            {
+                _ran_off = true;
+                _start_falling();
+                _run_off_end();
+                return;
+            }
+        }
+    }
+    else if(_axle_distance(axle_count() - 1) >= total)
+    {
+        // The run is won when the last coach is off the bridge, not the engine.
         _status = SimStatus::success;
     }
 
@@ -1159,8 +1206,11 @@ void BridgeSystem::_place_train()
 
         if(distance >= total)
         {
-            // Rolled off onto the far bank.
-            _axle_position[axle] = bn::fixed_point(end.x() + (distance - total), end.y());
+            // Rolled off onto the far bank (or standing at a dead end).
+            const bn::fixed_point last_rail = _route_complete ? end : _nodes[_path[last]].position;
+            _axle_position[axle] =
+                bn::fixed_point(last_rail.x() + (_route_complete ? distance - total : bn::fixed(0)),
+                                last_rail.y());
             continue;
         }
 
@@ -1196,6 +1246,46 @@ void BridgeSystem::_place_train()
     }
 }
 
+void BridgeSystem::_run_off_end()
+{
+    // The engine goes over the end of the rails and the rest of the train
+    // follows it, one vehicle at a time.
+    const int last = _path.size() - 1;
+    const bn::fixed total = _path_cum[last];
+    const bn::fixed_point start = _nodes[START_NODE].position;
+    const bn::fixed speed = _current_train_speed();
+    _train_distance += speed;
+
+    for(int axle = 0; axle < axle_count(); ++axle)
+    {
+        const bn::fixed distance = _axle_distance(axle);
+        bn::fixed_point& at = _axle_position[axle];
+
+        if(distance >= total)
+        {
+            _axle_fall[axle] += GRAVITY;
+            at.set_x(at.x() + speed / 2);
+            at.set_y(at.y() + _axle_fall[axle]);
+
+            if(at.y() > FALL_Y_LIMIT)
+            {
+                at.set_y(FALL_Y_LIMIT);
+            }
+        }
+        else if(distance <= 0)
+        {
+            at = bn::fixed_point(start.x() + distance, start.y());
+        }
+        else
+        {
+            const int segment = _segment_at(distance);
+            const bn::fixed span = _path_cum[segment + 1] - _path_cum[segment];
+            at = physics::lerp(_nodes[_path[segment]].position, _nodes[_path[segment + 1]].position,
+                               (distance - _path_cum[segment]).safe_division(span));
+        }
+    }
+}
+
 SimStatus BridgeSystem::update()
 {
     constexpr int SETTLE_DAMPING_SHIFT = 4;
@@ -1216,14 +1306,21 @@ SimStatus BridgeSystem::update()
     {
         _fall_vy += GRAVITY;
 
-        // The whole train goes down together.
-        for(bn::fixed_point& axle : _axle_position)
+        if(_ran_off)
         {
-            axle.set_y(axle.y() + _fall_vy);
-
-            if(axle.y() > FALL_Y_LIMIT)
+            _run_off_end();
+        }
+        else
+        {
+            // The road gave way: the whole train goes down together.
+            for(bn::fixed_point& axle : _axle_position)
             {
-                axle.set_y(FALL_Y_LIMIT);
+                axle.set_y(axle.y() + _fall_vy);
+
+                if(axle.y() > FALL_Y_LIMIT)
+                {
+                    axle.set_y(FALL_Y_LIMIT);
+                }
             }
         }
 

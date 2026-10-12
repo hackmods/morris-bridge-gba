@@ -295,7 +295,44 @@ int main()
         bridge::BridgeSystem system;
         system.load_level(0);
         assert(!system.has_track_path());
-        assert(system.begin_test() == bridge::SimStatus::no_path);
+
+        // The train always departs. With nothing built it rolls off the bank.
+        assert(system.begin_test() == bridge::SimStatus::running);
+        assert(!system.route_complete());
+        const bn::fixed bank_y = system.train_position().y();
+
+        for(int frame = 0; frame < 400 && system.status() == bridge::SimStatus::running; ++frame)
+        {
+            system.update();
+        }
+
+        assert(system.status() == bridge::SimStatus::failed_fall && system.ran_off());
+
+        for(int frame = 0; frame < 30; ++frame)
+        {
+            system.update();
+        }
+
+        assert(system.train_position().y() > bank_y + 20);
+        // The coaches are still on the bank: they follow one at a time.
+        assert(system.axle_position(2).y() == bank_y);
+        system.end_test();
+
+        // Half a deck: the engine runs to the end of it, then off.
+        const bn::optional<int> mid = system.add_node(0, 12, false);
+        assert(mid && system.add_strut(bridge::START_NODE, mid.value()));
+        assert(system.add_strut(2, mid.value()));
+        assert(system.begin_test() == bridge::SimStatus::running);
+        bn::fixed furthest = system.train_position().x();
+
+        for(int frame = 0; frame < 600 && system.status() == bridge::SimStatus::running; ++frame)
+        {
+            system.update();
+            furthest = system.train_position().x();
+        }
+
+        assert(system.status() == bridge::SimStatus::failed_fall && system.ran_off());
+        assert(furthest > -4 && furthest < 8);
         system.end_test();
         assert(level_solutions::build_reference(system, 0));
         assert(system.has_track_path());
@@ -313,7 +350,8 @@ int main()
         assert(system.add_strut(a.value(), b.value(), bridge::LinkRole::cable));
         assert(system.add_strut(b.value(), c.value(), bridge::LinkRole::cable));
         assert(system.add_strut(c.value(), bridge::END_NODE, bridge::LinkRole::cable));
-        assert(system.begin_test() == bridge::SimStatus::no_path);
+        assert(system.begin_test() == bridge::SimStatus::running);
+        assert(!system.route_complete());
         std::cout << "  ok cables and rods are not a train route\n";
     }
 
@@ -352,9 +390,26 @@ int main()
         assert(!system.has_track_path());
         assert(system.has_track_path(true));
         assert(system.steep_strut().value() == ramp.value());
+
         // A cable up to the crag is steep too, but it is not what stops the train.
         assert(system.add_strut(2, a.value(), bridge::LinkRole::cable));
         assert(system.steep_strut().value() == ramp.value());
+
+        // Sent anyway, the engine runs to the foot of the ramp and stalls there.
+        assert(system.add_strut(2, b.value(), bridge::LinkRole::cable));
+        assert(system.add_strut(3, c.value(), bridge::LinkRole::cable));
+        assert(system.begin_test() == bridge::SimStatus::running);
+
+        for(int frame = 0; frame < 900 && system.status() == bridge::SimStatus::running; ++frame)
+        {
+            system.update();
+        }
+
+        assert(system.status() == bridge::SimStatus::stalled);
+        assert(!system.ran_off());
+        assert(physics::abs(system.train_position().x() - 44) < 4);
+        system.end_test();
+        assert(system.remove_strut(system.find_strut(3, c.value()).value()));
 
         // The same climb shared between two beams is a route.
         assert(system.remove_player_node(c.value()) == bridge::RemoveNodeResult::ok);

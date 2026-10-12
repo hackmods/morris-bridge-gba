@@ -137,6 +137,24 @@ constexpr int BANNER_CINDERS = 6;
 constexpr int BANNER_BUFFERS = 7;
 constexpr int BANNER_BOTHER = 8;
 constexpr int BANNER_REALLY_USEFUL = 9;
+constexpr int BANNER_PAUSED = 10;
+
+/// Rows of the pause and result menus (graphics/option.bmp, two frames each).
+constexpr int OPTION_RESUME = 0;
+constexpr int OPTION_RESTART = 1;
+constexpr int OPTION_LEVELS = 2;
+constexpr int OPTION_TITLE = 3;
+constexpr int OPTION_NEXT = 4;
+constexpr int OPTION_REBUILD = 5;
+constexpr int OPTION_RETRY = 6;
+constexpr int OPTION_SPACING = 16;
+constexpr int MAX_MENU_ROWS = 4;
+constexpr int RESULT_BANNER_Y = -52;
+constexpr int RESULT_STARS_Y = -28;
+constexpr int RESULT_MENU_Y = -8;
+constexpr int PAUSE_MENU_Y = -22;
+/// How long a stalled engine sits spinning its wheels before Hatt arrives.
+constexpr int STALL_FRAMES = 70;
 
 constexpr int PANEL_HUD = 0;
 constexpr int PANEL_DIALOG = 1;

@@ -34,30 +34,15 @@
 
 void Game::_update_pause()
 {
-    if(_dir_repeat(bn::keypad::up_pressed(), bn::keypad::up_held(), _menu_up_counter))
+    if(_update_menu())
     {
-        _pause_option = PauseOption((int(_pause_option) + int(PauseOption::count) - 1) %
-                                    int(PauseOption::count));
-        bn::sound_items::ui.play();
-    }
-
-    if(_dir_repeat(bn::keypad::down_pressed(), bn::keypad::down_held(), _menu_down_counter))
-    {
-        _pause_option = PauseOption((int(_pause_option) + 1) % int(PauseOption::count));
-        bn::sound_items::ui.play();
-    }
-
-    _menu_row.set_item(bn::sprite_items::menu, game_ui::MENU_PAUSE_BASE + int(_pause_option));
-
-    if(bn::keypad::a_pressed() || bn::keypad::start_pressed())
-    {
-        switch(_pause_option)
+        switch(_menu_choice())
         {
-            case PauseOption::resume:
+            case game_ui::OPTION_RESUME:
                 _leave_pause();
                 break;
 
-            case PauseOption::restart:
+            case game_ui::OPTION_RESTART:
                 _bridge.reset_level();
                 _selected.reset();
                 _cursor_pos = _bridge.nodes()[bridge::START_NODE].position;
@@ -67,20 +52,24 @@ void Game::_update_pause()
                 _audio.play(audio::MusicCue::workshop);
                 break;
 
-            case PauseOption::levels:
+            case game_ui::OPTION_LEVELS:
+                _close_menu();
                 _show_level_select();
                 break;
 
-            case PauseOption::title:
+            case game_ui::OPTION_TITLE:
+                _close_menu();
                 _show_title();
                 break;
 
             default:
                 break;
         }
+
+        return;
     }
 
-    if(bn::keypad::b_pressed())
+    if(bn::keypad::b_pressed() || bn::keypad::select_pressed())
     {
         _leave_pause();
     }

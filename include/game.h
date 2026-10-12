@@ -94,6 +94,14 @@ private:
     void _update_all_complete();
     void _update_playing();
 
+    void _open_menu(const int* options, int count, int top_y);
+    void _close_menu();
+    void _sync_menu();
+    /// Moves the choice with up / down; true when A or Start picks it.
+    [[nodiscard]] bool _update_menu();
+    [[nodiscard]] int _menu_choice() const;
+    void _leave_result_to_levels();
+
     void _set_counter(bn::vector<bn::sprite_ptr, 2>& digits, int value, bn::fixed x_base);
     void _show_toast(game_ui::ToastKind kind);
     void _update_toast();
@@ -126,6 +134,10 @@ private:
     bn::optional<int> _selected;
     int _selected_level = 0;
     PauseOption _pause_option = PauseOption::resume;
+    int _menu_options[game_ui::MAX_MENU_ROWS] = {};
+    int _menu_count = 0;
+    int _menu_index = 0;
+    int _menu_top_y = 0;
     audio::Director _audio;
     int _frame = 0;
     int _menu_up_counter = 0;
@@ -138,9 +150,7 @@ private:
     game_ui::ToastKind _toast_kind = game_ui::ToastKind::none;
     bool _build_hints_seen = false;
     int _build_hint_timer = 0;
-    int _no_go_timer = 0;
     int _fail_reveal_timer = 0;
-    int _no_go_label = 0;
     int _fail_streak = 0;          ///< Failed test runs in a row on this track.
     int _snaps_seen = 0;           ///< Links already heard snapping this run.
     bool _fell_before_departure = false;
@@ -160,6 +170,9 @@ private:
     bn::sprite_ptr _logo;
     bn::sprite_ptr _menu_row;
     bn::sprite_ptr _menu_arrow;
+    bn::vector<bn::sprite_ptr, game_ui::MAX_MENU_ROWS> _options;
+    bn::sprite_ptr _stars;
+    bn::optional<bn::sprite_ptr> _version;  ///< Build plate; alive on the title screen only.
     bn::sprite_ptr _track_card;
     bn::sprite_ptr _hatt;
     bn::sprite_ptr _ghost;
