@@ -663,23 +663,9 @@ void Game::_enter_test()
     game_ui::set_train_sprite_position(_train, _bridge.train_position());
     _chuff_cooldown = 0;
 
-    if(_bridge.status() == bridge::SimStatus::no_path)
-    {
-        // Sending the train with nothing built at all gets a different "no".
-        const bool nothing_built = _bridge.player_node_count() == 0 && _bridge.struts().empty();
-        _no_go_label = nothing_built ? game_ui::LABEL_LISTEN :
-            (_deck_too_steep() ? game_ui::LABEL_STEEP : game_ui::LABEL_NO_GO);
-        _audio.play(audio::MusicCue::none);
-        bn::sound_items::delay.play();
-        _no_go_timer = 60;
-        _leave_test();
-        return;
-    }
-    else
-    {
-        _audio.play(audio::MusicCue::full_steam);
-        bn::sound_items::peep.play();
-    }
+    // The train always goes. Unfinished track is found out the hard way.
+    _audio.play(audio::MusicCue::full_steam);
+    bn::sound_items::peep.play();
 }
 
 void Game::_leave_test()
@@ -752,6 +738,32 @@ void Game::_update_test()
         return;
     }
 
+    if(status == bridge::SimStatus::stalled)
+    {
+        // Wheels spinning at the foot of a beam too steep to climb.
+        if(prev_status == bridge::SimStatus::running)
+        {
+            _fail_reveal_timer = game_ui::STALL_FRAMES;
+            _audio.play(audio::MusicCue::none);
+        }
+
+        if(_fail_reveal_timer > 0)
+        {
+            --_fail_reveal_timer;
+
+            if(_fail_reveal_timer % 12 == 0)
+            {
+                bn::sound_items::chuff.play();
+                _spawn_dust(_train.position());
+            }
+
+            return;
+        }
+
+        _show_level_failed();
+        return;
+    }
+
     if(status == bridge::SimStatus::failed_fall)
     {
         if(_fail_reveal_timer > 0)
@@ -782,14 +794,15 @@ void Game::_update_test()
 
 void Game::_update_hud()
 {
+    if(_screen != Screen::playing)
+    {
+        // Paused or finished this frame: that screen owns the HUD sprites now.
+        return;
+    }
+
     int frame = game_ui::LABEL_BUILD;
 
-    if(_no_go_timer > 0)
-    {
-        --_no_go_timer;
-        frame = _no_go_label;
-    }
-    else if(_play_mode == PlayMode::test)
+    if(_play_mode == PlayMode::test)
     {
         switch(_bridge.status())
         {
@@ -801,8 +814,8 @@ void Game::_update_hud()
                 frame = game_ui::LABEL_ASHES;
                 break;
 
-            case bridge::SimStatus::no_path:
-                frame = game_ui::LABEL_NO_GO;
+            case bridge::SimStatus::stalled:
+                frame = game_ui::LABEL_STEEP;
                 break;
 
             default:

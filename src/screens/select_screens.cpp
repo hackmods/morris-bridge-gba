@@ -284,6 +284,6 @@ void Game::_sync_level_select_flavor()
 
 void Game::_sync_level_select_stars()
 {
-    const uint8_t stars = _progress.best_stars(_selected_level);
-    _set_weight_digits(stars, stars > 0);
+    // Drawn as stars by _sync_overlays; the weight digit stays off this screen.
+    _set_weight_digits(0, false);
 }

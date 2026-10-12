@@ -54,13 +54,11 @@ void Game::_show_level_complete()
 
     _banner.set_visible(true);
     _banner.set_item(bn::sprite_items::banner, _pick_win_banner());
-    _banner.set_position(0, -28);
-    _panel.set_visible(true);
-    _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_DIALOG);
-    _panel.set_position(0, 48);
+    _banner.set_position(0, game_ui::RESULT_BANNER_Y);
+    _panel.set_visible(false);
     _label.set_visible(true);
     _label.set_z_order(game_ui::Z_DIALOG_LABEL);
-    _label.set_position(0, 50);
+    _label.set_position(0, game_ui::RESULT_MENU_Y + 3 * game_ui::OPTION_SPACING + 2);
     _label.set_item(bn::sprite_items::label,
                     _show_unlock_flash ? game_ui::LABEL_NEW : _pick_win_label());
     _hint_label.set_visible(false);
@@ -86,11 +84,15 @@ void Game::_show_level_complete()
         bn::sound_items::whistle.play();
     }
     _hatt.set_visible(true);
-    _hatt.set_position(-56, 8);
+    _hatt.set_position(-68, 4);
     _hatt.set_item(bn::sprite_items::hatt, game_ui::HATT_STERN);
     _sync_train_sprite();
-    _set_weight_digits(_last_run_score.stars, _last_run_score.stars > 0);
+    _set_weight_digits(0, false);
     _fail_streak = 0;
+
+    constexpr int OPTIONS[] = { game_ui::OPTION_NEXT, game_ui::OPTION_REBUILD,
+                                game_ui::OPTION_LEVELS };
+    _open_menu(OPTIONS, 3, game_ui::RESULT_MENU_Y);
 }
 
 void Game::_show_level_failed()
@@ -99,14 +101,13 @@ void Game::_show_level_failed()
     ++_fail_streak;
     _set_splash_visible(false);
     _banner.set_visible(true);
+    const bool stalled = _bridge.status() == bridge::SimStatus::stalled;
     _banner.set_item(bn::sprite_items::banner, _pick_fail_banner());
-    _banner.set_position(0, -28);
-    _panel.set_visible(true);
-    _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_DIALOG);
-    _panel.set_position(0, 48);
+    _banner.set_position(0, game_ui::RESULT_BANNER_Y);
+    _panel.set_visible(false);
     _label.set_visible(true);
     _label.set_z_order(game_ui::Z_DIALOG_LABEL);
-    _label.set_position(0, 50);
+    _label.set_position(0, game_ui::RESULT_STARS_Y);
     _label.set_item(bn::sprite_items::label, _pick_fail_label());
     _hint_label.set_visible(false);
     _hint_secondary.set_visible(false);
@@ -114,13 +115,26 @@ void Game::_show_level_failed()
     _train.set_visible(_train.position().y() < bridge::FALL_Y_LIMIT);
     _sync_train_sprite();
     _audio.play(audio::MusicCue::none);
-    bn::sound_items::snap.play();
     bn::sound_items::delay.play();
-    bn::sound_items::splash.play();
+
+    if(! stalled)
+    {
+        // A stalled engine is late, not wet.
+        if(! _bridge.ran_off())
+        {
+            bn::sound_items::snap.play();
+        }
+
+        bn::sound_items::splash.play();
+    }
+
     _hatt.set_visible(true);
-    _hatt.set_position(-56, 8);
+    _hatt.set_position(-68, 4);
     _hatt.set_item(bn::sprite_items::hatt, game_ui::HATT_FURIOUS);
     _set_weight_digits(0, false);
+
+    constexpr int OPTIONS[] = { game_ui::OPTION_RETRY, game_ui::OPTION_LEVELS };
+    _open_menu(OPTIONS, 2, game_ui::RESULT_MENU_Y);
 }
 
 void Game::_show_all_complete()
@@ -166,44 +180,72 @@ void Game::_show_all_complete()
     }
 }
 
+void Game::_leave_result_to_levels()
+{
+    _close_menu();
+    _bridge.end_test();
+    _play_mode = PlayMode::build;
+    _show_level_select();
+}
+
 void Game::_update_level_complete()
 {
-    if(bn::keypad::a_pressed() || bn::keypad::start_pressed())
+    // B is the quick way back to the workshop with the winning bridge still
+    // standing, to shave its cost for a better star.
+    const bool picked = _update_menu();
+    const int choice = bn::keypad::b_pressed() ? game_ui::OPTION_REBUILD : (picked ? _menu_choice() : -1);
+
+    switch(choice)
     {
-        _bridge.end_test();
-        _play_mode = PlayMode::build;
+        case game_ui::OPTION_NEXT:
+            _close_menu();
+            _bridge.end_test();
+            _play_mode = PlayMode::build;
 
-        if(_bridge.current_level() + 1 >= bridge::LEVEL_COUNT)
-        {
-            _show_all_complete();
-        }
-        else
-        {
-            _pending_level = _bridge.current_level() + 1;
-            _start_level(_pending_level);
-        }
+            if(_bridge.current_level() + 1 >= bridge::LEVEL_COUNT)
+            {
+                _show_all_complete();
+            }
+            else
+            {
+                _pending_level = _bridge.current_level() + 1;
+                _start_level(_pending_level);
+            }
 
-        return;
-    }
+            break;
 
-    if(bn::keypad::b_pressed())
-    {
-        // Back to the workshop with the winning bridge still standing, to
-        // shave its cost for a better star. Pause has the way out to the map.
-        _leave_test();
-        _screen = Screen::playing;
-        _show_gameplay();
+        case game_ui::OPTION_REBUILD:
+            _close_menu();
+            _leave_test();
+            _screen = Screen::playing;
+            _show_gameplay();
+            break;
+
+        case game_ui::OPTION_LEVELS:
+            _leave_result_to_levels();
+            break;
+
+        default:
+            break;
     }
 }
 
 void Game::_update_level_failed()
 {
-    if(bn::keypad::a_pressed() || bn::keypad::start_pressed() || bn::keypad::b_pressed())
+    const bool picked = _update_menu();
+    const int choice = bn::keypad::b_pressed() ? game_ui::OPTION_RETRY : (picked ? _menu_choice() : -1);
+
+    if(choice == game_ui::OPTION_RETRY)
     {
         // Back to the workshop with the bridge rewound.
+        _close_menu();
         _leave_test();
         _screen = Screen::playing;
         _show_gameplay();
+    }
+    else if(choice == game_ui::OPTION_LEVELS)
+    {
+        _leave_result_to_levels();
     }
 }
 

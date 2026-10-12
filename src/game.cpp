@@ -24,7 +24,10 @@
 #include "bn_sprite_items_strut.h"
 #include "bn_sprite_items_toast.h"
 #include "bn_sprite_items_track_card.h"
+#include "bn_sprite_items_option.h"
+#include "bn_sprite_items_stars.h"
 #include "bn_sprite_items_train.h"
+#include "bn_sprite_items_version.h"
 
 #include "audio_director.h"
 #include "game_constants.h"
@@ -58,6 +61,7 @@ Game::Game() :
     _logo(bn::sprite_items::logo.create_sprite(0, -52)),
     _menu_row(bn::sprite_items::menu.create_sprite(0, 8)),
     _menu_arrow(bn::sprite_items::cursor.create_sprite(-36, 8)),
+    _stars(bn::sprite_items::stars.create_sprite(0, 0)),
     _track_card(bn::sprite_items::track_card.create_sprite(0, 16)),
     _hatt(bn::sprite_items::hatt.create_sprite(52, 8)),
     _ghost(game_ui::make_sprite(bn::sprite_items::ghost, 0, 0, game_ui::Z_GHOST)),
@@ -91,7 +95,9 @@ Game::Game() :
     _logo.set_z_order(-29);
     _logo.set_visible(false);
     _menu_row.set_z_order(-25);
-    _menu_arrow.set_z_order(-24);
+    _menu_arrow.set_z_order(-26);
+    _stars.set_z_order(-25);
+    _stars.set_visible(false);
     _track_card.set_z_order(-20);
     _track_card.set_visible(false);
     _hatt.set_z_order(-23);
@@ -247,6 +253,17 @@ int Game::_pick_win_label() const
 
 int Game::_pick_fail_label() const
 {
+    if(_bridge.status() == bridge::SimStatus::stalled)
+    {
+        return game_ui::LABEL_STEEP;
+    }
+
+    if(_bridge.ran_off())
+    {
+        // Nothing built at all gets its own "no".
+        return _bridge.struts().empty() ? game_ui::LABEL_LISTEN : game_ui::LABEL_OOPS;
+    }
+
     if(_fell_before_departure)
     {
         // The bridge could not hold itself up, let alone a train.
@@ -286,6 +303,17 @@ int Game::_pick_win_banner() const
 
 int Game::_pick_fail_banner() const
 {
+    if(_bridge.status() == bridge::SimStatus::stalled)
+    {
+        // Stuck on the hill with the line blocked behind: confusion and delay.
+        return game_ui::BANNER_DELAY;
+    }
+
+    if(_bridge.ran_off() && _fail_streak < game_ui::AGAIN_STREAK)
+    {
+        return game_ui::BANNER_BOTHER;
+    }
+
     if(_fail_streak >= game_ui::LOOP_STREAK)
     {
         return game_ui::BANNER_DELAY_LISTEN;
@@ -488,6 +516,40 @@ void Game::_sync_overlays()
     // is being shown off in its place).
     const bool on_line = _screen == Screen::playing && _play_mode == PlayMode::test;
     const bool arrived = _screen == Screen::level_complete && ! _show_unlock_flash;
+
+    // Stars: what this run earned on the win screen, the best so far on the map.
+    if(_screen == Screen::level_complete)
+    {
+        _stars.set_item(bn::sprite_items::stars, _last_run_score.stars);
+        _stars.set_position(0, game_ui::RESULT_STARS_Y);
+        _stars.set_visible(true);
+    }
+    else if(_screen == Screen::level_select)
+    {
+        _stars.set_item(bn::sprite_items::stars, _progress.best_stars(_selected_level));
+        _stars.set_position(0, 40);
+        _stars.set_visible(true);
+    }
+    else
+    {
+        _stars.set_visible(false);
+    }
+
+    if(_screen == Screen::title && ! _version)
+    {
+        _version = bn::sprite_items::version.create_sprite(84, -70);
+        _version->set_z_order(-25);
+    }
+    else if(_screen != Screen::title)
+    {
+        _version.reset();
+    }
+
+    if(_menu_count > 0 && _screen != Screen::pause && _screen != Screen::level_complete &&
+       _screen != Screen::level_failed)
+    {
+        _close_menu();
+    }
 
     if(on_line)
     {
@@ -823,24 +885,30 @@ void Game::_enter_pause()
     _set_splash_visible(false);
     _pause_option = PauseOption::resume;
     _banner.set_visible(true);
-    _banner.set_item(bn::sprite_items::banner, game_ui::BANNER_LEVEL_SELECT);
-    _banner.set_position(0, -48);
-    _panel.set_visible(true);
-    _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_SELECT);
-    _panel.set_position(0, 12);
+    _banner.set_item(bn::sprite_items::banner, game_ui::BANNER_PAUSED);
+    _banner.set_position(0, game_ui::RESULT_BANNER_Y);
+    _panel.set_visible(false);
     _track_card.set_visible(false);
     _label.set_visible(false);
     _hint_label.set_visible(false);
     _hint_secondary.set_visible(false);
-    _menu_row.set_visible(true);
-    _menu_row.set_item(bn::sprite_items::menu, game_ui::MENU_PAUSE_BASE + int(_pause_option));
-    _menu_row.set_position(0, 0);
-    _menu_arrow.set_visible(true);
-    _menu_arrow.set_position(-42, 8);
+    _menu_row.set_visible(false);
     _cursor.set_visible(false);
+    _ghost.set_visible(false);
+    _graph.hide_preview();
+    _toast.set_visible(false);
+    _set_weight_digits(0, false);
+    _node_count_digits[0].set_visible(false);
+    _node_count_digits[1].set_visible(false);
+    _strut_count_digits[0].set_visible(false);
+    _strut_count_digits[1].set_visible(false);
     _hatt.set_visible(true);
-    _hatt.set_position(56, 8);
-    _hatt.set_item(bn::sprite_items::hatt, game_ui::HATT_FURIOUS);
+    _hatt.set_position(64, 4);
+    _hatt.set_item(bn::sprite_items::hatt, game_ui::HATT_STERN);
+
+    constexpr int OPTIONS[] = { game_ui::OPTION_RESUME, game_ui::OPTION_RESTART,
+                                game_ui::OPTION_LEVELS, game_ui::OPTION_TITLE };
+    _open_menu(OPTIONS, 4, game_ui::PAUSE_MENU_Y);
 
     if(bn::music::playing())
     {
@@ -851,9 +919,9 @@ void Game::_enter_pause()
 void Game::_leave_pause()
 {
     _screen = Screen::playing;
+    _close_menu();
     _banner.set_visible(false);
     _menu_row.set_visible(false);
-    _menu_arrow.set_visible(false);
     _hatt.set_visible(false);
     _panel.set_visible(true);
     _panel.set_item(bn::sprite_items::panel, game_ui::PANEL_HUD);
@@ -867,6 +935,79 @@ void Game::_leave_pause()
     {
         _audio.restore_from_pause();
     }
+}
+
+void Game::_open_menu(const int* options, const int count, const int top_y)
+{
+    _close_menu();
+    _menu_count = count;
+    _menu_index = 0;
+    _menu_top_y = top_y;
+
+    for(int row = 0; row < count; ++row)
+    {
+        _menu_options[row] = options[row];
+        _options.push_back(bn::sprite_items::option.create_sprite(
+            0, top_y + row * game_ui::OPTION_SPACING, options[row] * 2));
+        _options.back().set_z_order(-25);
+    }
+
+    _menu_up_counter = 0;
+    _menu_down_counter = 0;
+    _sync_menu();
+}
+
+void Game::_close_menu()
+{
+    _options.clear();
+    _menu_count = 0;
+    _menu_arrow.set_visible(false);
+}
+
+void Game::_sync_menu()
+{
+    for(int row = 0; row < _options.size(); ++row)
+    {
+        _options[row].set_item(bn::sprite_items::option,
+                               _menu_options[row] * 2 + (row == _menu_index ? 1 : 0));
+    }
+
+    _menu_arrow.set_position(-42, _menu_top_y + _menu_index * game_ui::OPTION_SPACING);
+    _menu_arrow.set_visible(_menu_count > 0);
+}
+
+bool Game::_update_menu()
+{
+    if(_menu_count == 0)
+    {
+        return false;
+    }
+
+    int step = 0;
+
+    if(_dir_repeat(bn::keypad::up_pressed(), bn::keypad::up_held(), _menu_up_counter))
+    {
+        step = _menu_count - 1;
+    }
+
+    if(_dir_repeat(bn::keypad::down_pressed(), bn::keypad::down_held(), _menu_down_counter))
+    {
+        step = 1;
+    }
+
+    if(step != 0)
+    {
+        _menu_index = (_menu_index + step) % _menu_count;
+        bn::sound_items::ui.play();
+        _sync_menu();
+    }
+
+    return bn::keypad::a_pressed() || bn::keypad::start_pressed();
+}
+
+int Game::_menu_choice() const
+{
+    return _menu_count > 0 ? _menu_options[_menu_index] : -1;
 }
 
 void Game::_animate_train()

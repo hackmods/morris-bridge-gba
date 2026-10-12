@@ -103,3 +103,7 @@ git push origin main
 GitHub Actions builds a fresh ROM on every push (see [CI/CD](ci-cd.md)). The committed copy is for **clone-and-play** convenience; keep it in sync with `main` after refactors so [Getting started](getting-started.md) and EverDrive users get current behavior.
 
 See also [Session knowledge — ROM policy](knowledge.md#prebuilt-rom-policy).
+
+## Version
+
+The build version on the title screen comes from the `VERSION` file at the repo root. Change it, then run `python tools/gen_graphics.py` before building.

@@ -140,8 +140,8 @@ enum class SimStatus
     idle,        ///< Build mode; simulation is not running.
     running,     ///< Structure is loaded and the train is settling or crossing.
     success,     ///< The whole train is on the far bank.
-    failed_fall, ///< The road under the train snapped, vanished, or sank.
-    no_path      ///< No climbable track joins the two banks.
+    failed_fall, ///< The road under the train snapped, vanished, sank, or ran out.
+    stalled      ///< The engine reached track too steep to climb and stopped.
 };
 
 enum class StrutPreviewStatus
@@ -359,6 +359,10 @@ public:
     /**
      * @brief Begin test mode: snapshot the build, pick the shortest climbable
      * track route, weigh the structure, and park the train on the start bank.
+     *
+     * The train always departs. With no route to the far bank it takes what
+     * track there is as far right as it goes, then runs off the end (or
+     * stalls, if the end is the foot of a beam too steep to climb).
      */
     SimStatus begin_test();
 
@@ -408,6 +412,18 @@ public:
      * Level (1, 0) on either bank and before a run.
      */
     [[nodiscard]] bn::fixed_point axle_heading(int axle) const;
+
+    /// False when this run's route stops short of the far bank.
+    [[nodiscard]] bool route_complete() const
+    {
+        return _route_complete;
+    }
+
+    /// True once the engine has driven off the end of unfinished track.
+    [[nodiscard]] bool ran_off() const
+    {
+        return _ran_off;
+    }
 
     [[nodiscard]] bool train_falling() const
     {
@@ -502,6 +518,7 @@ private:
     void _break_strut(int strut_index);
     void _start_falling();
     void _place_train();
+    void _run_off_end();
     [[nodiscard]] bn::fixed _axle_distance(int axle) const;
     [[nodiscard]] int _segment_at(bn::fixed distance) const;
     void _park_train();
@@ -522,6 +539,10 @@ private:
 
     SimStatus _status = SimStatus::idle;
     bn::fixed_point _axle_position[1 + engine::MAX_CARS];
+    bn::fixed _axle_fall[1 + engine::MAX_CARS] = {};  ///< Fall speed of each axle off a dead end.
+    bool _route_complete = false;
+    bool _stall_at_end = false;     ///< The route's dead end is the foot of a too-steep beam.
+    bool _ran_off = false;
     bn::fixed _train_distance = 0;  ///< Engine distance along the route.
     bn::fixed _train_t = 0;         ///< 0..1 along the current strut.
     int _path_index = 0;            ///< Index of the node the train is leaving.
