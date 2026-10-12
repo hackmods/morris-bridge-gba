@@ -109,13 +109,13 @@ int main()
     }
 
     {
-        // The purse is half as much again as par, and every par design fits.
+        // The purse is twice par, and every par design fits.
         for(int level_index = 0; level_index < level::COUNT; ++level_index)
         {
             bridge::BridgeSystem system;
             assert(level_solutions::build_reference(system, level_index));
             const level::Def& def = system.level_def();
-            assert(session::purse(def) == def.par_cost + (def.par_cost + 1) / 2);
+            assert(session::purse(def) == def.par_cost * 2);
             assert(session::purse_left(system, def) == session::purse(def) - def.par_cost);
         }
 

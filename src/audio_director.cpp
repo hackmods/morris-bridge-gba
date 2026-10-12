@@ -31,10 +31,8 @@ void Director::play_yard_menu()
 void Director::play_yard_engine_motif(const engine::Id id)
 {
     ensure_yard_playing();
-    // The yard tune has five motifs; Henry shares the other big green-flag
-    // engine's slot rather than running off the end of the pattern list.
-    const engine::Id motif = id == engine::Id::henry ? engine::Id::edward : id;
-    bn::music::set_position(YARD_ENGINE_MOTIF_BASE + int(motif) * 2);
+    // One pair of patterns per engine, in engine::Id order.
+    bn::music::set_position(YARD_ENGINE_MOTIF_BASE + int(id) * 2);
 }
 
 void Director::play(const MusicCue cue)

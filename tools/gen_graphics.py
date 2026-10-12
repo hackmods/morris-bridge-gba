@@ -314,7 +314,7 @@ BG_THEMES: list[dict] = [
         "water_dark": 1,
         "water_light": 10,
         "water_spark": 7,
-        "rock": (10, 13, 2),
+        "rock": (10, 7, 15),
     },
 ]
 
@@ -1671,7 +1671,7 @@ def make_labels() -> None:
         "CONFUS",
         "LOOP!",
         "THIN!",
-        # 39-45: HUD tags.
+        # 39-45: HUD tags. 46: a finished deck no engine can climb.
         "LOAD",
         "CABLE",
         "PAR",
@@ -1679,6 +1679,7 @@ def make_labels() -> None:
         "PEAK",
         "WOOD",
         "COST",
+        "STEEP!",
     )
     w, fh = 32, 8
     px = fill(w, fh * len(texts))
@@ -1686,7 +1687,7 @@ def make_labels() -> None:
         2, 2, 2, 3, 2, 3, 2, 3, 2, 2, 2, 3, 3, 2, 3, 3, 3, 2, 2, 2, 2, 3, 3, 2, 3,
         2, 3, 2, 3, 2, 3, 2, 3, 2, 3,
         3, 9, 3, 3,
-        2, 2, 3, 9, 9, 2, 2,
+        2, 2, 3, 9, 9, 2, 2, 9,
     )
     for i, text in enumerate(texts):
         y0 = i * fh

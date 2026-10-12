@@ -125,6 +125,7 @@ constexpr int LABEL_MAX = 42;
 constexpr int LABEL_PEAK = 43;
 constexpr int LABEL_WOOD = 44;
 constexpr int LABEL_COST = 45;
+constexpr int LABEL_STEEP = 46;
 
 constexpr int BANNER_LEVEL_SELECT = 0;
 constexpr int BANNER_HATT_OK = 1;

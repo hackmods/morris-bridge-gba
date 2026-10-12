@@ -318,7 +318,7 @@ int main()
     }
 
     {
-        // Track dropping 28 px over 16 px is far past the 1-in-2 limit.
+        // Track dropping 28 px over 16 px is far past the 2-in-3 limit.
         bridge::BridgeSystem system;
         system.load_level(0);
         const bn::optional<int> low = system.add_node(-24, 40, false);
@@ -332,6 +332,39 @@ int main()
         assert(system.add_strut(bridge::START_NODE, level_joint.value()));
         assert(system.is_routable(system.struts()[2]));
         std::cout << "  ok engines refuse track steeper than the grade limit\n";
+    }
+
+    {
+        // Gordon's Hill with the whole climb left to the last beam: the deck
+        // is complete, no engine can take it, and that beam is singled out.
+        bridge::BridgeSystem system;
+        system.load_level(1);
+        const bn::optional<int> a = system.add_node(-40, 44, false);
+        const bn::optional<int> b = system.add_node(0, 44, false);
+        const bn::optional<int> c = system.add_node(44, 44, false);
+        assert(a && b && c);
+        assert(system.add_strut(bridge::START_NODE, a.value()));
+        assert(system.add_strut(a.value(), b.value()));
+        assert(system.add_strut(b.value(), c.value()));
+        assert(!system.steep_strut());
+        const bn::optional<int> ramp = system.add_strut(c.value(), bridge::END_NODE);
+        assert(ramp.has_value());
+        assert(!system.has_track_path());
+        assert(system.has_track_path(true));
+        assert(system.steep_strut().value() == ramp.value());
+        // A cable up to the crag is steep too, but it is not what stops the train.
+        assert(system.add_strut(2, a.value(), bridge::LinkRole::cable));
+        assert(system.steep_strut().value() == ramp.value());
+
+        // The same climb shared between two beams is a route.
+        assert(system.remove_player_node(c.value()) == bridge::RemoveNodeResult::ok);
+        const bn::optional<int> eased = system.add_node(40, 28, false);
+        assert(eased.has_value());
+        assert(system.add_strut(b.value(), eased.value()));
+        assert(system.add_strut(eased.value(), bridge::END_NODE));
+        assert(system.has_track_path());
+        assert(!system.steep_strut());
+        std::cout << "  ok a deck too steep to climb names the beam at fault\n";
     }
 
     {

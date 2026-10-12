@@ -69,15 +69,21 @@ bridge that cannot hold itself up comes down before the engine moves.
 ## Routing
 
 `begin_test()` picks the **shortest** route by length over track links
-(Dijkstra, ≤16 nodes). Track steeper than 1-in-`MAX_GRADE_RUN` (1 in 2) is not
+(Dijkstra, ≤16 nodes). Track steeper than `MAX_GRADE_RISE` in `MAX_GRADE_RUN` (2 in 3) is not
 a route — engines stall on it — so timber can be used as a post or strut
 without the train trying to drive down it, and a timber truss chord above the
 deck never steals the train from the deck.
 
+`has_track_path(true)` waives the grade rule: a bridge that only passes that
+way is complete but too steep, and `steep_strut()` names the one beam at fault
+(climbable track reaches one end of it from the start bank and the other end
+from the far bank). The build screen uses both for the **STEEP!** warning.
+
 ## Build limits
 
 - Timber no longer than the level's beam length (`level::Def::safe_length`,
-  44–48 px); rod up to 1.5× that. The weld ghost turns red past the limit.
+  56–60 px); rod up to 1.5× that, cable 2×. A joint placed past the limit is
+  brought in along the same line to the end of the beam.
 - No link shorter than `MIN_LINK_LENGTH` (8 px).
 - 16 nodes including anchors, 32 links.
 

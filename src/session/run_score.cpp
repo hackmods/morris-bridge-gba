@@ -74,7 +74,7 @@ RunScore compute_run_score(const bridge::BridgeSystem& system, const level::Def&
 
 int purse(const level::Def& def)
 {
-    return def.par_cost + (def.par_cost + 1) / 2;
+    return def.par_cost * 2;
 }
 
 int purse_left(const bridge::BridgeSystem& system, const level::Def& def)

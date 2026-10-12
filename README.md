@@ -45,9 +45,9 @@ The bridge is simulated as a real structure. Joints have weight, beams carry for
 - **Cable** is cheap and long and holds 12, but only in tension. Push on it and it goes slack.
 - The bridge **settles under its own weight** before the train leaves. If it cannot hold itself up, you find out early.
 - A snapped link dumps its load on its neighbours. Collapses cascade.
-- Engines **slow uphill**, including on the sag of your own deck.
+- Engines **slow uphill** and lean into the grade, including on the sag of your own deck. Track steeper than 2 in 3 is too steep to climb.
 - **Troublesome Trucks** bump along and shake the bridge. Coaches do not.
-- Every level has a **par** cost for three stars and a **purse** (1.5× par) you cannot exceed.
+- Every level has a **par** cost for three stars and a **purse** (2× par) you cannot exceed.
 - After a failed run the bridge comes back as built, with the links that gave way still glowing.
 
 The full rules are in [game design](docs/game-design.md); the maths is in [physics](docs/physics.md).

@@ -52,7 +52,7 @@ test('capture Gordon Hill walkthrough screenshots', async ({ page }) => {
   await page.locator('#game-canvas').screenshot({ path: `${OUT_DIR}/07_gordons_hill_build_rod.png` });
 });
 
-/** Track 3, Culdee Fell (all_unlocked walkthrough save; file names kept from when it was Vicarstown). */
+/** Track 3, Culdee Fell (all_unlocked walkthrough save). */
 test('capture Culdee Fell walkthrough screenshots', async ({ page }) => {
   await page.goto('/?walkthrough=vicarstown');
   await waitForRenderSettle(page, 3_000);
@@ -63,10 +63,10 @@ test('capture Culdee Fell walkthrough screenshots', async ({ page }) => {
   await tap(page, 'Down');
   await tap(page, 'Down');
   await page.waitForTimeout(800);
-  await page.locator('#game-canvas').screenshot({ path: `${OUT_DIR}/08_vicarstown_select.png` });
+  await page.locator('#game-canvas').screenshot({ path: `${OUT_DIR}/08_culdee_fell_select.png` });
 
   await tap(page, 'Start');
   await tap(page, 'Start');
   await page.waitForTimeout(1_500);
-  await page.locator('#game-canvas').screenshot({ path: `${OUT_DIR}/09_vicarstown_build.png` });
+  await page.locator('#game-canvas').screenshot({ path: `${OUT_DIR}/09_culdee_fell_build.png` });
 });

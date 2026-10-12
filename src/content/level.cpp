@@ -73,21 +73,21 @@ constexpr Seed Vicarstown[] = {
 // back/front, tools, intro, par, banked. tools/gen_graphics.py reads this table (and
 // the seeds above) to draw each level's terrain, so keep the layout regular.
 constexpr Def DEFINITIONS[COUNT] = {
-    { SEEDS(Knapford), 0, engine::Id::thomas, 12, 48, 54,
+    { SEEDS(Knapford), 0, engine::Id::thomas, 12, 60, 54,
       bn::fixed(1) / 4, bn::fixed(1) / 2, ALLOW_TRACK, 1, 4, false },
-    { SEEDS(GordonHill), 1, engine::Id::thomas, 44, 48, 60,
+    { SEEDS(GordonHill), 1, engine::Id::thomas, 44, 60, 60,
       bn::fixed(1) / 3, bn::fixed(3) / 5, ALLOW_TRACK_AND_CABLE, 2, 10, true },
-    { SEEDS(CuldeeFell), 1, engine::Id::edward, 30, 44, 54,
+    { SEEDS(CuldeeFell), 1, engine::Id::edward, 30, 56, 54,
       bn::fixed(1) / 3, bn::fixed(2) / 3, ALLOW_ALL, 3, 20, false },
-    { SEEDS(Tidmouth), 0, engine::Id::percy, 30, 44, 54,
+    { SEEDS(Tidmouth), 0, engine::Id::percy, 30, 56, 54,
       bn::fixed(1) / 4, bn::fixed(1) / 2, ALLOW_TRACK, 4, 13, false },
-    { SEEDS(Wellsworth), 1, engine::Id::henry, 0, 48, 58,
+    { SEEDS(Wellsworth), 1, engine::Id::henry, 0, 60, 58,
       bn::fixed(1) / 3, bn::fixed(3) / 5, ALLOW_ALL, 5, 9, false },
-    { SEEDS(CrovanGate), 0, engine::Id::edward, 0, 48, 54,
+    { SEEDS(CrovanGate), 0, engine::Id::edward, 0, 60, 54,
       bn::fixed(1) / 4, bn::fixed(3) / 5, ALLOW_ALL, 6, 20, false },
-    { SEEDS(Callan), 0, engine::Id::james, 40, 48, 60,
+    { SEEDS(Callan), 0, engine::Id::james, 40, 60, 60,
       bn::fixed(1) / 3, bn::fixed(2) / 3, ALLOW_ALL, 7, 15, false },
-    { SEEDS(Vicarstown), 2, engine::Id::henry, 8, 48, 54,
+    { SEEDS(Vicarstown), 2, engine::Id::henry, 8, 60, 54,
       bn::fixed(1) / 3, bn::fixed(2) / 3, ALLOW_ALL, 8, 25, false },
 };
 

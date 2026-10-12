@@ -525,10 +525,10 @@ bool BridgeSystem::is_routable(const Strut& strut) const
 
     const bn::fixed_point& a = _nodes[strut.node_a].position;
     const bn::fixed_point& b = _nodes[strut.node_b].position;
-    return physics::abs(b.y() - a.y()) * MAX_GRADE_RUN <= physics::abs(b.x() - a.x());
+    return physics::abs(b.y() - a.y()) * MAX_GRADE_RUN <= physics::abs(b.x() - a.x()) * MAX_GRADE_RISE;
 }
 
-bool BridgeSystem::has_track_path() const
+bool BridgeSystem::has_track_path(const bool ignore_grade) const
 {
     bool visited[MAX_NODES] = {};
     bn::vector<int, MAX_NODES> queue;
@@ -553,7 +553,7 @@ bool BridgeSystem::has_track_path() const
 
             const int next = strut.node_a == current ? strut.node_b : strut.node_a;
 
-            if(!visited[next] && is_routable(strut))
+            if(!visited[next] && strut.role == LinkRole::track && (ignore_grade || is_routable(strut)))
             {
                 visited[next] = true;
                 queue.push_back(next);
@@ -562,6 +562,61 @@ bool BridgeSystem::has_track_path() const
     }
 
     return false;
+}
+
+void BridgeSystem::_mark_climbable(const int from, bool* reached) const
+{
+    bn::vector<int, MAX_NODES> queue;
+    queue.push_back(from);
+    reached[from] = true;
+
+    for(int head = 0; head < queue.size(); ++head)
+    {
+        const int current = queue[head];
+
+        for(const Strut& strut : _struts)
+        {
+            if((strut.node_a != current && strut.node_b != current) || !is_routable(strut))
+            {
+                continue;
+            }
+
+            const int next = strut.node_a == current ? strut.node_b : strut.node_a;
+
+            if(!reached[next])
+            {
+                reached[next] = true;
+                queue.push_back(next);
+            }
+        }
+    }
+}
+
+bn::optional<int> BridgeSystem::steep_strut() const
+{
+    bool from_start[MAX_NODES] = {};
+    bool from_end[MAX_NODES] = {};
+    _mark_climbable(START_NODE, from_start);
+    _mark_climbable(END_NODE, from_end);
+
+    if(from_start[END_NODE])
+    {
+        return bn::optional<int>();
+    }
+
+    for(int i = 0; i < _struts.size(); ++i)
+    {
+        const Strut& strut = _struts[i];
+
+        if(strut.role == LinkRole::track && !is_routable(strut) &&
+           ((from_start[strut.node_a] && from_end[strut.node_b]) ||
+            (from_start[strut.node_b] && from_end[strut.node_a])))
+        {
+            return bn::optional<int>(i);
+        }
+    }
+
+    return bn::optional<int>();
 }
 
 bool BridgeSystem::_find_route()
@@ -849,6 +904,20 @@ void BridgeSystem::_apply_axle(const bn::fixed distance, const bn::fixed weight)
 bn::fixed BridgeSystem::_axle_distance(const int axle) const
 {
     return _train_distance - engine::CAR_SPACING * axle;
+}
+
+bn::fixed_point BridgeSystem::axle_heading(const int axle) const
+{
+    const int last = _path.size() - 1;
+    const bn::fixed distance = _axle_distance(axle);
+
+    if(last < 1 || distance <= 0 || distance >= _path_cum[last])
+    {
+        return bn::fixed_point(1, 0);
+    }
+
+    const int segment = _segment_at(distance);
+    return _nodes[_path[segment + 1]].position - _nodes[_path[segment]].position;
 }
 
 int BridgeSystem::_segment_at(const bn::fixed distance) const
